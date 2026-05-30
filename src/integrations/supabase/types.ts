@@ -14,16 +14,3018 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      ahc_bookings: {
+        Row: {
+          beneficiary_name: string
+          corporate_id: string | null
+          created_at: string
+          employee_id: string | null
+          fulfilled_date: string | null
+          id: string
+          invoice_amount: number
+          notes: string | null
+          org_id: string
+          package_id: string | null
+          report_delivered_at: string | null
+          scheduled_date: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          beneficiary_name: string
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          fulfilled_date?: string | null
+          id?: string
+          invoice_amount?: number
+          notes?: string | null
+          org_id: string
+          package_id?: string | null
+          report_delivered_at?: string | null
+          scheduled_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          beneficiary_name?: string
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          fulfilled_date?: string | null
+          id?: string
+          invoice_amount?: number
+          notes?: string | null
+          org_id?: string
+          package_id?: string | null
+          report_delivered_at?: string | null
+          scheduled_date?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ahc_bookings_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ahc_bookings_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "opd_employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ahc_bookings_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "ahc_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ahc_packages: {
+        Row: {
+          age_band: string | null
+          code: string
+          created_at: string
+          gender: string | null
+          id: string
+          inclusions: Json
+          is_active: boolean
+          name: string
+          org_id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          age_band?: string | null
+          code: string
+          created_at?: string
+          gender?: string | null
+          id?: string
+          inclusions?: Json
+          is_active?: boolean
+          name: string
+          org_id: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          age_band?: string | null
+          code?: string
+          created_at?: string
+          gender?: string | null
+          id?: string
+          inclusions?: Json
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ai_generations: {
+        Row: {
+          attachments_count: number
+          claim_id: string | null
+          completion_tokens: number | null
+          created_at: string
+          created_by: string | null
+          duration_ms: number | null
+          error_message: string | null
+          id: string
+          input_summary: string | null
+          model: string
+          ocr_text: string | null
+          org_id: string
+          output: string | null
+          prompt_tokens: number | null
+          provider: string
+          status: string
+          tool: string
+        }
+        Insert: {
+          attachments_count?: number
+          claim_id?: string | null
+          completion_tokens?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_summary?: string | null
+          model: string
+          ocr_text?: string | null
+          org_id: string
+          output?: string | null
+          prompt_tokens?: number | null
+          provider: string
+          status?: string
+          tool: string
+        }
+        Update: {
+          attachments_count?: number
+          claim_id?: string | null
+          completion_tokens?: number | null
+          created_at?: string
+          created_by?: string | null
+          duration_ms?: number | null
+          error_message?: string | null
+          id?: string
+          input_summary?: string | null
+          model?: string
+          ocr_text?: string | null
+          org_id?: string
+          output?: string | null
+          prompt_tokens?: number | null
+          provider?: string
+          status?: string
+          tool?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_generations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_generations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_generations_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "ai_generations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_providers: {
+        Row: {
+          api_key: string
+          created_at: string
+          default_model: string | null
+          display_name: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          last_used_at: string | null
+          notes: string | null
+          org_id: string
+          provider: string
+          total_calls: number
+          total_tokens: number
+          updated_at: string
+        }
+        Insert: {
+          api_key: string
+          created_at?: string
+          default_model?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_used_at?: string | null
+          notes?: string | null
+          org_id: string
+          provider: string
+          total_calls?: number
+          total_tokens?: number
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          default_model?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_used_at?: string | null
+          notes?: string | null
+          org_id?: string
+          provider?: string
+          total_calls?: number
+          total_tokens?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_providers_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_token_usage: {
+        Row: {
+          app_id: string
+          calls: number
+          cost_inr: number
+          created_at: string
+          day: string
+          id: string
+          org_id: string
+          token_id: string
+          tokens_in: number
+          tokens_out: number
+        }
+        Insert: {
+          app_id: string
+          calls?: number
+          cost_inr?: number
+          created_at?: string
+          day: string
+          id?: string
+          org_id: string
+          token_id: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Update: {
+          app_id?: string
+          calls?: number
+          cost_inr?: number
+          created_at?: string
+          day?: string
+          id?: string
+          org_id?: string
+          token_id?: string
+          tokens_in?: number
+          tokens_out?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_token_usage_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "platform_apps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_token_usage_token_id_fkey"
+            columns: ["token_id"]
+            isOneToOne: false
+            referencedRelation: "api_tokens"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_tokens: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          org_id: string
+          prefix: string
+          revoked_at: string | null
+          scopes: string[]
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          org_id: string
+          prefix: string
+          revoked_at?: string | null
+          scopes?: string[]
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          org_id?: string
+          prefix?: string
+          revoked_at?: string | null
+          scopes?: string[]
+          token_hash?: string
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          key: string
+          org_id: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          org_id: string
+          updated_at?: string
+          value?: Json
+        }
+        Update: {
+          key?: string
+          org_id?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_settings_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_user_access: {
+        Row: {
+          app_id: string
+          app_user_id: string
+          can_login: boolean
+          created_at: string
+          id: string
+          org_id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          app_id: string
+          app_user_id: string
+          can_login?: boolean
+          created_at?: string
+          id?: string
+          org_id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          app_id?: string
+          app_user_id?: string
+          can_login?: boolean
+          created_at?: string
+          id?: string
+          org_id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_user_access_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "platform_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      app_users: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string
+          department: string | null
+          designation: string | null
+          email: string
+          id: string
+          last_login_at: string | null
+          name: string
+          notes: string | null
+          org_id: string
+          phone: string | null
+          role: string
+          smtp_from_email: string | null
+          smtp_from_name: string | null
+          smtp_host: string | null
+          smtp_password: string | null
+          smtp_port: number | null
+          smtp_reply_to: string | null
+          smtp_use_tls: boolean
+          smtp_username: string | null
+          smtp_verified_at: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string
+          department?: string | null
+          designation?: string | null
+          email: string
+          id?: string
+          last_login_at?: string | null
+          name: string
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          role?: string
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_reply_to?: string | null
+          smtp_use_tls?: boolean
+          smtp_username?: string | null
+          smtp_verified_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string
+          department?: string | null
+          designation?: string | null
+          email?: string
+          id?: string
+          last_login_at?: string | null
+          name?: string
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          role?: string
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_host?: string | null
+          smtp_password?: string | null
+          smtp_port?: number | null
+          smtp_reply_to?: string | null
+          smtp_use_tls?: boolean
+          smtp_username?: string | null
+          smtp_verified_at?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_documents: {
+        Row: {
+          claim_id: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          mime_type: string | null
+          org_id: string
+          uploaded_by: string | null
+          uploader_name: string | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          org_id: string
+          uploaded_by?: string | null
+          uploader_name?: string | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          mime_type?: string | null
+          org_id?: string
+          uploaded_by?: string | null
+          uploader_name?: string | null
+        }
+        Relationships: []
+      }
+      claims: {
+        Row: {
+          action_plan: string | null
+          approved_amount: number
+          cheque_neft_utr_date: string | null
+          cheque_neft_utr_no: string | null
+          claim_creation_date: string
+          claim_number: string
+          claim_status: string
+          claimed_amount: number
+          copay: number
+          created_at: string
+          data_quality: Json
+          date_of_admission: string | null
+          date_of_discharge: string | null
+          diagnosis: string | null
+          doc_submission_date: string | null
+          employee_code: string | null
+          hospital_branch_id: string | null
+          hospital_discount: number
+          hospital_group_id: string | null
+          hospital_name: string | null
+          hospital_spoc: string | null
+          id: string
+          ihx_ref_id: string | null
+          in_patient_number: string | null
+          initial_claim_number: string | null
+          insurance_company_name: string | null
+          insurer_comments: string | null
+          is_irdai_breach: boolean
+          last_communication_at: string | null
+          last_communication_note: string | null
+          legacy_id: string | null
+          member_customer_id: string | null
+          org_id: string
+          outstanding_amount: number
+          patient_contact: string | null
+          patient_name: string
+          patient_paid_amount: number
+          payment_update_date: string | null
+          policy_holder_name: string | null
+          policy_number: string | null
+          policy_type: string | null
+          receipt_no: string | null
+          remarks: string | null
+          settled_amount: number
+          shortfall_amount: number
+          tds_amount: number
+          tpa_name: string
+          tpa_spoc: string | null
+          treatment: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_plan?: string | null
+          approved_amount?: number
+          cheque_neft_utr_date?: string | null
+          cheque_neft_utr_no?: string | null
+          claim_creation_date: string
+          claim_number: string
+          claim_status: string
+          claimed_amount?: number
+          copay?: number
+          created_at?: string
+          data_quality?: Json
+          date_of_admission?: string | null
+          date_of_discharge?: string | null
+          diagnosis?: string | null
+          doc_submission_date?: string | null
+          employee_code?: string | null
+          hospital_branch_id?: string | null
+          hospital_discount?: number
+          hospital_group_id?: string | null
+          hospital_name?: string | null
+          hospital_spoc?: string | null
+          id?: string
+          ihx_ref_id?: string | null
+          in_patient_number?: string | null
+          initial_claim_number?: string | null
+          insurance_company_name?: string | null
+          insurer_comments?: string | null
+          is_irdai_breach?: boolean
+          last_communication_at?: string | null
+          last_communication_note?: string | null
+          legacy_id?: string | null
+          member_customer_id?: string | null
+          org_id: string
+          outstanding_amount?: number
+          patient_contact?: string | null
+          patient_name: string
+          patient_paid_amount?: number
+          payment_update_date?: string | null
+          policy_holder_name?: string | null
+          policy_number?: string | null
+          policy_type?: string | null
+          receipt_no?: string | null
+          remarks?: string | null
+          settled_amount?: number
+          shortfall_amount?: number
+          tds_amount?: number
+          tpa_name: string
+          tpa_spoc?: string | null
+          treatment?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_plan?: string | null
+          approved_amount?: number
+          cheque_neft_utr_date?: string | null
+          cheque_neft_utr_no?: string | null
+          claim_creation_date?: string
+          claim_number?: string
+          claim_status?: string
+          claimed_amount?: number
+          copay?: number
+          created_at?: string
+          data_quality?: Json
+          date_of_admission?: string | null
+          date_of_discharge?: string | null
+          diagnosis?: string | null
+          doc_submission_date?: string | null
+          employee_code?: string | null
+          hospital_branch_id?: string | null
+          hospital_discount?: number
+          hospital_group_id?: string | null
+          hospital_name?: string | null
+          hospital_spoc?: string | null
+          id?: string
+          ihx_ref_id?: string | null
+          in_patient_number?: string | null
+          initial_claim_number?: string | null
+          insurance_company_name?: string | null
+          insurer_comments?: string | null
+          is_irdai_breach?: boolean
+          last_communication_at?: string | null
+          last_communication_note?: string | null
+          legacy_id?: string | null
+          member_customer_id?: string | null
+          org_id?: string
+          outstanding_amount?: number
+          patient_contact?: string | null
+          patient_name?: string
+          patient_paid_amount?: number
+          payment_update_date?: string | null
+          policy_holder_name?: string | null
+          policy_number?: string | null
+          policy_type?: string | null
+          receipt_no?: string | null
+          remarks?: string | null
+          settled_amount?: number
+          shortfall_amount?: number
+          tds_amount?: number
+          tpa_name?: string
+          tpa_spoc?: string | null
+          treatment?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_hospital_branch_id_fkey"
+            columns: ["hospital_branch_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_hospital_group_id_fkey"
+            columns: ["hospital_group_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      demo_leads: {
+        Row: {
+          contact_name: string
+          created_at: string
+          email: string
+          hospital_name: string
+          id: string
+          notes: string | null
+          phone: string | null
+          role: string | null
+          source: string
+          status: string
+          user_agent: string | null
+        }
+        Insert: {
+          contact_name: string
+          created_at?: string
+          email: string
+          hospital_name: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          source?: string
+          status?: string
+          user_agent?: string | null
+        }
+        Update: {
+          contact_name?: string
+          created_at?: string
+          email?: string
+          hospital_name?: string
+          id?: string
+          notes?: string | null
+          phone?: string | null
+          role?: string | null
+          source?: string
+          status?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      discrepancy_action_log: {
+        Row: {
+          action_type: string
+          ai_generation_id: string | null
+          attachments: Json
+          body_preview: string | null
+          bulk_batch_id: string | null
+          cc_emails: string[]
+          channel: string | null
+          claim_id: string
+          delivered_at: string | null
+          error_message: string | null
+          failed_at: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          performed_at: string
+          performed_by: string | null
+          provider_message_id: string | null
+          recipient: string | null
+          scheduled_for: string | null
+          status: string
+          subject: string | null
+          tone: string | null
+        }
+        Insert: {
+          action_type: string
+          ai_generation_id?: string | null
+          attachments?: Json
+          body_preview?: string | null
+          bulk_batch_id?: string | null
+          cc_emails?: string[]
+          channel?: string | null
+          claim_id: string
+          delivered_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          performed_at?: string
+          performed_by?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          scheduled_for?: string | null
+          status?: string
+          subject?: string | null
+          tone?: string | null
+        }
+        Update: {
+          action_type?: string
+          ai_generation_id?: string | null
+          attachments?: Json
+          body_preview?: string | null
+          bulk_batch_id?: string | null
+          cc_emails?: string[]
+          channel?: string | null
+          claim_id?: string
+          delivered_at?: string | null
+          error_message?: string | null
+          failed_at?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          performed_at?: string
+          performed_by?: string | null
+          provider_message_id?: string | null
+          recipient?: string | null
+          scheduled_for?: string | null
+          status?: string
+          subject?: string | null
+          tone?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discrepancy_action_log_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrepancy_action_log_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrepancy_action_log_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "discrepancy_action_log_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      discrepancy_actions: {
+        Row: {
+          claim_id: string
+          created_at: string
+          email_sent_count: number
+          flag_severity: string
+          flagged_amount: number
+          flagged_pct: number
+          id: string
+          last_action_at: string | null
+          last_action_by: string | null
+          last_action_type: string | null
+          org_id: string
+          pushed_to_appeal_at: string | null
+          remarks: string | null
+          resolved_at: string | null
+          stage: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          email_sent_count?: number
+          flag_severity?: string
+          flagged_amount?: number
+          flagged_pct?: number
+          id?: string
+          last_action_at?: string | null
+          last_action_by?: string | null
+          last_action_type?: string | null
+          org_id: string
+          pushed_to_appeal_at?: string | null
+          remarks?: string | null
+          resolved_at?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          email_sent_count?: number
+          flag_severity?: string
+          flagged_amount?: number
+          flagged_pct?: number
+          id?: string
+          last_action_at?: string | null
+          last_action_by?: string | null
+          last_action_type?: string | null
+          org_id?: string
+          pushed_to_appeal_at?: string | null
+          remarks?: string | null
+          resolved_at?: string | null
+          stage?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "discrepancy_actions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrepancy_actions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "discrepancy_actions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "discrepancy_actions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      dq_rules: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          created_at?: string
+          id?: string
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dq_rules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follow_ups: {
+        Row: {
+          claim_id: string
+          created_at: string
+          id: string
+          logged_at: string
+          logged_by: string | null
+          next_action_date: string
+          notes: string | null
+          org_id: string
+          outcome: string
+          promised_date: string | null
+          ref_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_by?: string | null
+          next_action_date: string
+          notes?: string | null
+          org_id: string
+          outcome: string
+          promised_date?: string | null
+          ref_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          id?: string
+          logged_at?: string
+          logged_by?: string | null
+          next_action_date?: string
+          notes?: string | null
+          org_id?: string
+          outcome?: string
+          promised_date?: string | null
+          ref_number?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follow_ups_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follow_ups_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "follow_ups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_claim_deductions: {
+        Row: {
+          amount: number
+          claim_id: string
+          created_at: string
+          head: string
+          id: string
+          org_id: string
+          reason_code: string | null
+          reason_text: string | null
+          recoverable: boolean
+        }
+        Insert: {
+          amount?: number
+          claim_id: string
+          created_at?: string
+          head: string
+          id?: string
+          org_id: string
+          reason_code?: string | null
+          reason_text?: string | null
+          recoverable?: boolean
+        }
+        Update: {
+          amount?: number
+          claim_id?: string
+          created_at?: string
+          head?: string
+          id?: string
+          org_id?: string
+          reason_code?: string | null
+          reason_text?: string | null
+          recoverable?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gov_claim_deductions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "gov_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_claim_documents: {
+        Row: {
+          claim_id: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          id: string
+          metadata: Json
+          mime_type: string | null
+          org_id: string
+          uploaded_at: string
+          uploaded_by: string | null
+          verified: boolean
+          verified_at: string | null
+        }
+        Insert: {
+          claim_id: string
+          doc_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          org_id: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Update: {
+          claim_id?: string
+          doc_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          metadata?: Json
+          mime_type?: string | null
+          org_id?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+          verified?: boolean
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gov_claim_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "gov_claims"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_claims: {
+        Row: {
+          approved_amount: number
+          beneficiary_contact: string | null
+          beneficiary_id: string | null
+          beneficiary_name: string
+          claim_no: string | null
+          claim_status: string
+          claim_submitted_at: string | null
+          claimed_amount: number
+          created_at: string
+          date_of_admission: string | null
+          date_of_discharge: string | null
+          deduction_amount: number
+          doc_completeness_pct: number
+          hospital_branch_id: string | null
+          hospital_group_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          outstanding_amount: number
+          package_code: string | null
+          package_name: string | null
+          paid_amount: number
+          pre_auth_approved_at: string | null
+          pre_auth_no: string | null
+          pre_auth_requested_at: string | null
+          pre_auth_tat_deadline: string | null
+          query_count: number
+          scheme_id: string
+          updated_at: string
+        }
+        Insert: {
+          approved_amount?: number
+          beneficiary_contact?: string | null
+          beneficiary_id?: string | null
+          beneficiary_name: string
+          claim_no?: string | null
+          claim_status?: string
+          claim_submitted_at?: string | null
+          claimed_amount?: number
+          created_at?: string
+          date_of_admission?: string | null
+          date_of_discharge?: string | null
+          deduction_amount?: number
+          doc_completeness_pct?: number
+          hospital_branch_id?: string | null
+          hospital_group_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          outstanding_amount?: number
+          package_code?: string | null
+          package_name?: string | null
+          paid_amount?: number
+          pre_auth_approved_at?: string | null
+          pre_auth_no?: string | null
+          pre_auth_requested_at?: string | null
+          pre_auth_tat_deadline?: string | null
+          query_count?: number
+          scheme_id: string
+          updated_at?: string
+        }
+        Update: {
+          approved_amount?: number
+          beneficiary_contact?: string | null
+          beneficiary_id?: string | null
+          beneficiary_name?: string
+          claim_no?: string | null
+          claim_status?: string
+          claim_submitted_at?: string | null
+          claimed_amount?: number
+          created_at?: string
+          date_of_admission?: string | null
+          date_of_discharge?: string | null
+          deduction_amount?: number
+          doc_completeness_pct?: number
+          hospital_branch_id?: string | null
+          hospital_group_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          outstanding_amount?: number
+          package_code?: string | null
+          package_name?: string | null
+          paid_amount?: number
+          pre_auth_approved_at?: string | null
+          pre_auth_no?: string | null
+          pre_auth_requested_at?: string | null
+          pre_auth_tat_deadline?: string | null
+          query_count?: number
+          scheme_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gov_claims_scheme_id_fkey"
+            columns: ["scheme_id"]
+            isOneToOne: false
+            referencedRelation: "gov_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_empanelment: {
+        Row: {
+          created_at: string
+          hospital_branch_id: string | null
+          hospital_id_on_portal: string | null
+          id: string
+          mou_end: string | null
+          mou_start: string | null
+          notes: string | null
+          org_id: string
+          portal_credentials_ref: string | null
+          renewal_status: string
+          scheme_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hospital_branch_id?: string | null
+          hospital_id_on_portal?: string | null
+          id?: string
+          mou_end?: string | null
+          mou_start?: string | null
+          notes?: string | null
+          org_id: string
+          portal_credentials_ref?: string | null
+          renewal_status?: string
+          scheme_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hospital_branch_id?: string | null
+          hospital_id_on_portal?: string | null
+          id?: string
+          mou_end?: string | null
+          mou_start?: string | null
+          notes?: string | null
+          org_id?: string
+          portal_credentials_ref?: string | null
+          renewal_status?: string
+          scheme_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gov_empanelment_scheme_id_fkey"
+            columns: ["scheme_id"]
+            isOneToOne: false
+            referencedRelation: "gov_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_packages: {
+        Row: {
+          created_at: string
+          id: string
+          implant_allowed: boolean
+          is_active: boolean
+          org_id: string
+          package_code: string
+          package_name: string
+          rate: number
+          required_documents: Json
+          scheme_id: string
+          specialty: string | null
+          stratification: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          implant_allowed?: boolean
+          is_active?: boolean
+          org_id: string
+          package_code: string
+          package_name: string
+          rate?: number
+          required_documents?: Json
+          scheme_id: string
+          specialty?: string | null
+          stratification?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          implant_allowed?: boolean
+          is_active?: boolean
+          org_id?: string
+          package_code?: string
+          package_name?: string
+          rate?: number
+          required_documents?: Json
+          scheme_id?: string
+          specialty?: string | null
+          stratification?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gov_packages_scheme_id_fkey"
+            columns: ["scheme_id"]
+            isOneToOne: false
+            referencedRelation: "gov_schemes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gov_schemes: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          org_id: string
+          payer_authority: string | null
+          portal_url: string | null
+          scheme_type: string
+          state_code: string | null
+          tat_claim_days: number
+          tat_payment_days: number
+          tat_preauth_hrs: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          org_id: string
+          payer_authority?: string | null
+          portal_url?: string | null
+          scheme_type?: string
+          state_code?: string | null
+          tat_claim_days?: number
+          tat_payment_days?: number
+          tat_preauth_hrs?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          org_id?: string
+          payer_authority?: string | null
+          portal_url?: string | null
+          scheme_type?: string
+          state_code?: string | null
+          tat_claim_days?: number
+          tat_payment_days?: number
+          tat_preauth_hrs?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      hospital_branches: {
+        Row: {
+          city: string | null
+          created_at: string
+          group_id: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          raw_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          raw_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          raw_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_branches_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_branches_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_groups: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          org_id: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          org_id: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          org_id?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_groups_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hospital_kpis: {
+        Row: {
+          app_id: string
+          id: string
+          meta: Json
+          metric: string
+          org_id: string
+          period: string
+          recorded_at: string
+          value: number
+        }
+        Insert: {
+          app_id: string
+          id?: string
+          meta?: Json
+          metric: string
+          org_id: string
+          period: string
+          recorded_at?: string
+          value?: number
+        }
+        Update: {
+          app_id?: string
+          id?: string
+          meta?: Json
+          metric?: string
+          org_id?: string
+          period?: string
+          recorded_at?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hospital_kpis_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "platform_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      import_history: {
+        Row: {
+          created_at: string
+          error_summary: string | null
+          failed_rows: number
+          file_name: string
+          id: string
+          inserted_rows: number
+          org_id: string
+          reverted_at: string | null
+          snapshot: Json | null
+          status: string
+          success_rows: number
+          total_rows: number
+          updated_rows: number
+        }
+        Insert: {
+          created_at?: string
+          error_summary?: string | null
+          failed_rows?: number
+          file_name: string
+          id?: string
+          inserted_rows?: number
+          org_id: string
+          reverted_at?: string | null
+          snapshot?: Json | null
+          status?: string
+          success_rows?: number
+          total_rows?: number
+          updated_rows?: number
+        }
+        Update: {
+          created_at?: string
+          error_summary?: string | null
+          failed_rows?: number
+          file_name?: string
+          id?: string
+          inserted_rows?: number
+          org_id?: string
+          reverted_at?: string | null
+          snapshot?: Json | null
+          status?: string
+          success_rows?: number
+          total_rows?: number
+          updated_rows?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "import_history_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurer_contacts: {
+        Row: {
+          cc_emails: string | null
+          contact_name: string
+          contract_expiry_date: string | null
+          created_at: string
+          designation: string | null
+          email: string
+          id: string
+          is_primary: boolean
+          notes: string | null
+          org_id: string
+          phone: string | null
+          provider: string
+          updated_at: string
+          whatsapp: string | null
+        }
+        Insert: {
+          cc_emails?: string | null
+          contact_name: string
+          contract_expiry_date?: string | null
+          created_at?: string
+          designation?: string | null
+          email: string
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          org_id: string
+          phone?: string | null
+          provider: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Update: {
+          cc_emails?: string | null
+          contact_name?: string
+          contract_expiry_date?: string | null
+          created_at?: string
+          designation?: string | null
+          email?: string
+          id?: string
+          is_primary?: boolean
+          notes?: string | null
+          org_id?: string
+          phone?: string | null
+          provider?: string
+          updated_at?: string
+          whatsapp?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurer_contacts_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_checklist: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          key: string
+          note: string | null
+          org_id: string
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key: string
+          note?: string | null
+          org_id: string
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          key?: string
+          note?: string | null
+          org_id?: string
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      opd_batches: {
+        Row: {
+          ack_no: string | null
+          aggregator: string | null
+          batch_no: string
+          claim_count: number
+          corporate_id: string | null
+          created_at: string
+          id: string
+          org_id: string
+          status: string
+          submission_date: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          ack_no?: string | null
+          aggregator?: string | null
+          batch_no: string
+          claim_count?: number
+          corporate_id?: string | null
+          created_at?: string
+          id?: string
+          org_id: string
+          status?: string
+          submission_date?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          ack_no?: string | null
+          aggregator?: string | null
+          batch_no?: string
+          claim_count?: number
+          corporate_id?: string | null
+          created_at?: string
+          id?: string
+          org_id?: string
+          status?: string
+          submission_date?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_batches_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opd_corporates: {
+        Row: {
+          aggregator: string | null
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          hospital_branch_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          org_id: string
+          rate_sheet: Json
+          spoc_email: string | null
+          spoc_name: string | null
+          spoc_phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          aggregator?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          hospital_branch_id?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          org_id: string
+          rate_sheet?: Json
+          spoc_email?: string | null
+          spoc_name?: string | null
+          spoc_phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aggregator?: string | null
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          hospital_branch_id?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          org_id?: string
+          rate_sheet?: Json
+          spoc_email?: string | null
+          spoc_name?: string | null
+          spoc_phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      opd_employees: {
+        Row: {
+          corporate_id: string
+          created_at: string
+          eligibility_synced_at: string | null
+          email: string | null
+          employee_code: string
+          employee_name: string
+          family_members: Json
+          id: string
+          org_id: string
+          phone: string | null
+          updated_at: string
+          valid_from: string | null
+          valid_to: string | null
+          wallet_balance: number
+          wallet_total: number
+        }
+        Insert: {
+          corporate_id: string
+          created_at?: string
+          eligibility_synced_at?: string | null
+          email?: string | null
+          employee_code: string
+          employee_name: string
+          family_members?: Json
+          id?: string
+          org_id: string
+          phone?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          wallet_balance?: number
+          wallet_total?: number
+        }
+        Update: {
+          corporate_id?: string
+          created_at?: string
+          eligibility_synced_at?: string | null
+          email?: string | null
+          employee_code?: string
+          employee_name?: string
+          family_members?: Json
+          id?: string
+          org_id?: string
+          phone?: string | null
+          updated_at?: string
+          valid_from?: string | null
+          valid_to?: string | null
+          wallet_balance?: number
+          wallet_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_employees_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opd_visits: {
+        Row: {
+          aggregator_claim_id: string | null
+          batch_id: string | null
+          copay: number
+          corporate_id: string | null
+          created_at: string
+          department: string | null
+          doctor_name: string | null
+          employee_id: string | null
+          hospital_branch_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          patient_name: string
+          patient_paid: number
+          patient_relation: string | null
+          payable_amount: number
+          rejection_reason: string | null
+          services: Json
+          settled_at: string | null
+          status: string
+          submitted_at: string | null
+          total_amount: number
+          updated_at: string
+          visit_date: string
+        }
+        Insert: {
+          aggregator_claim_id?: string | null
+          batch_id?: string | null
+          copay?: number
+          corporate_id?: string | null
+          created_at?: string
+          department?: string | null
+          doctor_name?: string | null
+          employee_id?: string | null
+          hospital_branch_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          patient_name: string
+          patient_paid?: number
+          patient_relation?: string | null
+          payable_amount?: number
+          rejection_reason?: string | null
+          services?: Json
+          settled_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_amount?: number
+          updated_at?: string
+          visit_date: string
+        }
+        Update: {
+          aggregator_claim_id?: string | null
+          batch_id?: string | null
+          copay?: number
+          corporate_id?: string | null
+          created_at?: string
+          department?: string | null
+          doctor_name?: string | null
+          employee_id?: string | null
+          hospital_branch_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          patient_name?: string
+          patient_paid?: number
+          patient_relation?: string | null
+          payable_amount?: number
+          rejection_reason?: string | null
+          services?: Json
+          settled_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          total_amount?: number
+          updated_at?: string
+          visit_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_visits_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opd_visits_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "opd_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_app_access: {
+        Row: {
+          app_id: string
+          contract_end: string | null
+          contract_start: string | null
+          created_at: string
+          id: string
+          mrr_inr: number
+          org_id: string
+          plan: string
+          settings: Json
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          app_id: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          id?: string
+          mrr_inr?: number
+          org_id: string
+          plan?: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          app_id?: string
+          contract_end?: string | null
+          contract_start?: string | null
+          created_at?: string
+          id?: string
+          mrr_inr?: number
+          org_id?: string
+          plan?: string
+          settings?: Json
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_app_access_app_id_fkey"
+            columns: ["app_id"]
+            isOneToOne: false
+            referencedRelation: "platform_apps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      org_designations: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      organization_members: {
+        Row: {
+          created_at: string
+          id: string
+          last_seen_at: string | null
+          org_id: string
+          role: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          org_id: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_seen_at?: string | null
+          org_id?: string
+          role?: Database["public"]["Enums"]["org_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organizations: {
+        Row: {
+          address: string | null
+          billing_email: string | null
+          billing_phone: string | null
+          created_at: string
+          first_run_completed: boolean
+          gstin: string | null
+          id: string
+          mrr_inr: number
+          name: string
+          plan: string
+          settings: Json
+          slug: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          billing_email?: string | null
+          billing_phone?: string | null
+          created_at?: string
+          first_run_completed?: boolean
+          gstin?: string | null
+          id?: string
+          mrr_inr?: number
+          name: string
+          plan?: string
+          settings?: Json
+          slug: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          billing_email?: string | null
+          billing_phone?: string | null
+          created_at?: string
+          first_run_completed?: boolean
+          gstin?: string | null
+          id?: string
+          mrr_inr?: number
+          name?: string
+          plan?: string
+          settings?: Json
+          slug?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      outstanding_notifications: {
+        Row: {
+          created_at: string
+          dedupe_key: string | null
+          id: string
+          message: string | null
+          org_id: string
+          read: boolean
+          ref_claim_id: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          message?: string | null
+          org_id: string
+          read?: boolean
+          ref_claim_id?: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dedupe_key?: string | null
+          id?: string
+          message?: string | null
+          org_id?: string
+          read?: boolean
+          ref_claim_id?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      outstanding_reminders: {
+        Row: {
+          cc_emails: string[] | null
+          claim_count: number
+          created_at: string
+          error_message: string | null
+          id: string
+          insurer_id: number
+          insurer_name: string
+          oldest_claim_days: number | null
+          org_id: string
+          payload: Json | null
+          recipient_email: string
+          scheduled_at: string
+          sent_at: string | null
+          status: string
+          total_outstanding: number
+          updated_at: string
+        }
+        Insert: {
+          cc_emails?: string[] | null
+          claim_count?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          insurer_id: number
+          insurer_name: string
+          oldest_claim_days?: number | null
+          org_id: string
+          payload?: Json | null
+          recipient_email: string
+          scheduled_at: string
+          sent_at?: string | null
+          status?: string
+          total_outstanding?: number
+          updated_at?: string
+        }
+        Update: {
+          cc_emails?: string[] | null
+          claim_count?: number
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          insurer_id?: number
+          insurer_name?: string
+          oldest_claim_days?: number | null
+          org_id?: string
+          payload?: Json | null
+          recipient_email?: string
+          scheduled_at?: string
+          sent_at?: string | null
+          status?: string
+          total_outstanding?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outstanding_reminders_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_admins: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      platform_apps: {
+        Row: {
+          base_url: string | null
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          slug: string
+          updated_at: string
+        }
+        Insert: {
+          base_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          slug: string
+          updated_at?: string
+        }
+        Update: {
+          base_url?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          slug?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      reminder_runs: {
+        Row: {
+          cc_emails: string[] | null
+          claim_count: number
+          created_at: string
+          discrepancy_count: number
+          error_message: string | null
+          id: string
+          irdai_breach_count: number
+          oldest_claim_days: number | null
+          org_id: string
+          recipient_email: string | null
+          schedule_id: string | null
+          schedule_name: string | null
+          sent_at: string | null
+          status: string
+          total_outstanding: number
+          tpa_name: string | null
+          trigger_kind: string
+        }
+        Insert: {
+          cc_emails?: string[] | null
+          claim_count?: number
+          created_at?: string
+          discrepancy_count?: number
+          error_message?: string | null
+          id?: string
+          irdai_breach_count?: number
+          oldest_claim_days?: number | null
+          org_id: string
+          recipient_email?: string | null
+          schedule_id?: string | null
+          schedule_name?: string | null
+          sent_at?: string | null
+          status?: string
+          total_outstanding?: number
+          tpa_name?: string | null
+          trigger_kind?: string
+        }
+        Update: {
+          cc_emails?: string[] | null
+          claim_count?: number
+          created_at?: string
+          discrepancy_count?: number
+          error_message?: string | null
+          id?: string
+          irdai_breach_count?: number
+          oldest_claim_days?: number | null
+          org_id?: string
+          recipient_email?: string | null
+          schedule_id?: string | null
+          schedule_name?: string | null
+          sent_at?: string | null
+          status?: string
+          total_outstanding?: number
+          tpa_name?: string | null
+          trigger_kind?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_runs_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reminder_runs_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "reminder_schedules"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reminder_schedules: {
+        Row: {
+          aging_bucket: string | null
+          attach_excel: boolean
+          body_template: string | null
+          cadence: string
+          cc_emails_override: string | null
+          created_at: string
+          created_by: string | null
+          day_of_month: number | null
+          day_of_week: number | null
+          every_n_days: number | null
+          id: string
+          include_aging_summary: boolean
+          include_denied: boolean
+          include_discrepancies: boolean
+          include_irdai_breaches: boolean
+          include_pending: boolean
+          is_active: boolean
+          last_run_at: string | null
+          min_outstanding: number
+          name: string
+          next_run_at: string | null
+          notes: string | null
+          org_id: string
+          recipient_email_override: string | null
+          scope: string
+          send_hour: number
+          send_minute: number
+          subject_template: string | null
+          tpa_name: string | null
+          updated_at: string
+        }
+        Insert: {
+          aging_bucket?: string | null
+          attach_excel?: boolean
+          body_template?: string | null
+          cadence?: string
+          cc_emails_override?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          every_n_days?: number | null
+          id?: string
+          include_aging_summary?: boolean
+          include_denied?: boolean
+          include_discrepancies?: boolean
+          include_irdai_breaches?: boolean
+          include_pending?: boolean
+          is_active?: boolean
+          last_run_at?: string | null
+          min_outstanding?: number
+          name: string
+          next_run_at?: string | null
+          notes?: string | null
+          org_id: string
+          recipient_email_override?: string | null
+          scope?: string
+          send_hour?: number
+          send_minute?: number
+          subject_template?: string | null
+          tpa_name?: string | null
+          updated_at?: string
+        }
+        Update: {
+          aging_bucket?: string | null
+          attach_excel?: boolean
+          body_template?: string | null
+          cadence?: string
+          cc_emails_override?: string | null
+          created_at?: string
+          created_by?: string | null
+          day_of_month?: number | null
+          day_of_week?: number | null
+          every_n_days?: number | null
+          id?: string
+          include_aging_summary?: boolean
+          include_denied?: boolean
+          include_discrepancies?: boolean
+          include_irdai_breaches?: boolean
+          include_pending?: boolean
+          is_active?: boolean
+          last_run_at?: string | null
+          min_outstanding?: number
+          name?: string
+          next_run_at?: string | null
+          notes?: string | null
+          org_id?: string
+          recipient_email_override?: string | null
+          scope?: string
+          send_hour?: number
+          send_minute?: number
+          subject_template?: string | null
+          tpa_name?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reminder_schedules_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      role_permissions: {
+        Row: {
+          can_approve: boolean
+          can_create: boolean
+          can_delete: boolean
+          can_edit: boolean
+          can_export: boolean
+          can_send: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          org_id: string
+          resource: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_send?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          org_id: string
+          resource: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          can_approve?: boolean
+          can_create?: boolean
+          can_delete?: boolean
+          can_edit?: boolean
+          can_export?: boolean
+          can_send?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          org_id?: string
+          resource?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_scorecard_overrides: {
+        Row: {
+          app_user_id: string
+          created_at: string
+          id: string
+          month: string
+          notes: string | null
+          org_id: string
+          query_resolved: number
+          rating_override: string | null
+          updated_at: string
+        }
+        Insert: {
+          app_user_id: string
+          created_at?: string
+          id?: string
+          month: string
+          notes?: string | null
+          org_id: string
+          query_resolved?: number
+          rating_override?: string | null
+          updated_at?: string
+        }
+        Update: {
+          app_user_id?: string
+          created_at?: string
+          id?: string
+          month?: string
+          notes?: string | null
+          org_id?: string
+          query_resolved?: number
+          rating_override?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      team_digest_runs: {
+        Row: {
+          cadence: string
+          created_at: string
+          error_message: string | null
+          failed_count: number
+          id: string
+          org_id: string
+          recipients_count: number
+          sent_count: number
+          trigger_kind: string
+        }
+        Insert: {
+          cadence: string
+          created_at?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          org_id: string
+          recipients_count?: number
+          sent_count?: number
+          trigger_kind?: string
+        }
+        Update: {
+          cadence?: string
+          created_at?: string
+          error_message?: string | null
+          failed_count?: number
+          id?: string
+          org_id?: string
+          recipients_count?: number
+          sent_count?: number
+          trigger_kind?: string
+        }
+        Relationships: []
+      }
+      team_digest_subscriptions: {
+        Row: {
+          app_user_id: string
+          created_at: string
+          daily: boolean
+          id: string
+          monthly: boolean
+          org_id: string
+          updated_at: string
+          weekly: boolean
+        }
+        Insert: {
+          app_user_id: string
+          created_at?: string
+          daily?: boolean
+          id?: string
+          monthly?: boolean
+          org_id: string
+          updated_at?: string
+          weekly?: boolean
+        }
+        Update: {
+          app_user_id?: string
+          created_at?: string
+          daily?: boolean
+          id?: string
+          monthly?: boolean
+          org_id?: string
+          updated_at?: string
+          weekly?: boolean
+        }
+        Relationships: []
+      }
+      user_notification_prefs: {
+        Row: {
+          channel: string
+          enabled: boolean
+          id: string
+          pref_key: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel?: string
+          enabled?: boolean
+          id?: string
+          pref_key: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel?: string
+          enabled?: boolean
+          id?: string
+          pref_key?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tpa_allocations: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          provider: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          provider: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          provider?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_tpa_allocations_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_events: {
+        Row: {
+          actual_count: number
+          corporate_id: string | null
+          created_at: string
+          event_date: string
+          event_type: string
+          expenses: number
+          hospital_branch_id: string | null
+          id: string
+          location: string | null
+          notes: string | null
+          org_id: string
+          planned_count: number
+          revenue: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          actual_count?: number
+          corporate_id?: string | null
+          created_at?: string
+          event_date: string
+          event_type: string
+          expenses?: number
+          hospital_branch_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          org_id: string
+          planned_count?: number
+          revenue?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          actual_count?: number
+          corporate_id?: string | null
+          created_at?: string
+          event_date?: string
+          event_type?: string
+          expenses?: number
+          hospital_branch_id?: string | null
+          id?: string
+          location?: string | null
+          notes?: string | null
+          org_id?: string
+          planned_count?: number
+          revenue?: number
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_events_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      whatsapp_templates: {
+        Row: {
+          audience_role: string
+          body: string
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_system: boolean
+          name: string
+          org_id: string
+          sort_order: number
+          subject_hint: string | null
+          updated_at: string
+        }
+        Insert: {
+          audience_role?: string
+          body: string
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name: string
+          org_id: string
+          sort_order?: number
+          subject_hint?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audience_role?: string
+          body?: string
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          name?: string
+          org_id?: string
+          sort_order?: number
+          subject_hint?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "whatsapp_templates_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      v_claims_priority: {
+        Row: {
+          action_plan: string | null
+          age_days: number | null
+          age_pts: number | null
+          amt_pts: number | null
+          approved_amount: number | null
+          breach_pts: number | null
+          cheque_neft_utr_date: string | null
+          cheque_neft_utr_no: string | null
+          claim_creation_date: string | null
+          claim_number: string | null
+          claim_status: string | null
+          claimed_amount: number | null
+          copay: number | null
+          created_at: string | null
+          data_quality: Json | null
+          date_of_admission: string | null
+          date_of_discharge: string | null
+          diagnosis: string | null
+          doc_submission_date: string | null
+          employee_code: string | null
+          hospital_branch_id: string | null
+          hospital_discount: number | null
+          hospital_group_id: string | null
+          hospital_name: string | null
+          hospital_spoc: string | null
+          id: string | null
+          ihx_ref_id: string | null
+          in_patient_number: string | null
+          initial_claim_number: string | null
+          insurance_company_name: string | null
+          insurer_comments: string | null
+          is_irdai_breach: boolean | null
+          last_communication_at: string | null
+          last_communication_note: string | null
+          legacy_id: string | null
+          member_customer_id: string | null
+          org_id: string | null
+          outstanding_amount: number | null
+          patient_contact: string | null
+          patient_name: string | null
+          patient_paid_amount: number | null
+          payment_update_date: string | null
+          policy_holder_name: string | null
+          policy_number: string | null
+          policy_type: string | null
+          priority_band: string | null
+          priority_score: number | null
+          receipt_no: string | null
+          remarks: string | null
+          settled_amount: number | null
+          shortfall_amount: number | null
+          status_lc: string | null
+          status_pts: number | null
+          tds_amount: number | null
+          tpa_name: string | null
+          tpa_spoc: string | null
+          treatment: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_hospital_branch_id_fkey"
+            columns: ["hospital_branch_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_hospital_group_id_fkey"
+            columns: ["hospital_group_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_groups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claims_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_discrepancy_rows: {
+        Row: {
+          action_status: string | null
+          approved_amount: number | null
+          band: string | null
+          claim_creation_date: string | null
+          claim_id: string | null
+          claim_number: string | null
+          claim_status: string | null
+          disc_amount: number | null
+          disc_pct: number | null
+          email_sent_count: number | null
+          hospital_name: string | null
+          insurance_company_name: string | null
+          is_irdai_breach: boolean | null
+          last_action_at: string | null
+          last_action_type: string | null
+          org_id: string | null
+          outstanding_amount: number | null
+          patient_name: string | null
+          pushed_to_appeal_at: string | null
+          settled_amount: number | null
+          stage: string | null
+          tds_amount: number | null
+          tpa_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_followup_tpa_groups: {
+        Row: {
+          breach_count: number | null
+          claim_count: number | null
+          oldest_days: number | null
+          org_id: string | null
+          priority: string | null
+          total_outstanding: number | null
+          tpa: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claims_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
-      [_ in never]: never
+      get_own_smtp_settings: {
+        Args: never
+        Returns: {
+          smtp_from_email: string
+          smtp_from_name: string
+          smtp_host: string
+          smtp_password: string
+          smtp_port: number
+          smtp_reply_to: string
+          smtp_use_tls: boolean
+          smtp_username: string
+          smtp_verified_at: string
+        }[]
+      }
+      has_org_role: {
+        Args: {
+          _org_id: string
+          _roles: Database["public"]["Enums"]["org_role"][]
+        }
+        Returns: boolean
+      }
+      is_org_member: { Args: { _org_id: string }; Returns: boolean }
+      is_platform_admin: { Args: never; Returns: boolean }
+      seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
+      user_org_ids: { Args: never; Returns: string[] }
     }
     Enums: {
-      [_ in never]: never
+      org_role: "owner" | "admin" | "manager" | "member" | "viewer"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +3152,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      org_role: ["owner", "admin", "manager", "member", "viewer"],
+    },
   },
 } as const
