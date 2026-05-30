@@ -1,0 +1,191 @@
+import { useState } from "react";
+import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { getCurrentOrgId } from "@/lib/currentOrg";
+import { toast } from "@/hooks/use-toast";
+import { getActingRole } from "@/hooks/useRolePermissions";
+import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
+
+const ALLOWED_ROLES = new Set(["Super Admin", "Hospital Admin", "CFO View"]);
+
+export default function DataManagementPage() {
+  const role = getActingRole();
+  const allowed = ALLOWED_ROLES.has(role);
+
+  const [confirmText, setConfirmText] = useState("");
+  const [includeFollowUps, setIncludeFollowUps] = useState(true);
+  const [includeDiscrepancies, setIncludeDiscrepancies] = useState(true);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  const canSubmit = allowed && confirmText.trim().toUpperCase() === "DELETE ALL CLAIMS";
+
+  async function handleClearAll() {
+    setBusy(true);
+    try {
+      const orgId = getCurrentOrgId();
+      const tables: string[] = [];
+      if (includeFollowUps) tables.push("follow_ups");
+      if (includeDiscrepancies) {
+        tables.push("discrepancy_action_log");
+        tables.push("discrepancy_actions");
+      }
+      // Delete dependents first
+      for (const t of tables) {
+        const { error } = await supabase.from(t as never).delete().eq("org_id", orgId);
+        if (error) throw new Error(`${t}: ${error.message}`);
+      }
+      const { error: claimsErr, count } = await supabase
+        .from("claims")
+        .delete({ count: "exact" })
+        .eq("org_id", orgId);
+      if (claimsErr) throw new Error(claimsErr.message);
+
+      // Mark that the user has explicitly cleared their data so the
+      // mock/demo claims do NOT come back to haunt them on next load.
+      try { localStorage.setItem("rcm-buddy-claims-cleared", "1"); } catch { /* ignore */ }
+      bumpClaimsVersion();
+
+      toast({
+        title: "Claims data cleared",
+        description: `${count ?? 0} claims removed. You can now re-upload the correct data.`,
+      });
+      setConfirmText("");
+      setOpen(false);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Unknown error";
+      toast({ title: "Could not clear claims", description: msg, variant: "destructive" });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div>
+        <h1 className="text-2xl font-semibold tracking-tight">Data Management</h1>
+        <p className="text-sm text-muted-foreground">
+          Administrative tools to reset claims data. Use with extreme caution.
+        </p>
+      </div>
+
+      {!allowed && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Restricted</CardTitle>
+            <CardDescription>
+              Only <strong>Super Admin</strong>, <strong>Hospital Admin</strong>, or <strong>CFO View</strong> can
+              perform destructive data operations. You are currently acting as <strong>{role}</strong>.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      )}
+
+      <Card className="border-destructive/40">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-destructive" />
+            <CardTitle className="text-base">Danger Zone — Clear all claims</CardTitle>
+          </div>
+          <CardDescription>
+            Permanently deletes every claim in your organisation so you can re-upload a corrected file.
+            This action cannot be undone.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="fu"
+                checked={includeFollowUps}
+                onCheckedChange={(v) => setIncludeFollowUps(Boolean(v))}
+                disabled={!allowed}
+              />
+              <Label htmlFor="fu" className="text-sm font-normal">
+                Also delete follow-ups linked to these claims (recommended)
+              </Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="dq"
+                checked={includeDiscrepancies}
+                onCheckedChange={(v) => setIncludeDiscrepancies(Boolean(v))}
+                disabled={!allowed}
+              />
+              <Label htmlFor="dq" className="text-sm font-normal">
+                Also delete discrepancy actions and action log (recommended)
+              </Label>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="confirm" className="text-sm">
+              Type <code className="rounded bg-muted px-1.5 py-0.5 text-xs">DELETE ALL CLAIMS</code> to confirm
+            </Label>
+            <Input
+              id="confirm"
+              value={confirmText}
+              onChange={(e) => setConfirmText(e.target.value)}
+              placeholder="DELETE ALL CLAIMS"
+              disabled={!allowed}
+              autoComplete="off"
+            />
+          </div>
+
+          <Button
+            variant="destructive"
+            disabled={!canSubmit || busy}
+            onClick={() => setOpen(true)}
+            className="gap-2"
+          >
+            <Trash2 className="h-4 w-4" />
+            Clear all claims data
+          </Button>
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Permanently delete all claims?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove every claim in your organisation
+              {includeFollowUps ? ", their follow-ups" : ""}
+              {includeDiscrepancies ? ", and discrepancy records" : ""}. There is no undo.
+              You can re-upload a corrected file from <strong>Claims → Import</strong> afterwards.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                void handleClearAll();
+              }}
+              disabled={busy}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {busy ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              Yes, delete everything
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </div>
+  );
+}
