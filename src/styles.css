@@ -1,144 +1,429 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&family=DM+Serif+Display:ital@0;1&display=swap');
 @import "tailwindcss" source(none);
 @source "../src";
 @import "tw-animate-css";
 
 @custom-variant dark (&:is(.dark *));
 
-/*
- * Design system definition.
- *
- * The @theme inline block maps CSS custom properties to Tailwind utility
- * classes (e.g. --color-primary -> bg-primary, text-primary).
- *
- * The :root and .dark blocks define the actual color values using oklch.
- * All colors MUST use oklch format.
- *
- * To add a new semantic color:
- * 1. Add the variable to :root (light value) and .dark (dark value)
- * 2. Register it in @theme inline as --color-<name>: var(--<name>)
- */
-
 @theme inline {
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-sans);
+  --font-serif: var(--font-display);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --radius-2xl: calc(var(--radius) + 8px);
-  --radius-3xl: calc(var(--radius) + 12px);
-  --radius-4xl: calc(var(--radius) + 16px);
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-ring-offset-background: var(--background);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-success: hsl(var(--success));
+  --color-success-foreground: hsl(var(--success-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-whatsapp: hsl(var(--whatsapp));
+  --color-whatsapp-foreground: hsl(var(--whatsapp-foreground));
+
+  /* Severity tokens — destructive red is reserved strictly for denials &
+     SLA breaches. Aging buckets use a graduated amber→orange→red ramp. */
+  --color-denial: hsl(var(--denial));
+  --color-denial-foreground: hsl(var(--denial-foreground));
+  --color-aging-30: hsl(var(--aging-30));
+  --color-aging-30-foreground: hsl(var(--aging-30-foreground));
+  --color-aging-60: hsl(var(--aging-60));
+  --color-aging-60-foreground: hsl(var(--aging-60-foreground));
+  --color-aging-90: hsl(var(--aging-90));
+  --color-aging-90-foreground: hsl(var(--aging-90-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.129 0.042 264.695);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.129 0.042 264.695);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.129 0.042 264.695);
-  --primary: oklch(0.208 0.042 265.755);
-  --primary-foreground: oklch(0.984 0.003 247.858);
-  --secondary: oklch(0.968 0.007 247.896);
-  --secondary-foreground: oklch(0.208 0.042 265.755);
-  --muted: oklch(0.968 0.007 247.896);
-  --muted-foreground: oklch(0.554 0.046 257.417);
-  --accent: oklch(0.968 0.007 247.896);
-  --accent-foreground: oklch(0.208 0.042 265.755);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(0.929 0.013 255.508);
-  --input: oklch(0.929 0.013 255.508);
-  --ring: oklch(0.704 0.04 256.788);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.984 0.003 247.858);
-  --sidebar-foreground: oklch(0.129 0.042 264.695);
-  --sidebar-primary: oklch(0.208 0.042 265.755);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.968 0.007 247.896);
-  --sidebar-accent-foreground: oklch(0.208 0.042 265.755);
-  --sidebar-border: oklch(0.929 0.013 255.508);
-  --sidebar-ring: oklch(0.704 0.04 256.788);
+  --font-sans: 'Inter', system-ui, sans-serif;
+  /* Display font is the brand serif — applied app-wide to h1/h2/h3 */
+  --font-display: 'DM Serif Display', 'Plus Jakarta Sans', 'Inter', Georgia, serif;
+
+  /* Premium SaaS canvas — soft cool white */
+  --background: 220 30% 99%;
+  --foreground: 222 25% 12%;
+  --card: 0 0% 100%;
+  --card-foreground: 222 25% 12%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222 25% 12%;
+  /* Primary — RCM Buddy CHERRY RED (#c81e2c) — single source of truth */
+  --primary: 354 74% 45%;
+  --primary-foreground: 0 0% 100%;
+  --primary-glow: 358 73% 56%;
+  --secondary: 354 100% 96%;
+  --secondary-foreground: 354 70% 32%;
+  --muted: 220 20% 96%;
+  --muted-foreground: 222 14% 46%;
+  /* Accent — brand cherry red */
+  --accent: 354 74% 45%;
+  --accent-foreground: 0 0% 100%;
+  /* Warning is amber — never red */
+  --warning: 28 92% 46%;
+  --warning-foreground: 0 0% 100%;
+  /* Success is clinical green — paid/cleared/settled */
+  --success: 152 64% 36%;
+  --success-foreground: 0 0% 100%;
+  /* Destructive is red but reserved for true destructive ops */
+  --destructive: 354 74% 45%;
+  --destructive-foreground: 0 0% 100%;
+  --whatsapp: 142 70% 40%;
+  --whatsapp-foreground: 0 0% 100%;
+
+  /* Denial / SLA breach (alias of destructive — single semantic) */
+  --denial: 354 74% 45%;
+  --denial-foreground: 0 0% 100%;
+  /* Aging severity ramp */
+  --aging-30: 45 95% 50%;
+  --aging-30-foreground: 30 50% 12%;
+  --aging-60: 28 92% 46%;
+  --aging-60-foreground: 0 0% 100%;
+  --aging-90: 15 88% 42%;
+  --aging-90-foreground: 0 0% 100%;
+
+  --border: 220 20% 92%;
+  --input: 220 20% 92%;
+  --ring: 354 74% 45%;
+  --radius: 0.875rem;
+
+  /* Sidebar — deep navy from logo with white type */
+  --sidebar-background: 220 60% 12%;
+  --sidebar-foreground: 0 0% 100%;
+  --sidebar-primary: 354 74% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 40% 18%;
+  --sidebar-accent-foreground: 0 0% 100%;
+  --sidebar-border: 220 35% 22%;
+  --sidebar-ring: 354 74% 55%;
+  --sidebar-muted: 220 14% 78%;
+
+  /* Pastel surfaces for KPI chips */
+  --pastel-indigo: 226 100% 96%;
+  --pastel-slate: 220 30% 97%;
+  --pastel-blue: 220 100% 97%;
+  --pastel-amber: 32 100% 95%;
+  --pastel-mint: 152 70% 95%;
+  --pastel-rose: 350 100% 96%;
+}
+
+/* ============================================================
+   THEME PRESETS — applied via data-theme on <html>.
+   Palette: Red · Orange · Yellow · Green · Blue
+   Override only primary / accent / sidebar tokens.
+   Status colors (success/denial/warning) stay constant.
+   ============================================================ */
+:root[data-theme="red"] {
+  --primary: 354 74% 45%;
+  --primary-glow: 358 73% 56%;
+  --accent: 354 74% 45%;
+  --ring: 354 74% 45%;
+  --sidebar-background: 220 60% 12%;
+  --sidebar-accent: 220 40% 18%;
+  --sidebar-border: 220 35% 22%;
+  --sidebar-primary: 354 74% 55%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-ring: 354 74% 55%;
+}
+:root[data-theme="orange"] {
+  --primary: 28 80% 48%;
+  --primary-glow: 28 88% 60%;
+  --accent: 28 88% 52%;
+  --ring: 28 88% 52%;
+  --sidebar-background: 24 38% 16%;
+  --sidebar-accent: 24 28% 24%;
+  --sidebar-border: 24 28% 24%;
+  --sidebar-primary: 28 92% 56%;
+  --sidebar-ring: 28 92% 56%;
+}
+:root[data-theme="yellow"] {
+  --primary: 44 90% 46%;
+  --primary-glow: 44 95% 58%;
+  --accent: 44 95% 50%;
+  --ring: 44 95% 50%;
+  --sidebar-background: 40 24% 14%;
+  --sidebar-accent: 40 18% 22%;
+  --sidebar-border: 40 18% 22%;
+  --sidebar-primary: 44 95% 56%;
+  --sidebar-primary-foreground: 40 50% 12%;
+  --sidebar-ring: 44 95% 56%;
+}
+:root[data-theme="green"] {
+  --primary: 100 40% 36%;
+  --primary-glow: 100 44% 48%;
+  --accent: 100 44% 44%;
+  --ring: 100 44% 44%;
+  --sidebar-background: 110 28% 14%;
+  --sidebar-accent: 110 20% 22%;
+  --sidebar-border: 110 20% 22%;
+  --sidebar-primary: 100 50% 52%;
+  --sidebar-ring: 100 50% 52%;
+}
+:root[data-theme="blue"] {
+  --primary: 210 70% 44%;
+  --primary-glow: 210 80% 58%;
+  --accent: 210 80% 52%;
+  --ring: 210 80% 52%;
+  --sidebar-background: 215 40% 16%;
+  --sidebar-accent: 215 28% 24%;
+  --sidebar-border: 215 28% 24%;
+  --sidebar-primary: 210 80% 60%;
+  --sidebar-ring: 210 80% 60%;
 }
 
 .dark {
-  --background: oklch(0.129 0.042 264.695);
-  --foreground: oklch(0.984 0.003 247.858);
-  --card: oklch(0.208 0.042 265.755);
-  --card-foreground: oklch(0.984 0.003 247.858);
-  --popover: oklch(0.208 0.042 265.755);
-  --popover-foreground: oklch(0.984 0.003 247.858);
-  --primary: oklch(0.929 0.013 255.508);
-  --primary-foreground: oklch(0.208 0.042 265.755);
-  --secondary: oklch(0.279 0.041 260.031);
-  --secondary-foreground: oklch(0.984 0.003 247.858);
-  --muted: oklch(0.279 0.041 260.031);
-  --muted-foreground: oklch(0.704 0.04 256.788);
-  --accent: oklch(0.279 0.041 260.031);
-  --accent-foreground: oklch(0.984 0.003 247.858);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(0.984 0.003 247.858);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.551 0.027 264.364);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.208 0.042 265.755);
-  --sidebar-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-accent: oklch(0.279 0.041 260.031);
-  --sidebar-accent-foreground: oklch(0.984 0.003 247.858);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.551 0.027 264.364);
+  --background: 222 25% 7%;
+  --foreground: 220 20% 92%;
+  --card: 222 22% 10%;
+  --card-foreground: 220 20% 92%;
+  --popover: 222 22% 10%;
+  --popover-foreground: 220 20% 92%;
+  --primary: 354 78% 56%;
+  --primary-foreground: 0 0% 100%;
+  --primary-glow: 358 80% 66%;
+  --secondary: 354 30% 18%;
+  --secondary-foreground: 220 20% 92%;
+  --muted: 222 18% 16%;
+  --muted-foreground: 220 14% 64%;
+  --accent: 354 78% 56%;
+  --accent-foreground: 0 0% 100%;
+  --warning: 32 95% 56%;
+  --warning-foreground: 222 25% 8%;
+  --destructive: 354 78% 56%;
+  --destructive-foreground: 0 0% 100%;
+  --success: 158 65% 48%;
+  --success-foreground: 0 0% 100%;
+  --whatsapp: 142 65% 45%;
+  --whatsapp-foreground: 0 0% 100%;
+  --denial: 354 78% 56%;
+  --denial-foreground: 0 0% 100%;
+  --aging-30: 45 92% 58%;
+  --aging-30-foreground: 30 50% 12%;
+  --aging-60: 28 88% 54%;
+  --aging-60-foreground: 0 0% 100%;
+  --aging-90: 15 82% 50%;
+  --aging-90-foreground: 0 0% 100%;
+  --border: 222 18% 18%;
+  --input: 222 18% 18%;
+  --ring: 354 78% 56%;
+
+  /* Sidebar — premium dark */
+  --sidebar-background: 222 22% 9%;
+  --sidebar-foreground: 220 18% 86%;
+  --sidebar-primary: 354 78% 60%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 222 22% 14%;
+  --sidebar-accent-foreground: 220 20% 92%;
+  --sidebar-border: 222 18% 16%;
+  --sidebar-ring: 354 78% 60%;
+  --sidebar-muted: 220 12% 56%;
+
+  --pastel-indigo: 248 30% 18%;
+  --pastel-slate: 222 18% 14%;
+  --pastel-blue: 220 40% 16%;
+  --pastel-amber: 32 50% 16%;
+  --pastel-mint: 152 40% 14%;
+  --pastel-rose: 350 50% 16%;
 }
 
 @layer base {
   * {
-    border-color: var(--color-border);
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+    /* DM Serif Display ships at weight 400 only — avoid faux-bold synthesis */
+    font-weight: 400;
+  }
+  h1 { color: hsl(var(--foreground)); }
+  h2 { color: hsl(var(--foreground)); }
+  h3 { color: hsl(var(--foreground)); }
+  .no-heading-hl h1,
+  .no-heading-hl h2,
+  .no-heading-hl h3,
+  h1.no-hl, h2.no-hl, h3.no-hl {
+    border-left: 0 !important;
+    padding-left: 0 !important;
+  }
+}
+
+@layer utilities {
+  /* Premium glass surface for sticky chrome */
+  .glass-chrome {
+    background: color-mix(in oklab, hsl(var(--card)) 78%, transparent);
+    backdrop-filter: saturate(140%) blur(14px);
+    -webkit-backdrop-filter: saturate(140%) blur(14px);
+  }
+  .btn-primary-grad {
+    background-image: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary-glow)) 100%);
+  }
+  /* Cherry-red brand panel — single source for Landing + Audit hero treatments */
+  .brand-cherry-panel {
+    background-image: linear-gradient(135deg, #7a0a18 0%, #a8101f 45%, #c81e2c 100%);
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+  }
+  .brand-cherry-panel h1,
+  .brand-cherry-panel h2,
+  .brand-cherry-panel h3,
+  .brand-cherry-panel p,
+  .brand-cherry-panel span,
+  .brand-cherry-panel a {
+    color: #fff;
+  }
+  .brand-cherry-grid::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.18;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px);
+    background-size: 56px 56px;
+    -webkit-mask-image: radial-gradient(ellipse at 30% 30%, black 40%, transparent 80%);
+            mask-image: radial-gradient(ellipse at 30% 30%, black 40%, transparent 80%);
+  }
+  .brand-cherry-glow::after {
+    content: "";
+    position: absolute;
+    right: -6rem;
+    top: -6rem;
+    width: 32rem;
+    height: 32rem;
+    border-radius: 9999px;
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.22), transparent 70%);
+  }
+  .font-display-serif {
+    font-family: 'DM Serif Display', Georgia, serif;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .font-mono { font-family: var(--font-sans); font-variant-numeric: tabular-nums; letter-spacing: 0; }
+
+  /* Metric typography scale — drives visual hierarchy on KPI surfaces.
+     Hero numbers are 3–4× larger than secondary metrics so a CFO can
+     scan totals at a glance. */
+  .metric-hero {
+    font-family: var(--font-display);
+    font-size: clamp(2.5rem, 4.5vw, 3.75rem);
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: hsl(var(--foreground));
+    font-weight: 400;
+  }
+  .metric-primary {
+    font-size: 1.5rem;
+    line-height: 1.1;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+  .metric-secondary {
+    font-size: 0.875rem;
+    color: hsl(var(--muted-foreground));
+    font-variant-numeric: tabular-nums;
+  }
+  .metric-meta {
+    font-size: 0.6875rem;
+    color: hsl(var(--muted-foreground) / 0.75);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
   }
 
-  body {
-    background-color: var(--color-background);
-    color: var(--color-foreground);
+  /* Severity tone helpers — keep red strictly for denials & breaches. */
+  .tone-denial { color: hsl(var(--denial)); }
+  .tone-aging-30 { color: hsl(var(--aging-30-foreground)); background-color: hsl(var(--aging-30) / 0.18); }
+  .tone-aging-60 { color: hsl(var(--aging-60)); }
+  .tone-aging-90 { color: hsl(var(--aging-90)); }
+  .tone-success { color: hsl(var(--success)); }
+
+  @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+  /* ---------- Mobile responsiveness helpers ---------- */
+  html, body { overflow-x: hidden; }
+
+  @media (max-width: 767px) {
+    /* Tighten oversized card padding on phones. */
+    [data-slot="card"] { padding: 0.875rem !important; }
+
+    /* Collapse multi-column grids to a single column ONLY when they hold
+       card-like tiles (KPIs/charts). Action-button grids and similar
+       compact rows opt out via .keep-cols. */
+    .grid.grid-cols-2:has(> [data-slot="card"]):not(.keep-cols),
+    .grid.grid-cols-3:has(> [data-slot="card"]):not(.keep-cols),
+    .grid.grid-cols-4:has(> [data-slot="card"]):not(.keep-cols) {
+      grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    /* Smaller hero/metric numbers on small screens. */
+    .metric-hero { font-size: clamp(1.75rem, 9vw, 2.5rem) !important; }
+    .metric-primary { font-size: 1.125rem !important; }
+
+    /* Allow long words / IDs to wrap instead of pushing layout wider — but
+       only break inside a word when there is no normal break opportunity
+       (prevents character-by-character wrapping inside narrow table cells). */
+    h1, h2, h3, p { overflow-wrap: break-word; }
+    /* Table cells: never char-wrap — keep numbers, IDs, headers on one line */
+    td, th { overflow-wrap: normal; word-break: keep-all; }
+
+    /* Subtle right-edge fade hints horizontal scroll on tables. */
+    .relative.w-full.overflow-x-auto {
+      mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 16px), transparent);
+      -webkit-mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 16px), transparent);
+    }
+
+    /* When user clicks "More columns", reveal hidden priority cells inside
+       that specific table only. */
+    [data-table-scroll-root][data-cols-expanded="true"] [data-priority="secondary"],
+    [data-table-scroll-root][data-cols-expanded="true"] [data-priority="tertiary"],
+    [data-table-scroll-root][data-cols-expanded="true"] [data-priority="supporting"] {
+      display: table-cell !important;
+    }
   }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+  html, body { background: #fff !important; }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .print-avoid-break { break-inside: avoid; page-break-inside: avoid; }
 }

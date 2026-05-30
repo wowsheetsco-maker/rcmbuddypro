@@ -1,0 +1,40 @@
+{
+  "name": "RCM Buddy — Hospital Claims & Follow-Up",
+  "short_name": "RCM Buddy",
+  "description": "Hospital revenue cycle, claims, and TPA follow-up workspace.",
+  "id": "/",
+  "start_url": "/m",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#a51c1c",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Follow-up worklist",
+      "short_name": "Follow-up",
+      "url": "/follow-up",
+      "description": "Open today's TPA follow-up list"
+    },
+    {
+      "name": "Priority claims",
+      "short_name": "Priority",
+      "url": "/claims/priority",
+      "description": "Claims that need action today"
+    }
+  ]
+}

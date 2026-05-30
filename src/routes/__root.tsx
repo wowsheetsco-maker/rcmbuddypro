@@ -7,10 +7,10 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { AuthContextProvider } from "@/contexts/AuthContext";
+import { GlobalAuthLoader } from "@/components/auth/GlobalAuthLoader";
 
 import appCss from "../styles.css?url";
-import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
   return (
@@ -37,9 +37,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -76,21 +73,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "RCM Buddy — Hospital Revenue Cycle Management" },
+      { name: "description", content: "Track claims, follow-ups, denials, and TPA recovery across hospital insurance billing." },
+      { property: "og:title", content: "RCM Buddy — Hospital Revenue Cycle Management" },
+      { property: "og:description", content: "Track claims, follow-ups, denials, and TPA recovery across hospital insurance billing." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
+      { name: "twitter:title", content: "RCM Buddy — Hospital Revenue Cycle Management" },
+      { name: "twitter:description", content: "Track claims, follow-ups, denials, and TPA recovery across hospital insurance billing." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1991ae03-e1d7-48df-bab2-7896edd888e7/id-preview-29b89dfb--743540c3-ec0c-496e-b96b-26590c9a7c37.lovable.app-1778578543839.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1991ae03-e1d7-48df-bab2-7896edd888e7/id-preview-29b89dfb--743540c3-ec0c-496e-b96b-26590c9a7c37.lovable.app-1778578543839.png" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
+      { rel: "manifest", href: "/manifest.webmanifest" },
+      { rel: "icon", href: "/favicon.ico" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
     ],
   }),
   shellComponent: RootShell,
@@ -99,11 +98,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
+function RootShell({ children }: { children: React.ReactNode }) {
+  // Apply persisted theme + mode BEFORE first paint so refresh/login is flicker-free.
+  const themeBootScript = `(function(){try{
+    var t=localStorage.getItem('rcm.theme')||'blue';
+    var m=localStorage.getItem('rcm.mode')||'light';
+    document.documentElement.setAttribute('data-theme',t);
+    var dark=m==='dark'||(m==='system'&&window.matchMedia('(prefers-color-scheme: dark)').matches);
+    document.documentElement.classList.toggle('dark',dark);
+  }catch(e){}})();`;
   return (
     <html lang="en">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
       </head>
       <body>
         {children}
@@ -118,8 +126,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-      <Outlet />
+      <AuthContextProvider>
+        <GlobalAuthLoader>
+          <Outlet />
+        </GlobalAuthLoader>
+      </AuthContextProvider>
     </QueryClientProvider>
   );
 }

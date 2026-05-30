@@ -9,38 +9,164 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
+import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
+import { Route as ApiPublicHooksDispatchNotificationsRouteImport } from './routes/api/public/hooks/dispatch-notifications'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SplatRoute = SplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWhatsappDeliveryRoute =
+  ApiPublicHooksWhatsappDeliveryRouteImport.update({
+    id: '/api/public/hooks/whatsapp-delivery',
+    path: '/api/public/hooks/whatsapp-delivery',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksTeamDigestsRoute =
+  ApiPublicHooksTeamDigestsRouteImport.update({
+    id: '/api/public/hooks/team-digests',
+    path: '/api/public/hooks/team-digests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksDispatchNotificationsRoute =
+  ApiPublicHooksDispatchNotificationsRouteImport.update({
+    id: '/api/public/hooks/dispatch-notifications',
+    path: '/api/public/hooks/dispatch-notifications',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/$': typeof SplatRoute
+  '/forgot-password': typeof ForgotPasswordRoute
+  '/login': typeof LoginRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/$'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/whatsapp-delivery'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/$'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/whatsapp-delivery'
+  id:
+    | '__root__'
+    | '/'
+    | '/$'
+    | '/forgot-password'
+    | '/login'
+    | '/reset-password'
+    | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/whatsapp-delivery'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  SplatRoute: typeof SplatRoute
+  ForgotPasswordRoute: typeof ForgotPasswordRoute
+  LoginRoute: typeof LoginRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  ApiPublicHooksDispatchNotificationsRoute: typeof ApiPublicHooksDispatchNotificationsRoute
+  ApiPublicHooksTeamDigestsRoute: typeof ApiPublicHooksTeamDigestsRoute
+  ApiPublicHooksWhatsappDeliveryRoute: typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/$': {
+      id: '/$'
+      path: '/$'
+      fullPath: '/$'
+      preLoaderRoute: typeof SplatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,11 +174,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/whatsapp-delivery': {
+      id: '/api/public/hooks/whatsapp-delivery'
+      path: '/api/public/hooks/whatsapp-delivery'
+      fullPath: '/api/public/hooks/whatsapp-delivery'
+      preLoaderRoute: typeof ApiPublicHooksWhatsappDeliveryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/team-digests': {
+      id: '/api/public/hooks/team-digests'
+      path: '/api/public/hooks/team-digests'
+      fullPath: '/api/public/hooks/team-digests'
+      preLoaderRoute: typeof ApiPublicHooksTeamDigestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/dispatch-notifications': {
+      id: '/api/public/hooks/dispatch-notifications'
+      path: '/api/public/hooks/dispatch-notifications'
+      fullPath: '/api/public/hooks/dispatch-notifications'
+      preLoaderRoute: typeof ApiPublicHooksDispatchNotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  SplatRoute: SplatRoute,
+  ForgotPasswordRoute: ForgotPasswordRoute,
+  LoginRoute: LoginRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  ApiPublicHooksDispatchNotificationsRoute:
+    ApiPublicHooksDispatchNotificationsRoute,
+  ApiPublicHooksTeamDigestsRoute: ApiPublicHooksTeamDigestsRoute,
+  ApiPublicHooksWhatsappDeliveryRoute: ApiPublicHooksWhatsappDeliveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
