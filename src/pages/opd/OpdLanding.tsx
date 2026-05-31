@@ -55,13 +55,16 @@ export default function OpdLanding() {
         </div>
 
         <Card>
-          <CardHeader><CardTitle>Module roadmap</CardTitle></CardHeader>
+          <CardHeader><CardTitle>Module status</CardTitle></CardHeader>
           <CardContent className="space-y-2 text-sm">
-            <p className="text-muted-foreground">Phase 1 (current): schema, navigation and zero-state KPIs.</p>
+            <p className="text-muted-foreground">All phases live: schema, navigation, capture, masters, bookings, events, batching, reconciliation and analytics.</p>
             <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li>Phase 3: visit capture (mobile-first), corporate + employee master, aggregator import, batch builder</li>
-              <li>Phase 4: AHC booking funnel, wellness event ROI, settlement reconciliation</li>
-              <li>Phase 5: aggregator eligibility APIs, auto-escalation rules</li>
+              <li>Visits → quick-capture, batch submit, settlement reconciliation</li>
+              <li>Employees → roster, wallet balances, CSV import, eligibility sync</li>
+              <li>AHC → package master + booking funnel (booked → settled)</li>
+              <li>Wellness events → planner with revenue / expense / ROI</li>
+              <li>Analytics → aggregator revenue, rejection drivers, TAT, escalations &gt;14d</li>
+              <li>Aggregator eligibility APIs: stubbed sync — wire vendor credentials in Settings to enable live polling</li>
             </ul>
           </CardContent>
         </Card>

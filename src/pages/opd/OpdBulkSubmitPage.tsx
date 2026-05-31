@@ -16,10 +16,15 @@ interface Visit {
   total_amount: number; payable_amount: number; status: string;
 }
 interface Corporate { id: string; name: string; aggregator: string | null }
+interface Batch {
+  id: string; batch_no: string; aggregator: string | null; submission_date: string | null;
+  claim_count: number; total_amount: number; status: string; ack_no: string | null;
+}
 
 export default function OpdBulkSubmitPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [corps, setCorps] = useState<Corporate[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [corporateFilter, setCorporateFilter] = useState("all");
   const [batchNo, setBatchNo] = useState(`OPD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`);
@@ -27,15 +32,35 @@ export default function OpdBulkSubmitPage() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [v, c] = await Promise.all([
+    const [v, c, b] = await Promise.all([
       supabase.from("opd_visits").select("id,visit_date,patient_name,corporate_id,total_amount,payable_amount,status")
         .eq("status", "captured").order("visit_date", { ascending: false }).limit(500),
       supabase.from("opd_corporates").select("id,name,aggregator").eq("is_active", true).order("name"),
+      supabase.from("opd_batches").select("id,batch_no,aggregator,submission_date,claim_count,total_amount,status,ack_no")
+        .order("created_at", { ascending: false }).limit(50),
     ]);
     setVisits((v.data ?? []) as Visit[]);
     setCorps((c.data ?? []) as Corporate[]);
+    setBatches((b.data ?? []) as Batch[]);
   };
   useEffect(() => { load(); }, []);
+
+  const reconcileBatch = async (batch: Batch, nextStatus: "approved" | "settled" | "rejected") => {
+    const patch: any = { status: nextStatus };
+    const visitPatch: any = { status: nextStatus };
+    if (nextStatus === "settled") visitPatch.settled_at = new Date().toISOString();
+    const { error: bErr } = await supabase.from("opd_batches").update(patch).eq("id", batch.id);
+    if (bErr) return toast({ title: "Failed", description: bErr.message, variant: "destructive" });
+    const { error: vErr } = await supabase.from("opd_visits").update(visitPatch).eq("batch_id", batch.id);
+    if (vErr) return toast({ title: "Batch updated, visits partial", description: vErr.message, variant: "destructive" });
+    toast({ title: `Batch ${batch.batch_no} → ${nextStatus}` });
+    load();
+  };
+
+  const setAck = async (batch: Batch, ack: string) => {
+    await supabase.from("opd_batches").update({ ack_no: ack }).eq("id", batch.id);
+    load();
+  };
 
   const filtered = useMemo(() => visits.filter((v) =>
     corporateFilter === "all" || v.corporate_id === corporateFilter
@@ -140,6 +165,46 @@ export default function OpdBulkSubmitPage() {
                         <TableCell>{v.patient_name}</TableCell>
                         <TableCell className="text-right tabular-nums">₹{Number(v.total_amount).toLocaleString("en-IN")}</TableCell>
                         <TableCell className="text-right tabular-nums">₹{Number(v.payable_amount).toLocaleString("en-IN")}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            }
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Recent batches — settlement reconciliation</CardTitle></CardHeader>
+          <CardContent>
+            {batches.length === 0 ? <div className="text-sm text-muted-foreground py-6 text-center">No batches submitted yet.</div> :
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Batch</TableHead><TableHead>Submitted</TableHead><TableHead>Aggregator</TableHead>
+                    <TableHead className="text-right">Claims</TableHead><TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Ack #</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {batches.map((b) => (
+                      <TableRow key={b.id}>
+                        <TableCell className="font-mono text-xs">{b.batch_no}</TableCell>
+                        <TableCell className="text-xs">{b.submission_date ?? "—"}</TableCell>
+                        <TableCell>{b.aggregator ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{b.claim_count}</TableCell>
+                        <TableCell className="text-right tabular-nums">₹{Math.round(Number(b.total_amount)).toLocaleString("en-IN")}</TableCell>
+                        <TableCell>
+                          <Input className="h-7 w-28 text-xs" defaultValue={b.ack_no ?? ""} placeholder="ack #"
+                            onBlur={(e) => e.target.value !== (b.ack_no ?? "") && setAck(b, e.target.value)} />
+                        </TableCell>
+                        <TableCell className="capitalize text-xs">{b.status}</TableCell>
+                        <TableCell className="flex gap-1">
+                          {b.status === "submitted" && <>
+                            <Button size="sm" variant="ghost" onClick={() => reconcileBatch(b, "approved")}>Approved</Button>
+                            <Button size="sm" variant="ghost" onClick={() => reconcileBatch(b, "rejected")}>Rejected</Button>
+                          </>}
+                          {(b.status === "approved" || b.status === "submitted") && <Button size="sm" onClick={() => reconcileBatch(b, "settled")}>Settle</Button>}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
