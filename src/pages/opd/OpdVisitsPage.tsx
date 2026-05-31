@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, Upload, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+import { Link } from "@/lib/router-compat";
 
 interface Corporate { id: string; name: string; aggregator: string | null }
 interface Visit {
@@ -62,10 +63,14 @@ export default function OpdVisitsPage() {
             <h1 className="text-2xl font-display">OPD Visits</h1>
             <p className="text-sm text-muted-foreground">Quick-capture register for corporate OPD, teleconsult and reimbursement visits.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New Visit</Button></DialogTrigger>
-            <NewVisitDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button asChild variant="outline"><Link to="/opd/visits/import"><Upload className="h-4 w-4 mr-1" /> Import CSV</Link></Button>
+            <Button asChild variant="outline"><Link to="/opd/visits/new"><Smartphone className="h-4 w-4 mr-1" /> Quick capture</Link></Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New Visit</Button></DialogTrigger>
+              <NewVisitDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
+            </Dialog>
+          </div>
         </header>
 
         <div className="grid grid-cols-3 gap-3">

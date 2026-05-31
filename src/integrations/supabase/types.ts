@@ -1851,6 +1851,62 @@ export type Database = {
         }
         Relationships: []
       }
+      opd_eligibility_sync_log: {
+        Row: {
+          aggregator: string | null
+          completed_at: string | null
+          corporate_id: string | null
+          created_at: string
+          details: Json
+          employees_activated: number
+          employees_synced: number
+          error_message: string | null
+          id: string
+          org_id: string
+          started_at: string
+          status: string
+          triggered_by: string | null
+        }
+        Insert: {
+          aggregator?: string | null
+          completed_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          details?: Json
+          employees_activated?: number
+          employees_synced?: number
+          error_message?: string | null
+          id?: string
+          org_id: string
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Update: {
+          aggregator?: string | null
+          completed_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          details?: Json
+          employees_activated?: number
+          employees_synced?: number
+          error_message?: string | null
+          id?: string
+          org_id?: string
+          started_at?: string
+          status?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_eligibility_sync_log_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opd_employees: {
         Row: {
           corporate_id: string
