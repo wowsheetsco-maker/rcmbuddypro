@@ -2332,6 +2332,42 @@ export type Database = {
           },
         ]
       }
+      platform_admin_audit: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          bootstrap: boolean
+          created_at: string
+          id: string
+          org_id: string | null
+          target_email: string
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          bootstrap?: boolean
+          created_at?: string
+          id?: string
+          org_id?: string | null
+          target_email: string
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          bootstrap?: boolean
+          created_at?: string
+          id?: string
+          org_id?: string | null
+          target_email?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -3077,6 +3113,10 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      promote_to_super_admin: {
+        Args: { _make_owner?: boolean; _org_id?: string; _target_email: string }
+        Returns: Json
+      }
       seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
       user_org_ids: { Args: never; Returns: string[] }
     }
