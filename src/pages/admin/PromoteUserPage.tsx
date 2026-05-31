@@ -68,7 +68,7 @@ export default function PromoteUserPage() {
     setSubmitting(true);
     const { data, error } = await supabase.rpc("promote_to_super_admin", {
       _target_email: email.trim().toLowerCase(),
-      _org_id: orgId || null,
+      _org_id: orgId || undefined,
       _make_owner: makeOwner,
     });
     setSubmitting(false);
