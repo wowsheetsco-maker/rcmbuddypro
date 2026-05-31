@@ -124,10 +124,8 @@ export default function OpdVisitImportPage() {
     const empByCode = new Map((emps ?? []).map((e) => [e.employee_code, e.id]));
 
     const orgId = getCurrentOrgId();
-    type VisitInsert = Parameters<ReturnType<typeof supabase.from<"opd_visits">>["insert"]>[0] extends ReadonlyArray<infer U> ? U : never;
     const records: VisitInsert[] = [];
     const errors: string[] = [];
-    let skipped = 0;
     let skipped = 0;
 
     rows.forEach((r, i) => {
