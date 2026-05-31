@@ -71,6 +71,11 @@ import OpdLanding from "./pages/opd/OpdLanding";
 import OpdVisitsPage from "./pages/opd/OpdVisitsPage";
 import OpdCorporatesPage from "./pages/opd/OpdCorporatesPage";
 import OpdBulkSubmitPage from "./pages/opd/OpdBulkSubmitPage";
+import OpdEmployeesPage from "./pages/opd/OpdEmployeesPage";
+import AhcPackagesPage from "./pages/opd/AhcPackagesPage";
+import AhcBookingsPage from "./pages/opd/AhcBookingsPage";
+import WellnessEventsPage from "./pages/opd/WellnessEventsPage";
+import OpdAnalyticsPage from "./pages/opd/OpdAnalyticsPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
