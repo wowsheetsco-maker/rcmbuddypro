@@ -173,6 +173,46 @@ export default function OpdBulkSubmitPage() {
             }
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader><CardTitle className="text-base">Recent batches — settlement reconciliation</CardTitle></CardHeader>
+          <CardContent>
+            {batches.length === 0 ? <div className="text-sm text-muted-foreground py-6 text-center">No batches submitted yet.</div> :
+              <div className="overflow-auto">
+                <Table>
+                  <TableHeader><TableRow>
+                    <TableHead>Batch</TableHead><TableHead>Submitted</TableHead><TableHead>Aggregator</TableHead>
+                    <TableHead className="text-right">Claims</TableHead><TableHead className="text-right">Amount</TableHead>
+                    <TableHead>Ack #</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
+                  </TableRow></TableHeader>
+                  <TableBody>
+                    {batches.map((b) => (
+                      <TableRow key={b.id}>
+                        <TableCell className="font-mono text-xs">{b.batch_no}</TableCell>
+                        <TableCell className="text-xs">{b.submission_date ?? "—"}</TableCell>
+                        <TableCell>{b.aggregator ?? "—"}</TableCell>
+                        <TableCell className="text-right tabular-nums">{b.claim_count}</TableCell>
+                        <TableCell className="text-right tabular-nums">₹{Math.round(Number(b.total_amount)).toLocaleString("en-IN")}</TableCell>
+                        <TableCell>
+                          <Input className="h-7 w-28 text-xs" defaultValue={b.ack_no ?? ""} placeholder="ack #"
+                            onBlur={(e) => e.target.value !== (b.ack_no ?? "") && setAck(b, e.target.value)} />
+                        </TableCell>
+                        <TableCell className="capitalize text-xs">{b.status}</TableCell>
+                        <TableCell className="flex gap-1">
+                          {b.status === "submitted" && <>
+                            <Button size="sm" variant="ghost" onClick={() => reconcileBatch(b, "approved")}>Approved</Button>
+                            <Button size="sm" variant="ghost" onClick={() => reconcileBatch(b, "rejected")}>Rejected</Button>
+                          </>}
+                          {(b.status === "approved" || b.status === "submitted") && <Button size="sm" onClick={() => reconcileBatch(b, "settled")}>Settle</Button>}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            }
+          </CardContent>
+        </Card>
       </div>
     </AppLayout>
   );
