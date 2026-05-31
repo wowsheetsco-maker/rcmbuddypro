@@ -214,6 +214,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/admin/org-access": OrgAccessPage,
   "/admin/promote-user": PromoteUserPage,
   "/admin/roles-matrix": RolesMatrixPage,
+  "/admin/access-checker": AccessCheckerPage,
 
   // Government Schemes (Phase 1 scaffold)
   "/gov-schemes": GovSchemesLanding,
