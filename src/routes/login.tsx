@@ -481,27 +481,8 @@ function LoginPage() {
               </div>
             )}
 
-            {needsVerification && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResendVerification}
-                disabled={resendingVerification}
-                className="w-full h-10"
-              >
-                {resendingVerification ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending verification…
-                  </>
-                ) : (
-                  <>
-                    <MailCheck className="mr-2 h-4 w-4" />
-                    Resend verification email
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Verification UI now lives in the dedicated screen above. */}
+
 
             <div className="space-y-3 pt-1">
               {usePassword ? (
