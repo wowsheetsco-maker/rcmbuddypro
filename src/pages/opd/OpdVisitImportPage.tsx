@@ -7,8 +7,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Upload, FileUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+
+type VisitInsert = Database["public"]["Tables"]["opd_visits"]["Insert"];
 
 // Maps aggregator CSV columns → opd_visits columns
 const FIELDS: ReadonlyArray<{ key: FieldKey; label: string; required: boolean; hint?: string }> = [
