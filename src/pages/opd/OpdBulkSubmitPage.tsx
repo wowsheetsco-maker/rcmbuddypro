@@ -32,15 +32,35 @@ export default function OpdBulkSubmitPage() {
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
-    const [v, c] = await Promise.all([
+    const [v, c, b] = await Promise.all([
       supabase.from("opd_visits").select("id,visit_date,patient_name,corporate_id,total_amount,payable_amount,status")
         .eq("status", "captured").order("visit_date", { ascending: false }).limit(500),
       supabase.from("opd_corporates").select("id,name,aggregator").eq("is_active", true).order("name"),
+      supabase.from("opd_batches").select("id,batch_no,aggregator,submission_date,claim_count,total_amount,status,ack_no")
+        .order("created_at", { ascending: false }).limit(50),
     ]);
     setVisits((v.data ?? []) as Visit[]);
     setCorps((c.data ?? []) as Corporate[]);
+    setBatches((b.data ?? []) as Batch[]);
   };
   useEffect(() => { load(); }, []);
+
+  const reconcileBatch = async (batch: Batch, nextStatus: "approved" | "settled" | "rejected") => {
+    const patch: any = { status: nextStatus };
+    const visitPatch: any = { status: nextStatus };
+    if (nextStatus === "settled") visitPatch.settled_at = new Date().toISOString();
+    const { error: bErr } = await supabase.from("opd_batches").update(patch).eq("id", batch.id);
+    if (bErr) return toast({ title: "Failed", description: bErr.message, variant: "destructive" });
+    const { error: vErr } = await supabase.from("opd_visits").update(visitPatch).eq("batch_id", batch.id);
+    if (vErr) return toast({ title: "Batch updated, visits partial", description: vErr.message, variant: "destructive" });
+    toast({ title: `Batch ${batch.batch_no} → ${nextStatus}` });
+    load();
+  };
+
+  const setAck = async (batch: Batch, ack: string) => {
+    await supabase.from("opd_batches").update({ ack_no: ack }).eq("id", batch.id);
+    load();
+  };
 
   const filtered = useMemo(() => visits.filter((v) =>
     corporateFilter === "all" || v.corporate_id === corporateFilter
