@@ -34,6 +34,8 @@ function safeRedirectTarget(raw: string | undefined): string {
 }
 
 const RESEND_COOLDOWN_SECONDS = 30;
+// Supabase verification / magic-link tokens expire after 1 hour by default.
+const VERIFICATION_LINK_TTL_SECONDS = 60 * 60;
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -52,7 +54,12 @@ function LoginPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationCooldown, setVerificationCooldown] = useState(0);
+  const [verificationSentAt, setVerificationSentAt] = useState<number | null>(null);
+  const [verificationExpiresIn, setVerificationExpiresIn] = useState<number | null>(null);
   const cooldownTimerRef = useRef<number | null>(null);
+  const verificationTimerRef = useRef<number | null>(null);
+  const expiryTimerRef = useRef<number | null>(null);
 
   // Handle verification / magic-link callback tokens in the URL hash.
   useEffect(() => {
@@ -96,7 +103,7 @@ function LoginPage() {
     };
   }, [navigate, redirectTo]);
 
-  // Resend cooldown tick.
+  // Resend (magic-link) cooldown tick.
   useEffect(() => {
     if (resendCooldown <= 0) return;
     cooldownTimerRef.current = window.setTimeout(
@@ -107,6 +114,32 @@ function LoginPage() {
       if (cooldownTimerRef.current) window.clearTimeout(cooldownTimerRef.current);
     };
   }, [resendCooldown]);
+
+  // Verification-resend cooldown tick.
+  useEffect(() => {
+    if (verificationCooldown <= 0) return;
+    verificationTimerRef.current = window.setTimeout(
+      () => setVerificationCooldown((s) => s - 1),
+      1000
+    );
+    return () => {
+      if (verificationTimerRef.current) window.clearTimeout(verificationTimerRef.current);
+    };
+  }, [verificationCooldown]);
+
+  // Verification link expiry countdown.
+  useEffect(() => {
+    if (verificationSentAt === null) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - verificationSentAt) / 1000);
+      const remaining = Math.max(0, VERIFICATION_LINK_TTL_SECONDS - elapsed);
+      setVerificationExpiresIn(remaining);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    expiryTimerRef.current = id;
+    return () => window.clearInterval(id);
+  }, [verificationSentAt]);
 
   const sendMagicLink = useCallback(async () => {
     const { error: magicError } = await supabase.auth.signInWithOtp({
@@ -160,6 +193,7 @@ function LoginPage() {
       setError("Please enter your email address first.");
       return;
     }
+    if (verificationCooldown > 0) return; // client-side rate limit
     setResendingVerification(true);
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
@@ -173,11 +207,13 @@ function LoginPage() {
       setError(resendError.message);
       return;
     }
+    setVerificationCooldown(RESEND_COOLDOWN_SECONDS);
+    setVerificationSentAt(Date.now());
     toast({
       title: "Verification email sent",
       description: "Check your inbox to confirm your email, then sign in.",
     });
-  }, [email, redirectTo]);
+  }, [email, redirectTo, verificationCooldown]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
@@ -254,6 +290,110 @@ function LoginPage() {
   }
 
   const formDisabled = signingIn;
+
+  function formatMmSs(seconds: number): string {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  }
+
+  // Dedicated "Verify your email" status screen — shown when a password
+  // sign-in fails because the account isn't confirmed yet. Replaces the
+  // form so the user has one clear next step.
+  if (needsVerification) {
+    const expired = verificationExpiresIn !== null && verificationExpiresIn <= 0;
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm">
+          <div className="mb-8 flex flex-col items-center text-center">
+            <img
+              src={rcmLogo}
+              alt="RCM Buddy — Revenue Care for Healthcare"
+              className="mb-3 h-24 w-auto"
+            />
+          </div>
+          <div className="rounded-[calc(var(--radius))] border border-border bg-card p-6 shadow-sm">
+            <div className="flex items-center gap-2">
+              <MailCheck className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold text-card-foreground">
+                Verify your email
+              </h2>
+            </div>
+            <p className="mt-2 text-sm text-muted-foreground">
+              We've sent a confirmation link to{" "}
+              <span className="font-medium text-foreground">{email.trim()}</span>.
+              Click the link to activate your account, then come back here to sign in.
+            </p>
+            <ol className="mt-4 space-y-1.5 text-sm text-muted-foreground list-decimal list-inside">
+              <li>Open the email from RCM Buddy.</li>
+              <li>Click <span className="font-medium text-foreground">Confirm your email</span>.</li>
+              <li>You'll be redirected back here and signed in.</li>
+            </ol>
+
+            {verificationExpiresIn !== null && (
+              <div
+                className={`mt-4 rounded-md px-3 py-2 text-sm ${
+                  expired
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-muted/40 text-muted-foreground"
+                }`}
+              >
+                {expired
+                  ? "This verification link has expired. Resend a new one below."
+                  : `Link expires in ${formatMmSs(verificationExpiresIn)}.`}
+              </div>
+            )}
+
+            {error && (
+              <div className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                {error}
+              </div>
+            )}
+
+            <div className="mt-5 space-y-3">
+              <Button
+                type="button"
+                onClick={handleResendVerification}
+                disabled={resendingVerification || verificationCooldown > 0}
+                className="w-full h-10 btn-primary-grad"
+              >
+                {resendingVerification ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending verification…
+                  </>
+                ) : verificationCooldown > 0 ? (
+                  `Resend verification (${verificationCooldown}s)`
+                ) : (
+                  <>
+                    <MailCheck className="mr-2 h-4 w-4" />
+                    Resend verification email
+                  </>
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setNeedsVerification(false);
+                  setError(null);
+                  setVerificationSentAt(null);
+                  setVerificationExpiresIn(null);
+                }}
+                className="w-full h-10"
+              >
+                Back to sign in
+              </Button>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-xs text-muted-foreground">
+            Didn't get the email? Check spam, or contact your hospital admin.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -341,27 +481,8 @@ function LoginPage() {
               </div>
             )}
 
-            {needsVerification && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResendVerification}
-                disabled={resendingVerification}
-                className="w-full h-10"
-              >
-                {resendingVerification ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Sending verification…
-                  </>
-                ) : (
-                  <>
-                    <MailCheck className="mr-2 h-4 w-4" />
-                    Resend verification email
-                  </>
-                )}
-              </Button>
-            )}
+            {/* Verification UI now lives in the dedicated screen above. */}
+
 
             <div className="space-y-3 pt-1">
               {usePassword ? (
