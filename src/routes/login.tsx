@@ -60,6 +60,13 @@ function LoginPage() {
   const cooldownTimerRef = useRef<number | null>(null);
   const verificationTimerRef = useRef<number | null>(null);
   const expiryTimerRef = useRef<number | null>(null);
+  const verifyHeadingRef = useRef<HTMLHeadingElement | null>(null);
+
+  // Focus the "Verify your email" heading when the status screen appears so
+  // screen readers and keyboard users land on the new context immediately.
+  useEffect(() => {
+    if (needsVerification) verifyHeadingRef.current?.focus();
+  }, [needsVerification]);
 
   // Handle verification / magic-link callback tokens in the URL hash.
   useEffect(() => {
