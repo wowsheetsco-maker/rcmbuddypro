@@ -63,6 +63,7 @@ import GoNoGoPage from "./pages/admin/GoNoGoPage";
 import OrgAccessPage from "./pages/admin/OrgAccessPage";
 import PromoteUserPage from "./pages/admin/PromoteUserPage";
 import RolesMatrixPage from "./pages/admin/RolesMatrixPage";
+import AccessCheckerPage from "./pages/admin/AccessCheckerPage";
 import LaunchPage from "./pages/LaunchPage";
 // Gov Schemes + OPD/Wellness
 import GovSchemesLanding from "./pages/gov-schemes/GovSchemesLanding";
@@ -213,6 +214,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/admin/org-access": OrgAccessPage,
   "/admin/promote-user": PromoteUserPage,
   "/admin/roles-matrix": RolesMatrixPage,
+  "/admin/access-checker": AccessCheckerPage,
 
   // Government Schemes (Phase 1 scaffold)
   "/gov-schemes": GovSchemesLanding,
