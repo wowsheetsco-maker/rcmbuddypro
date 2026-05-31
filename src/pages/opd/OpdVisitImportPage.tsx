@@ -11,7 +11,7 @@ import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
 
 // Maps aggregator CSV columns → opd_visits columns
-const FIELDS = [
+const FIELDS: ReadonlyArray<{ key: FieldKey; label: string; required: boolean; hint?: string }> = [
   { key: "visit_date", label: "Visit date *", required: true, hint: "YYYY-MM-DD or DD/MM/YYYY" },
   { key: "patient_name", label: "Patient name *", required: true },
   { key: "employee_code", label: "Employee code", required: false, hint: "Used to link to employee + corporate" },
@@ -21,9 +21,9 @@ const FIELDS = [
   { key: "copay", label: "Copay ₹", required: false },
   { key: "aggregator_claim_id", label: "Aggregator claim id", required: false, hint: "Used to dedupe re-imports" },
   { key: "notes", label: "Notes", required: false },
-] as const;
+];
 
-type FieldKey = typeof FIELDS[number]["key"];
+type FieldKey = "visit_date" | "patient_name" | "employee_code" | "doctor_name" | "department" | "total_amount" | "copay" | "aggregator_claim_id" | "notes";
 type Row = Record<string, string>;
 
 function parseCsv(text: string): { headers: string[]; rows: Row[] } {
