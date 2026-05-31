@@ -61,6 +61,8 @@ import TodaysWorklistPage from "./pages/TodaysWorklistPage";
 import ControlPanelPage from "./pages/admin/ControlPanelPage";
 import GoNoGoPage from "./pages/admin/GoNoGoPage";
 import OrgAccessPage from "./pages/admin/OrgAccessPage";
+import PromoteUserPage from "./pages/admin/PromoteUserPage";
+import RolesMatrixPage from "./pages/admin/RolesMatrixPage";
 import LaunchPage from "./pages/LaunchPage";
 // Gov Schemes + OPD/Wellness
 import GovSchemesLanding from "./pages/gov-schemes/GovSchemesLanding";
@@ -209,6 +211,8 @@ const ROUTES: Record<string, RouteEntry> = {
   "/admin/performance": ControlPanelPage,
   "/admin/go-no-go": GoNoGoPage,
   "/admin/org-access": OrgAccessPage,
+  "/admin/promote-user": PromoteUserPage,
+  "/admin/roles-matrix": RolesMatrixPage,
 
   // Government Schemes (Phase 1 scaffold)
   "/gov-schemes": GovSchemesLanding,
