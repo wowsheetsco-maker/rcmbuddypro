@@ -2947,6 +2947,59 @@ export type Database = {
       }
     }
     Views: {
+      app_users_public: {
+        Row: {
+          auth_user_id: string | null
+          created_at: string | null
+          email: string | null
+          id: string | null
+          name: string | null
+          org_id: string | null
+          role: string | null
+          smtp_from_email: string | null
+          smtp_from_name: string | null
+          smtp_verified_at: string | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          name?: string | null
+          org_id?: string | null
+          role?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_verified_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          auth_user_id?: string | null
+          created_at?: string | null
+          email?: string | null
+          id?: string | null
+          name?: string | null
+          org_id?: string | null
+          role?: string | null
+          smtp_from_email?: string | null
+          smtp_from_name?: string | null
+          smtp_verified_at?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_users_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_claims_priority: {
         Row: {
           action_plan: string | null

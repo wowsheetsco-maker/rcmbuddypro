@@ -1,0 +1,1 @@
+ALTER VIEW public.app_users_public SET (security_invoker = true);
