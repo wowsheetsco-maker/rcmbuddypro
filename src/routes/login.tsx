@@ -193,6 +193,7 @@ function LoginPage() {
       setError("Please enter your email address first.");
       return;
     }
+    if (verificationCooldown > 0) return; // client-side rate limit
     setResendingVerification(true);
     const { error: resendError } = await supabase.auth.resend({
       type: "signup",
@@ -206,11 +207,13 @@ function LoginPage() {
       setError(resendError.message);
       return;
     }
+    setVerificationCooldown(RESEND_COOLDOWN_SECONDS);
+    setVerificationSentAt(Date.now());
     toast({
       title: "Verification email sent",
       description: "Check your inbox to confirm your email, then sign in.",
     });
-  }, [email, redirectTo]);
+  }, [email, redirectTo, verificationCooldown]);
 
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
