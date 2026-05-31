@@ -223,12 +223,12 @@ const ROUTES: Record<string, RouteEntry> = {
   "/opd/visits": OpdVisitsPage,
   "/opd/visits/new": OpdVisitsPage,
   "/opd/corporates": OpdCorporatesPage,
-  "/opd/employees": () => <PlaceholderPage title="Employees" description="Employee + family roster with wallet balances — Phase 4." />,
-  "/opd/packages": () => <PlaceholderPage title="AHC Packages" description="Annual Health Check package master — Phase 4." />,
-  "/opd/ahc-bookings": () => <PlaceholderPage title="AHC Bookings" description="Booking → fulfilment → report → invoice → settlement — Phase 4." />,
-  "/opd/wellness-events": () => <PlaceholderPage title="Wellness Events" description="Camps, vaccination drives, executive health — Phase 4." />,
+  "/opd/employees": OpdEmployeesPage,
+  "/opd/packages": AhcPackagesPage,
+  "/opd/ahc-bookings": AhcBookingsPage,
+  "/opd/wellness-events": WellnessEventsPage,
   "/opd/bulk-submit": OpdBulkSubmitPage,
-  "/opd/analytics": () => <PlaceholderPage title="OPD Analytics" description="Aggregator-wise revenue, rejection reasons, avg TAT, wallet utilisation — Phase 4." />,
+  "/opd/analytics": OpdAnalyticsPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";
