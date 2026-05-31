@@ -37,7 +37,7 @@ export default function OpdEmployeesPage() {
       supabase.from("opd_employees").select("*").order("employee_name").limit(1000),
     ]);
     setCorps((c.data ?? []) as Corporate[]);
-    setRows((e.data ?? []) as Employee[]);
+    setRows((e.data ?? []) as unknown as Employee[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
