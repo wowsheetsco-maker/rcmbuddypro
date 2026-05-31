@@ -16,10 +16,15 @@ interface Visit {
   total_amount: number; payable_amount: number; status: string;
 }
 interface Corporate { id: string; name: string; aggregator: string | null }
+interface Batch {
+  id: string; batch_no: string; aggregator: string | null; submission_date: string | null;
+  claim_count: number; total_amount: number; status: string; ack_no: string | null;
+}
 
 export default function OpdBulkSubmitPage() {
   const [visits, setVisits] = useState<Visit[]>([]);
   const [corps, setCorps] = useState<Corporate[]>([]);
+  const [batches, setBatches] = useState<Batch[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [corporateFilter, setCorporateFilter] = useState("all");
   const [batchNo, setBatchNo] = useState(`OPD-${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-001`);
