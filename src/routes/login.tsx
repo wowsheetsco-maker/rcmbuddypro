@@ -34,6 +34,8 @@ function safeRedirectTarget(raw: string | undefined): string {
 }
 
 const RESEND_COOLDOWN_SECONDS = 30;
+// Supabase verification / magic-link tokens expire after 1 hour by default.
+const VERIFICATION_LINK_TTL_SECONDS = 60 * 60;
 
 function LoginPage() {
   const navigate = useNavigate();
@@ -52,7 +54,12 @@ function LoginPage() {
   const [checkingSession, setCheckingSession] = useState(true);
   const [needsVerification, setNeedsVerification] = useState(false);
   const [resendingVerification, setResendingVerification] = useState(false);
+  const [verificationCooldown, setVerificationCooldown] = useState(0);
+  const [verificationSentAt, setVerificationSentAt] = useState<number | null>(null);
+  const [verificationExpiresIn, setVerificationExpiresIn] = useState<number | null>(null);
   const cooldownTimerRef = useRef<number | null>(null);
+  const verificationTimerRef = useRef<number | null>(null);
+  const expiryTimerRef = useRef<number | null>(null);
 
   // Handle verification / magic-link callback tokens in the URL hash.
   useEffect(() => {
@@ -96,7 +103,7 @@ function LoginPage() {
     };
   }, [navigate, redirectTo]);
 
-  // Resend cooldown tick.
+  // Resend (magic-link) cooldown tick.
   useEffect(() => {
     if (resendCooldown <= 0) return;
     cooldownTimerRef.current = window.setTimeout(
@@ -107,6 +114,32 @@ function LoginPage() {
       if (cooldownTimerRef.current) window.clearTimeout(cooldownTimerRef.current);
     };
   }, [resendCooldown]);
+
+  // Verification-resend cooldown tick.
+  useEffect(() => {
+    if (verificationCooldown <= 0) return;
+    verificationTimerRef.current = window.setTimeout(
+      () => setVerificationCooldown((s) => s - 1),
+      1000
+    );
+    return () => {
+      if (verificationTimerRef.current) window.clearTimeout(verificationTimerRef.current);
+    };
+  }, [verificationCooldown]);
+
+  // Verification link expiry countdown.
+  useEffect(() => {
+    if (verificationSentAt === null) return;
+    const tick = () => {
+      const elapsed = Math.floor((Date.now() - verificationSentAt) / 1000);
+      const remaining = Math.max(0, VERIFICATION_LINK_TTL_SECONDS - elapsed);
+      setVerificationExpiresIn(remaining);
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    expiryTimerRef.current = id;
+    return () => window.clearInterval(id);
+  }, [verificationSentAt]);
 
   const sendMagicLink = useCallback(async () => {
     const { error: magicError } = await supabase.auth.signInWithOtp({
