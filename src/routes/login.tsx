@@ -60,6 +60,13 @@ function LoginPage() {
   const cooldownTimerRef = useRef<number | null>(null);
   const verificationTimerRef = useRef<number | null>(null);
   const expiryTimerRef = useRef<number | null>(null);
+  const verifyHeadingRef = useRef<HTMLHeadingElement | null>(null);
+
+  // Focus the "Verify your email" heading when the status screen appears so
+  // screen readers and keyboard users land on the new context immediately.
+  useEffect(() => {
+    if (needsVerification) verifyHeadingRef.current?.focus();
+  }, [needsVerification]);
 
   // Handle verification / magic-link callback tokens in the URL hash.
   useEffect(() => {
@@ -312,10 +319,20 @@ function LoginPage() {
               className="mb-3 h-24 w-auto"
             />
           </div>
-          <div className="rounded-[calc(var(--radius))] border border-border bg-card p-6 shadow-sm">
+          <section
+            role="region"
+            aria-labelledby="verify-email-heading"
+            data-testid="verify-email-screen"
+            className="rounded-[calc(var(--radius))] border border-border bg-card p-6 shadow-sm"
+          >
             <div className="flex items-center gap-2">
-              <MailCheck className="h-5 w-5 text-primary" />
-              <h2 className="text-lg font-semibold text-card-foreground">
+              <MailCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+              <h2
+                id="verify-email-heading"
+                ref={verifyHeadingRef}
+                tabIndex={-1}
+                className="text-lg font-semibold text-card-foreground focus:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+              >
                 Verify your email
               </h2>
             </div>
@@ -332,20 +349,36 @@ function LoginPage() {
 
             {verificationExpiresIn !== null && (
               <div
+                role={expired ? "alert" : "status"}
+                aria-live={expired ? "assertive" : "polite"}
+                aria-atomic="true"
+                data-testid="verify-expiry"
                 className={`mt-4 rounded-md px-3 py-2 text-sm ${
                   expired
                     ? "bg-destructive/10 text-destructive"
                     : "bg-muted/40 text-muted-foreground"
                 }`}
               >
-                {expired
-                  ? "This verification link has expired. Resend a new one below."
-                  : `Link expires in ${formatMmSs(verificationExpiresIn)}.`}
+                {expired ? (
+                  "This verification link has expired. Resend a new one below."
+                ) : (
+                  <>
+                    Link expires in{" "}
+                    <time dateTime={`PT${verificationExpiresIn}S`}>
+                      {formatMmSs(verificationExpiresIn)}
+                    </time>
+                    .
+                  </>
+                )}
               </div>
             )}
 
             {error && (
-              <div className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="mt-4 rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive"
+              >
                 {error}
               </div>
             )}
@@ -355,22 +388,29 @@ function LoginPage() {
                 type="button"
                 onClick={handleResendVerification}
                 disabled={resendingVerification || verificationCooldown > 0}
+                aria-describedby={verificationCooldown > 0 ? "verify-cooldown-hint" : undefined}
+                data-testid="resend-verification"
                 className="w-full h-10 btn-primary-grad"
               >
                 {resendingVerification ? (
                   <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
                     Sending verification…
                   </>
                 ) : verificationCooldown > 0 ? (
                   `Resend verification (${verificationCooldown}s)`
                 ) : (
                   <>
-                    <MailCheck className="mr-2 h-4 w-4" />
+                    <MailCheck className="mr-2 h-4 w-4" aria-hidden="true" />
                     Resend verification email
                   </>
                 )}
               </Button>
+              {verificationCooldown > 0 && (
+                <span id="verify-cooldown-hint" className="sr-only" aria-live="polite">
+                  You can resend the verification email in {verificationCooldown} seconds.
+                </span>
+              )}
               <Button
                 type="button"
                 variant="outline"
@@ -380,12 +420,13 @@ function LoginPage() {
                   setVerificationSentAt(null);
                   setVerificationExpiresIn(null);
                 }}
+                data-testid="back-to-signin"
                 className="w-full h-10"
               >
                 Back to sign in
               </Button>
             </div>
-          </div>
+          </section>
           <p className="mt-6 text-center text-xs text-muted-foreground">
             Didn't get the email? Check spam, or contact your hospital admin.
           </p>
@@ -393,6 +434,7 @@ function LoginPage() {
       </div>
     );
   }
+
 
 
   return (
