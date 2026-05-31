@@ -69,9 +69,12 @@ import GovClaimsPage from "./pages/gov-schemes/GovClaimsPage";
 import GovPackagesPage from "./pages/gov-schemes/GovPackagesPage";
 import OpdLanding from "./pages/opd/OpdLanding";
 import OpdVisitsPage from "./pages/opd/OpdVisitsPage";
+import OpdVisitCapturePage from "./pages/opd/OpdVisitCapturePage";
+import OpdVisitImportPage from "./pages/opd/OpdVisitImportPage";
 import OpdCorporatesPage from "./pages/opd/OpdCorporatesPage";
 import OpdBulkSubmitPage from "./pages/opd/OpdBulkSubmitPage";
 import OpdEmployeesPage from "./pages/opd/OpdEmployeesPage";
+import OpdEligibilitySyncPage from "./pages/opd/OpdEligibilitySyncPage";
 import AhcPackagesPage from "./pages/opd/AhcPackagesPage";
 import AhcBookingsPage from "./pages/opd/AhcBookingsPage";
 import WellnessEventsPage from "./pages/opd/WellnessEventsPage";
@@ -221,9 +224,11 @@ const ROUTES: Record<string, RouteEntry> = {
   "/opd": OpdLanding,
   "/opd/dashboard": OpdLanding,
   "/opd/visits": OpdVisitsPage,
-  "/opd/visits/new": OpdVisitsPage,
+  "/opd/visits/new": OpdVisitCapturePage,
+  "/opd/visits/import": OpdVisitImportPage,
   "/opd/corporates": OpdCorporatesPage,
   "/opd/employees": OpdEmployeesPage,
+  "/opd/eligibility": OpdEligibilitySyncPage,
   "/opd/packages": AhcPackagesPage,
   "/opd/ahc-bookings": AhcBookingsPage,
   "/opd/wellness-events": WellnessEventsPage,
