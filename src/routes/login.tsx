@@ -382,7 +382,7 @@ function LoginPage() {
               ) : magicLinkSent ? (
                 <div className="space-y-2">
                   <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                    Magic link sent to <span className="font-medium text-foreground">{email.trim()}</span>. Check your inbox.
+                    Magic link sent to <span className="font-medium text-foreground">{email.trim()}</span>. Click the link in your inbox to verify your email and sign in.
                   </div>
                   <Button
                     type="button"
