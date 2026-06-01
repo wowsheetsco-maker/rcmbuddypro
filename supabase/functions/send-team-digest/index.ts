@@ -6,6 +6,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import {
   resolveSender, sendWithSender, type AppUserRow,
 } from "../_shared/smtpSender.ts";
+import { requireUserOrCron } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
