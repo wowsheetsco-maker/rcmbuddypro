@@ -108,7 +108,8 @@ export default function AccessCheckerPage() {
   const { userId, orgId, role, isLoading } = useAuth();
   const { lookup, loading: permsLoading } = useRolePermissions();
   const { subroles, isLoading: subrolesLoading } = useAdminSubroles();
-  const location = useLocation();
+  useLocation(); // re-render when query string changes
+
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [pathInput, setPathInput] = useState("/claims/priority");
   const [actingRole, setActing] = useState<UserRole>(getActingRole());
