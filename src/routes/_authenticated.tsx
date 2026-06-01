@@ -60,9 +60,14 @@ function AdminSubroleGate({ children }: { children: React.ReactNode }) {
     if (!required) return;
     if (isLoading) return;
     if (!hasAnyOf(required)) {
-      tNavigate({ to: "/admin/access-checker", replace: true });
+      tNavigate({
+        to: "/admin/access-checker",
+        search: { attempted: location.pathname, required: required.join(",") },
+        replace: true,
+      });
     }
-  }, [required, isLoading, hasAnyOf, tNavigate]);
+  }, [required, isLoading, hasAnyOf, tNavigate, location.pathname]);
+
 
   if (required && isLoading) return null;
   if (required && !hasAnyOf(required)) return null;
