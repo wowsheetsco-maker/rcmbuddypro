@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/lib/router-compat";
-import { ShieldCheck, CheckCircle2, XCircle, Search, User2, Building2, Loader2 } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { ShieldCheck, CheckCircle2, XCircle, Search, User2, Building2, Loader2, ShieldAlert } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ROUTE_ROLE_RULES, allowedRolesForPath } from "@/lib/routeAccess";
 import { useAuth, type OrgRole } from "@/contexts/AuthContext";
 import {
@@ -19,8 +21,10 @@ import {
   type Action,
   type Resource,
 } from "@/hooks/useRolePermissions";
+import { useAdminSubroles, requiredSubrolesForPath, type AdminSubrole } from "@/hooks/useAdminSubroles";
 import { supabase } from "@/integrations/supabase/client";
 import type { UserRole } from "@/hooks/useAppUsers";
+
 
 const APP_ROLES: UserRole[] = [
   "Super Admin",
