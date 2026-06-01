@@ -246,9 +246,14 @@ async function extractAttachmentText(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Require authenticated caller — provider api_key fetch must never be public.
+  const authed = await requireUser(req);
+  if (authed instanceof Response) return authed;
+
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
 
   const t0 = Date.now();
   let body: RequestBody;
