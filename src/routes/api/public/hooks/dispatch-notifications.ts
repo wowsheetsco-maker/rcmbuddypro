@@ -238,10 +238,29 @@ export const Route = createFileRoute("/api/public/hooks/dispatch-notifications")
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apiKey =
-          request.headers.get("apikey") ?? request.headers.get("x-api-key");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!expected || apiKey !== expected) {
+        // Shared-secret gate. Fail closed: if the secret isn't configured,
+        // refuse every request. This used to accept the publishable anon key,
+        // which any browser visitor could replay.
+        const expected = process.env.DISPATCH_WEBHOOK_SECRET;
+        if (!expected) {
+          return new Response(
+            JSON.stringify({ error: "Webhook secret not configured" }),
+            { status: 503, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        const provided =
+          request.headers.get("x-webhook-secret") ??
+          new URL(request.url).searchParams.get("secret") ??
+          "";
+        // Constant-time compare to avoid timing oracles.
+        const a = new TextEncoder().encode(provided);
+        const b = new TextEncoder().encode(expected);
+        let same = a.length === b.length;
+        const len = Math.max(a.length, b.length);
+        for (let i = 0; i < len; i++) {
+          same = same && (a[i] ?? 0) === (b[i] ?? 0);
+        }
+        if (!same) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },

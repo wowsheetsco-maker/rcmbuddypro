@@ -1,97 +1,121 @@
-# RCM Buddy Pro — Full 1:1 Port
+## Goal
 
-## Scope at a glance
+Lock down RCM Buddy for hospital deployment by adding branch-scoped data access, admin sub-roles, tenant-isolation tests, and patching all remaining unauthenticated server functions.
 
-The uploaded project (`rcm-buddy-pro-614b913a-main`) is a Vite + React Router app with:
+## Scope (4 work streams, executed in order)
 
-- **56 pages** across claims, analytics, communications, gov-schemes, OPD, providers, settings, admin, AI, executive, mobile
-- **52 custom components** (drawers, dialogs, command palette, sidebar, etc.) + shadcn UI
-- **37 custom hooks** for data + permissions + notifications
-- **30+ lib modules** (CSV import/export, metrics, denial analytics, Excel reports, playbooks, WhatsApp, smart reports)
-- **27 Supabase migrations** (multi-tenant orgs, RBAC, claims, denials, discrepancies, contacts, reminders, audit, etc.)
-- **10 edge functions** (AI generate/enhance, send AI draft email, send discrepancy bulk, outstanding/TPA reminders, team digest, SMTP test, scheduled dispatchers)
-- **3 public API webhooks** (notifications dispatch, team digests, WhatsApp delivery)
-- Auth (email/password, forgot/reset), multi-org "acting role" switcher, branch picker, onboarding checklist, command palette, theme switcher
-- ~40k LOC total
+### 1. Branch-scoped authorization (DB + UI)
 
-The current template is **TanStack Start v1** (not Vite-React-Router). Routing, server-side, and auth must be rewritten to TanStack idioms; UI components and lib logic port directly.
+**DB migration** — extend membership with optional branch scope:
 
-## Target architecture
+```text
+organization_members
+  + branch_scope            uuid[]  NULL   -- NULL = all branches in org
+  + branch_scope_mode       text    'all' | 'restricted' (default 'all')
+```
 
-- Routing: file-based under `src/routes/` with `_authenticated` layout for the app shell; public routes for `/`, `/login`, `/forgot-password`, `/reset-password`
-- Backend: Lovable Cloud (Supabase). All 27 migrations ported to one consolidated migration set; RLS preserved
-- Server-side logic: edge functions converted to `createServerFn` under `src/lib/*.functions.ts`; the 3 public webhooks become TSS server routes at `src/routes/api/public/hooks/*.ts`
-- Email/AI: Lovable AI Gateway for AI; existing SMTP secrets re-added via `add_secret` (user will provide)
-- State: TanStack Query everywhere; auth context via `onAuthStateChange` listener in `__root.tsx`
+- New SECURITY DEFINER helper `can_access_branch(_org_id uuid, _branch_id uuid)`:
+  returns `is_platform_admin() OR (member of org AND (branch_scope_mode='all' OR _branch_id = ANY(branch_scope)))`.
+- Add branch-scoped RLS policies on tables that carry `hospital_branch_id`:
+  `claims`, `gov_claims`, `gov_empanelment`, `opd_corporates`, `ahc_bookings` (via package→branch is N/A; tables w/ branch column only).
+- Policies stay org-scoped but add `AND (hospital_branch_id IS NULL OR can_access_branch(org_id, hospital_branch_id))` on SELECT/UPDATE/DELETE.
+- Leave existing `is_org_member` SELECT policies intact for tables without `hospital_branch_id`.
 
-## Phased delivery
+**Frontend**
+- New `useBranchScope()` hook reading from `organization_members` for current `auth.uid()` + current org.
+- `BranchPicker` already exists — filter its options by `branch_scope` when `mode='restricted'`.
+- Hide branch-switcher option in UI when user has only one allowed branch.
 
-Because of the size (~40k LOC), I will deliver in phases and verify each before moving on. After every phase, the app builds and the new surface is usable.
+### 2. Admin sub-roles
 
-**Phase 1 — Foundation**
-- Enable Lovable Cloud
-- Port all 27 SQL migrations (schema, RLS, security-definer functions, triggers)
-- Copy `src/assets/` (logos)
-- Auth pages (`/login`, `/forgot-password`, `/reset-password`) + `_authenticated` layout
-- App shell: `AppLayout`, `AppHeader`, `AppSidebar`, `ActingRoleSwitcher`, `BranchPicker`, `ThemeSwitcher`, `NotificationBell`, `CommandPalette`
-- Landing page (`/`)
-- Core hooks: `useActingUser`, `useHasPermission`, `useIsPlatformAdmin`, `useAppSettings`, `useOnboardingChecklist`
+**DB**
 
-**Phase 2 — Claims core**
-- `ClaimsPage`, `ClaimDrawer`, `ClaimEditDialog`, `ClaimDocumentsPanel`
-- Claims CSV import/export (`ImportClaimsPage`, `claimsCsv.ts`, `claimsImport.ts`)
-- `PriorityWorklistPage`, `TodaysWorklistPage`, `MyTasksPage`, `Dashboard`
-- Hooks: `useClaimsPage`, `usePriorityWorklistPage`, `useLiveClaims`, `useMyTasks`
-- Lib: `claimMetrics`, `claimEditHistory`, `claimQualityRules`, `dataQualityEngine`
+```text
+CREATE TYPE admin_subrole AS ENUM (
+  'super_admin',         -- platform-wide; matches existing platform_admins
+  'org_owner',           -- maps from organization_members.role='owner'
+  'org_admin',           -- maps from organization_members.role='admin'
+  'billing_admin',       -- can manage claims + users in own branch scope
+  'compliance_admin',    -- read-only across org for audit
+  'tech_admin'           -- integrations, AI, webhooks, no PHI write
+);
 
-**Phase 3 — Denials, discrepancies, data quality, queries, TDS**
-- `DenialsPage`, `DiscrepancyTrackerPage`, `DataQualityPage`, `QueryPage`, `TdsReportPage`
-- Drawers: `DiscrepancyActionDrawer`, `PlaybookDrawer`, `ChecklistDialog`
-- Lib: `denialAnalytics`, `discrepancy`, `discrepancyExport`, `playbookMatch`
+CREATE TABLE public.admin_role_assignments (
+  id uuid pk,
+  org_id uuid not null,
+  user_id uuid not null,
+  subrole admin_subrole not null,
+  granted_by uuid,
+  granted_at timestamptz default now(),
+  UNIQUE (org_id, user_id, subrole)
+);
+```
 
-**Phase 4 — Analytics**
-- All 6 analytics pages (CashFlow, CorporatePerformance, PayerScorecard, StaffScorecard, TpaReport, TrendsAnalytics) + `ExecutiveDashboard`
-- Drilldown drawers (Corporate, Insurer, Executive)
-- Charts (Recharts), `Sparkline`, `KpiCard`, smart-report Excel export
-- Lib: `payerScorecard`, `payerBenchmarks`, `payerSnapshots`, `payerTrends`, `corporateStats`, `trendsAnalytics`, `denialAnalytics`, `smartReportExcel`, `smartReports`, `tpaReportExport`
+- `has_admin_subrole(_user uuid, _org uuid, _subrole admin_subrole)` SECURITY DEFINER helper.
+- GRANT block + RLS: only `org_owner`/`super_admin` can read/write assignments in their org.
 
-**Phase 5 — Communications + AI**
-- 5 communications pages (AiReply, Automation, FollowUpCalendar, FollowUpEngine, OutstandingReminders)
-- AI Center + AI Creation pages
-- Composers: `AiDraftLauncher`, `AiEmailSendDialog`, `AiToolDialog`, `BulkFollowUpComposer`, `DiscrepancyBulkComposer`, `WhatsAppComposerDialog`, `SavedDraftsDialog`, `ReminderRuleDialog`, `SmartReportDialog`
-- Server fns (replacing edge functions): `ai-generate`, `ai-enhance-followup`, `send-ai-draft-email`, `send-discrepancy-bulk`, `send-outstanding-reminder`, `send-team-digest`, `smtp-test`, `dispatch-scheduled-reminders`, `dispatch-tpa-reminders` → all `*.functions.ts`
-- Public webhooks → server routes at `src/routes/api/public/hooks/*`
-- AI provider via Lovable AI Gateway
+**Frontend route gating** in `src/lib/routeAccess.ts`:
 
-**Phase 6 — Gov schemes, OPD, providers**
-- Gov schemes landing + Claims/PreAuth/Packages
-- OPD landing + Visits/Corporates/BulkSubmit
-- Providers: Contacts (+ CSV import), TPA/Insurers (+ profile drawer, import/export, payer compare)
+```text
+/admin/control-panel       → super_admin | org_owner | tech_admin
+/admin/promote             → super_admin only
+/admin/org-access          → super_admin | org_owner
+/admin/roles-matrix        → super_admin | org_owner | org_admin
+/admin/access-checker      → any admin subrole
+/settings/users            → org_owner | org_admin | billing_admin (scoped)
+/settings/permissions      → super_admin | org_owner
+/settings/ai-providers     → super_admin | tech_admin
+/settings/integrations     → super_admin | tech_admin
+```
 
-**Phase 7 — Settings + Admin**
-- 14 settings pages (Users, Permissions, EffectivePermissions, HospitalBranches, Notifications, Integrations, MyEmail, SubjectTemplates, WhatsAppTemplates, AiProviders, TeamDigests, DqRules, FollowupAutomation, DataManagement)
-- 3 admin pages (ControlPanel, GoNoGo, OrgAccess)
-- Mobile pages (`MobileHomePage`, `MobileFollowUpPage`) + `MobileActionDock`, `SwipeableCard`
+Extend `_authenticated.tsx` `allowedRolesForPath` to call a new
+`canAccessAdminPath(path, subroles)` and redirect to `/access-denied` otherwise.
 
-**Phase 8 — Polish & QA**
-- Wire `CommandPalette` to all routes
-- Onboarding checklist
-- Permission gates on every route via `_authenticated/$.tsx` + `useHasPermission`
-- Manual smoke pass on each page, fix runtime errors
-- Build verification
+### 3. Playwright tenant-isolation tests
 
-## Technical notes
+`e2e/tenant-isolation.spec.ts` — seed two orgs via Supabase admin client in
+`globalSetup`, then:
 
-- **Routing rewrite**: every page becomes a `createFileRoute("/_authenticated/<path>")`. Sub-paths like `/claims/priority` map to `src/routes/_authenticated/claims/priority.tsx`. Dynamic IDs become `$id` segments. Hash anchors avoided.
-- **react-router-dom → @tanstack/react-router**: a thin compat layer (`router-compat.tsx`) already exists in the source — I'll port it so internal components keep using `Link`/`useNavigate` without per-file rewrites where possible, but pages will be migrated to native TanStack APIs.
-- **Edge functions → server functions**: bodies are reused verbatim with imports swapped from `Deno.env` to `process.env` and `serve()` wrapper replaced with `createServerFn` + Zod input validators + `requireSupabaseAuth` (or admin client for system-triggered ones).
-- **Secrets needed** (will request via `add_secret` when reached): `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM` (Phase 5). AI uses `LOVABLE_API_KEY` (already present).
-- **Scheduled dispatchers** (`dispatch-scheduled-reminders`, `dispatch-tpa-reminders`): exposed as `/api/public/cron/*` with a shared `CRON_SECRET` header check; user wires pg_cron later.
-- **Tests/E2E**: the source includes Cypress + Playwright + Vitest configs. Not ported in this plan (out of scope for "recreate the app"). Can be added on request after Phase 8.
-- **Excluded from port**: `_LegacyApp.tsx`, `Index.tsx` (placeholder), `PlaceholderPage.tsx`, `LaunchPage.tsx` (legacy launcher), source's `cypress/` `e2e/` `scripts/` folders.
+1. Log in as Org A user, fetch `/claims` API → assert 0 rows from Org B's claim IDs.
+2. Attempt direct REST: `GET /rest/v1/claims?id=eq.<OrgB-claim-id>` with Org A bearer → expect empty.
+3. Branch-restricted user inside Org A: assert `/claims` returns only own-branch claims.
+4. Cross-org admin escalation attempt via `promote_to_super_admin` → expect 403.
 
-## What I need from you to start
+`e2e/admin-subroles.spec.ts` — log in as each subrole, assert which `/admin/*` routes render vs redirect to `/access-denied`.
 
-Nothing — I have everything to begin Phase 1 once you switch to build mode. SMTP credentials will be requested at Phase 5; until then everything runs against Lovable Cloud + AI Gateway.
+Add CI npm script `e2e:isolation`.
 
-Approve this plan and switch to build mode to start with Phase 1 (Foundation).
+### 4. Server-function auth patches
+
+Audit + fix:
+
+- `src/lib/preflight.functions.ts` — `getPreflightStatus` needs `requireSupabaseAuth` + platform-admin gate.
+- `src/lib/whatsapp.functions.ts` — `sendWhatsApp` needs `requireSupabaseAuth` + org-membership check.
+- `src/lib/orgs.functions.ts` — verify each fn has middleware.
+- `src/routes/api/public/hooks/dispatch-notifications.ts` — replace anon-key gate with `DISPATCH_WEBHOOK_SECRET` HMAC (add secret request).
+- `src/routes/api/public/hooks/team-digests.ts` — make token check unconditional (no `if (process.env.NODE_ENV)` bypass).
+- `src/routes/api/public/hooks/whatsapp-delivery.ts` — verify provider signature.
+- Confirm `src/start.ts` registers `attachSupabaseAuth` as global `functionMiddleware`.
+
+For each patched fn: keep behavior identical for happy path, return 401/403 for unauth.
+
+## Out of scope (deferred to later sprint)
+
+- Encrypting `ai_providers.api_key` with pgcrypto (separate DB task).
+- Audit-log viewer UI (#18).
+- Custom email domain (#22).
+- Rate limiting (#10) — needs Cloudflare/edge config.
+
+## Execution order
+
+1. Submit DB migration for branch scope + admin subroles + helpers + RLS (one migration, requires user approval).
+2. After approval: update `routeAccess.ts`, `_authenticated.tsx`, `BranchPicker`, add `useBranchScope`, `useAdminSubroles` hooks.
+3. Patch server functions; request `DISPATCH_WEBHOOK_SECRET` if not present.
+4. Add Playwright specs + globalSetup seed.
+5. Run `bunx playwright test e2e/tenant-isolation.spec.ts` and report.
+
+## Risk notes
+
+- Branch RLS change can hide existing rows from current users — migration sets `branch_scope_mode='all'` for every existing member, so no regression on day one.
+- Admin subrole migration is additive; existing `organization_members.role` continues to work as the primary gate. Subroles are *additional* grants.
+- Tests rely on a service-role key being available to `globalSetup`; that's already present (`SUPABASE_SERVICE_ROLE_KEY`).
