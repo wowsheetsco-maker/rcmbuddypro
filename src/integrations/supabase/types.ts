@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_role_assignments: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          org_id: string
+          subrole: Database["public"]["Enums"]["admin_subrole"]
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          org_id: string
+          subrole: Database["public"]["Enums"]["admin_subrole"]
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          org_id?: string
+          subrole?: Database["public"]["Enums"]["admin_subrole"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       ahc_bookings: {
         Row: {
           beneficiary_name: string
@@ -2141,6 +2168,8 @@ export type Database = {
       }
       organization_members: {
         Row: {
+          branch_scope: string[] | null
+          branch_scope_mode: string
           created_at: string
           id: string
           last_seen_at: string | null
@@ -2149,6 +2178,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          branch_scope?: string[] | null
+          branch_scope_mode?: string
           created_at?: string
           id?: string
           last_seen_at?: string | null
@@ -2157,6 +2188,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          branch_scope?: string[] | null
+          branch_scope_mode?: string
           created_at?: string
           id?: string
           last_seen_at?: string | null
@@ -3143,6 +3176,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_branch: {
+        Args: { _branch_id: string; _org_id: string }
+        Returns: boolean
+      }
       get_own_smtp_settings: {
         Args: never
         Returns: {
@@ -3156,6 +3193,14 @@ export type Database = {
           smtp_username: string
           smtp_verified_at: string
         }[]
+      }
+      has_admin_subrole: {
+        Args: {
+          _org_id: string
+          _subrole: Database["public"]["Enums"]["admin_subrole"]
+          _user_id: string
+        }
+        Returns: boolean
       }
       has_org_role: {
         Args: {
@@ -3174,6 +3219,13 @@ export type Database = {
       user_org_ids: { Args: never; Returns: string[] }
     }
     Enums: {
+      admin_subrole:
+        | "super_admin"
+        | "org_owner"
+        | "org_admin"
+        | "billing_admin"
+        | "compliance_admin"
+        | "tech_admin"
       org_role: "owner" | "admin" | "manager" | "member" | "viewer"
     }
     CompositeTypes: {
@@ -3302,6 +3354,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admin_subrole: [
+        "super_admin",
+        "org_owner",
+        "org_admin",
+        "billing_admin",
+        "compliance_admin",
+        "tech_admin",
+      ],
       org_role: ["owner", "admin", "manager", "member", "viewer"],
     },
   },
