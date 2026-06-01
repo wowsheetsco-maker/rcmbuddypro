@@ -242,6 +242,8 @@ Deno.serve(async (req) => {
   // Resolve sender (per-user SMTP if available, else platform Resend sandbox)
   let actingUser: AppUserRow | null = null;
   if (body.actingUserId) {
+    const aclErr = await assertCallerCanActAs(supabase, authed, body.actingUserId);
+    if (aclErr) return aclErr;
     const { data } = await supabase
       .from("app_users")
       .select("id,name,email,smtp_host,smtp_port,smtp_username,smtp_password,smtp_use_tls,smtp_from_name,smtp_from_email,smtp_reply_to,smtp_verified_at")
@@ -249,6 +251,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     actingUser = (data as AppUserRow | null) ?? null;
   }
+
   const sender = resolveSender(actingUser);
   if (sender.mode === "resend" && (!LOVABLE_API_KEY || !RESEND_API_KEY)) {
     return new Response(
