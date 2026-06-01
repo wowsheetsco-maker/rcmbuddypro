@@ -29,7 +29,7 @@ export interface AdminSubrolesState {
  */
 export function useAdminSubroles(): AdminSubrolesState {
   const { userId, orgId } = useAuth();
-  const { isPlatformAdmin, isLoading: piLoading } = useIsPlatformAdmin();
+  const { isAdmin: isPlatformAdmin, loading: piLoading } = useIsPlatformAdmin();
   const [subroles, setSubroles] = useState<Set<AdminSubrole>>(new Set());
   const [isLoading, setIsLoading] = useState(true);
 
