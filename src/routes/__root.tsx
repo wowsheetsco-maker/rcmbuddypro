@@ -82,8 +82,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary" },
       { name: "twitter:title", content: "RCM Buddy — Hospital Revenue Cycle Management" },
       { name: "twitter:description", content: "Track claims, follow-ups, denials, and TPA recovery across hospital insurance billing." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1991ae03-e1d7-48df-bab2-7896edd888e7/id-preview-29b89dfb--743540c3-ec0c-496e-b96b-26590c9a7c37.lovable.app-1778578543839.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/1991ae03-e1d7-48df-bab2-7896edd888e7/id-preview-29b89dfb--743540c3-ec0c-496e-b96b-26590c9a7c37.lovable.app-1778578543839.png" },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/4e791d91-b3e0-4771-b542-6808f1b83dbb" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/4e791d91-b3e0-4771-b542-6808f1b83dbb" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
