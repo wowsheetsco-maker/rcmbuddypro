@@ -7,8 +7,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useHospitals } from "@/hooks/useHospitals";
+import { useBranchScope } from "@/hooks/useBranchScope";
 import { useGlobalFilter } from "@/components/global-filter-context";
 import { cn } from "@/lib/utils";
+
 
 /**
  * Compact picker for the top action bar — lets the user pin one or more
