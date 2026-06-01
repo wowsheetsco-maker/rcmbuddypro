@@ -6,6 +6,7 @@
 // into reminder_runs and reschedules next_run_at based on the cadence.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { verifyCronSecret } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
