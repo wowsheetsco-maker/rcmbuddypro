@@ -59,6 +59,11 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const authed = await requireUser(req);
+  if (authed instanceof Response) return authed;
+
+
+
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
     return new Response(
