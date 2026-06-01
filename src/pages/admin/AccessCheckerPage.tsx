@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@/lib/router-compat";
-import { ShieldCheck, CheckCircle2, XCircle, Search, User2, Building2, Loader2 } from "lucide-react";
+import { useLocation } from "@tanstack/react-router";
+import { ShieldCheck, CheckCircle2, XCircle, Search, User2, Building2, Loader2, ShieldAlert } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ROUTE_ROLE_RULES, allowedRolesForPath } from "@/lib/routeAccess";
 import { useAuth, type OrgRole } from "@/contexts/AuthContext";
 import {
@@ -19,8 +21,10 @@ import {
   type Action,
   type Resource,
 } from "@/hooks/useRolePermissions";
+import { useAdminSubroles, requiredSubrolesForPath, type AdminSubrole } from "@/hooks/useAdminSubroles";
 import { supabase } from "@/integrations/supabase/client";
 import type { UserRole } from "@/hooks/useAppUsers";
+
 
 const APP_ROLES: UserRole[] = [
   "Super Admin",
@@ -103,9 +107,28 @@ const SAMPLE_PATHS = [
 export default function AccessCheckerPage() {
   const { userId, orgId, role, isLoading } = useAuth();
   const { lookup, loading: permsLoading } = useRolePermissions();
+  const { subroles, isLoading: subrolesLoading } = useAdminSubroles();
+  useLocation(); // re-render when query string changes
+
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [pathInput, setPathInput] = useState("/claims/priority");
   const [actingRole, setActing] = useState<UserRole>(getActingRole());
+
+  // When the AdminSubroleGate redirected here, it appended ?attempted=<path>
+  // (and ?required=<comma-list>). Surface a banner that explains exactly
+  // which admin sub-role(s) the user is missing for that path.
+  const search = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
+  const attemptedPath = search.get("attempted");
+  const attemptedRequired = useMemo<AdminSubrole[]>(() => {
+    if (!attemptedPath) return [];
+    const fromUrl = (search.get("required") ?? "")
+      .split(",").map((s) => s.trim()).filter(Boolean) as AdminSubrole[];
+    if (fromUrl.length > 0) return fromUrl;
+    return (requiredSubrolesForPath(attemptedPath) ?? []) as AdminSubrole[];
+  }, [attemptedPath, search]);
+  const missingSubroles = attemptedRequired.filter((s) => !subroles.has(s));
+
+
 
   useEffect(() => {
     let cancelled = false;
@@ -153,6 +176,53 @@ export default function AccessCheckerPage() {
             </p>
           </div>
         </header>
+
+        {attemptedPath && attemptedRequired.length > 0 && (
+          <Alert variant={missingSubroles.length > 0 ? "destructive" : "default"}>
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>
+              {missingSubroles.length > 0
+                ? `Access blocked for ${attemptedPath}`
+                : `You should have access to ${attemptedPath}`}
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                That route requires one of these admin sub-roles:{" "}
+                {attemptedRequired.map((s) => (
+                  <Badge key={s} variant="outline" className="mr-1 font-mono">{s}</Badge>
+                ))}
+              </p>
+              {subrolesLoading ? (
+                <p className="flex items-center gap-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" /> Resolving your sub-roles…</p>
+              ) : missingSubroles.length > 0 ? (
+                <>
+                  <p>
+                    You are missing:{" "}
+                    {missingSubroles.map((s) => (
+                      <Badge key={s} variant="destructive" className="mr-1 font-mono">{s}</Badge>
+                    ))}
+                  </p>
+                  <p className="text-xs">
+                    You currently hold:{" "}
+                    {subroles.size === 0
+                      ? <span className="italic">no admin sub-roles in this org</span>
+                      : Array.from(subroles).map((s) => (
+                          <Badge key={s} variant="secondary" className="mr-1 font-mono">{s}</Badge>
+                        ))}
+                  </p>
+                  <p className="text-xs">
+                    Ask an Org Owner or Platform Super Admin to grant one of the required sub-roles in{" "}
+                    <Link to="/admin/roles-matrix" className="underline">Roles Matrix</Link>.
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs">Your current sub-roles satisfy the requirement — try opening the route again.</p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+
 
         {/* Current session summary */}
         <Card>

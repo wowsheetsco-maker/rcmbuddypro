@@ -7,8 +7,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useHospitals } from "@/hooks/useHospitals";
+import { useBranchScope } from "@/hooks/useBranchScope";
 import { useGlobalFilter } from "@/components/global-filter-context";
 import { cn } from "@/lib/utils";
+
 
 /**
  * Compact picker for the top action bar — lets the user pin one or more
@@ -16,7 +18,25 @@ import { cn } from "@/lib/utils";
  * scopes every dashboard, follow-up, and report.
  */
 export default function BranchPicker() {
-  const { groups, branches, loading } = useHospitals();
+  const { groups: allGroups, branches: allBranches, loading } = useHospitals();
+  const scope = useBranchScope();
+
+  // Scope-restricted users only see branches in their `branch_scope` list and
+  // groups that contain at least one such branch. The server enforces this
+  // via the `can_access_branch` RLS helper — this is UX-only.
+  const branches = useMemo(() => {
+    if (scope.mode !== "restricted") return allBranches;
+    const allowed = new Set(scope.branchIds);
+    return allBranches.filter((b) => allowed.has(b.id));
+  }, [allBranches, scope.mode, scope.branchIds]);
+
+  const groups = useMemo(() => {
+    if (scope.mode !== "restricted") return allGroups;
+    const allowedGroupIds = new Set(branches.map((b) => b.group_id));
+    return allGroups.filter((g) => allowedGroupIds.has(g.id));
+  }, [allGroups, branches, scope.mode]);
+
+
   const {
     groupIds, setGroupIds, branchIds, setBranchIds,
   } = useGlobalFilter();
