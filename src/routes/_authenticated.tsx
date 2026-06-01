@@ -1,10 +1,11 @@
-import { createFileRoute, Outlet, useLocation } from "@tanstack/react-router";
+import { createFileRoute, Outlet, useLocation, useNavigate as useTanstackNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { allowedRolesForPath } from "@/lib/routeAccess";
+import { useAdminSubroles, requiredSubrolesForPath } from "@/hooks/useAdminSubroles";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useNavigate } from "@/lib/router-compat";
 
@@ -43,6 +44,31 @@ function MobileRedirect() {
   return null;
 }
 
+/**
+ * Gate admin/settings paths behind admin-subrole assignments.
+ * Renders children if the path requires no admin subrole, or if the user
+ * holds at least one of the required subroles. Otherwise redirects to
+ * the access-checker page, which explains why access was denied.
+ */
+function AdminSubroleGate({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
+  const required = requiredSubrolesForPath(location.pathname);
+  const { hasAnyOf, isLoading } = useAdminSubroles();
+  const tNavigate = useTanstackNavigate();
+
+  useEffect(() => {
+    if (!required) return;
+    if (isLoading) return;
+    if (!hasAnyOf(required)) {
+      tNavigate({ to: "/admin/access-checker", replace: true });
+    }
+  }, [required, isLoading, hasAnyOf, tNavigate]);
+
+  if (required && isLoading) return null;
+  if (required && !hasAnyOf(required)) return null;
+  return <>{children}</>;
+}
+
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
 });
@@ -59,7 +85,11 @@ function AuthenticatedLayout() {
         <Toaster />
         <Sonner />
         <MobileRedirect />
-        {mounted ? <Outlet /> : null}
+        {mounted ? (
+          <AdminSubroleGate>
+            <Outlet />
+          </AdminSubroleGate>
+        ) : null}
       </TooltipProvider>
     </ProtectedRoute>
   );
