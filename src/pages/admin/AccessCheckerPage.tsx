@@ -107,9 +107,27 @@ const SAMPLE_PATHS = [
 export default function AccessCheckerPage() {
   const { userId, orgId, role, isLoading } = useAuth();
   const { lookup, loading: permsLoading } = useRolePermissions();
+  const { subroles, isLoading: subrolesLoading } = useAdminSubroles();
+  const location = useLocation();
   const [isPlatformAdmin, setIsPlatformAdmin] = useState(false);
   const [pathInput, setPathInput] = useState("/claims/priority");
   const [actingRole, setActing] = useState<UserRole>(getActingRole());
+
+  // When the AdminSubroleGate redirected here, it appended ?attempted=<path>
+  // (and ?required=<comma-list>). Surface a banner that explains exactly
+  // which admin sub-role(s) the user is missing for that path.
+  const search = new URLSearchParams(location.searchStr ?? (typeof window !== "undefined" ? window.location.search : ""));
+  const attemptedPath = search.get("attempted");
+  const attemptedRequired = useMemo<AdminSubrole[]>(() => {
+    if (!attemptedPath) return [];
+    const fromUrl = (search.get("required") ?? "")
+      .split(",").map((s) => s.trim()).filter(Boolean) as AdminSubrole[];
+    if (fromUrl.length > 0) return fromUrl;
+    return (requiredSubrolesForPath(attemptedPath) ?? []) as AdminSubrole[];
+  }, [attemptedPath, search]);
+  const missingSubroles = attemptedRequired.filter((s) => !subroles.has(s));
+
+
 
   useEffect(() => {
     let cancelled = false;
