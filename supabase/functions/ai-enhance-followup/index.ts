@@ -2,6 +2,9 @@
 // Receives the current draft body + tone + context (TPA, claim count,
 // outstanding amount) and returns a polished version in the requested tone.
 
+import { requireUser } from "../_shared/auth.ts";
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
