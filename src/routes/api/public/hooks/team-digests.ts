@@ -45,12 +45,22 @@ async function handle(request: Request) {
     );
   }
 
+  // Shared-secret gate. Fail closed when no token is configured — a
+  // public scheduler endpoint without authentication is unacceptable
+  // for a production hospital deployment.
+  if (!WEBHOOK_TOKEN) {
+    return new Response(
+      JSON.stringify({ error: "TEAM_DIGEST_WEBHOOK_TOKEN not configured" }),
+      { status: 503, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   const url = new URL(request.url);
   const cadenceParam = (url.searchParams.get("cadence") ?? "daily") as Cadence;
   const orgId = url.searchParams.get("orgId") ?? undefined;
   const token = url.searchParams.get("token") ?? request.headers.get("x-webhook-token") ?? "";
 
-  if (WEBHOOK_TOKEN && token !== WEBHOOK_TOKEN) {
+  if (token !== WEBHOOK_TOKEN) {
     return new Response(JSON.stringify({ error: "Invalid token" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
