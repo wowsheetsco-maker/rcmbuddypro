@@ -53,6 +53,11 @@ const DEFAULT_TPL: Record<Cadence, DigestTpl> = {
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  const gate = await requireUserOrCron(req);
+  if (gate instanceof Response) return gate;
+
+
+
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const RESEND_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
