@@ -6,6 +6,7 @@
 // calls the model, and logs the result to public.ai_generations.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireUser } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -245,9 +246,14 @@ async function extractAttachmentText(
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
+  // Require authenticated caller — provider api_key fetch must never be public.
+  const authed = await requireUser(req);
+  if (authed instanceof Response) return authed;
+
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
 
   const t0 = Date.now();
   let body: RequestBody;
@@ -280,6 +286,21 @@ Deno.serve(async (req) => {
       status: 404,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+  }
+  // Authorization: caller must belong to the provider's org.
+  {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", authed.id)
+      .eq("org_id", prov.org_id)
+      .maybeSingle();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Forbidden: not a member of this organization" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
   }
   if (!prov.is_active) {
     return new Response(JSON.stringify({ error: `Provider "${prov.display_name}" is disabled.` }), {

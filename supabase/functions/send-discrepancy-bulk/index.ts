@@ -5,6 +5,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 import { resolveSender, sendWithSender, type AppUserRow } from "../_shared/smtpSender.ts";
+import { requireUser, assertCallerCanActAs } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -211,12 +212,16 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const authed = await requireUser(req);
+  if (authed instanceof Response) return authed;
+
   const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
   const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY") ?? "";
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY") ?? "";
 
   const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
 
   let body: RequestBody;
   try {
@@ -237,6 +242,8 @@ Deno.serve(async (req) => {
   // Resolve sender (per-user SMTP if available, else platform Resend sandbox)
   let actingUser: AppUserRow | null = null;
   if (body.actingUserId) {
+    const aclErr = await assertCallerCanActAs(supabase, authed, body.actingUserId);
+    if (aclErr) return aclErr;
     const { data } = await supabase
       .from("app_users")
       .select("id,name,email,smtp_host,smtp_port,smtp_username,smtp_password,smtp_use_tls,smtp_from_name,smtp_from_email,smtp_reply_to,smtp_verified_at")
@@ -244,6 +251,7 @@ Deno.serve(async (req) => {
       .maybeSingle();
     actingUser = (data as AppUserRow | null) ?? null;
   }
+
   const sender = resolveSender(actingUser);
   if (sender.mode === "resend" && (!LOVABLE_API_KEY || !RESEND_API_KEY)) {
     return new Response(

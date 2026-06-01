@@ -2,6 +2,9 @@
 // Receives the current draft body + tone + context (TPA, claim count,
 // outstanding amount) and returns a polished version in the requested tone.
 
+import { requireUser } from "../_shared/auth.ts";
+
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -55,6 +58,11 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const authed = await requireUser(req);
+  if (authed instanceof Response) return authed;
+
+
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   if (!LOVABLE_API_KEY) {
