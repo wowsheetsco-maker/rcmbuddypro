@@ -117,7 +117,7 @@ export default function AccessCheckerPage() {
   // When the AdminSubroleGate redirected here, it appended ?attempted=<path>
   // (and ?required=<comma-list>). Surface a banner that explains exactly
   // which admin sub-role(s) the user is missing for that path.
-  const search = new URLSearchParams(location.searchStr ?? (typeof window !== "undefined" ? window.location.search : ""));
+  const search = new URLSearchParams(typeof window !== "undefined" ? window.location.search : "");
   const attemptedPath = search.get("attempted");
   const attemptedRequired = useMemo<AdminSubrole[]>(() => {
     if (!attemptedPath) return [];
