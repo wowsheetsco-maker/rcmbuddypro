@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 /**
  * Live RLS probe used by the Go/No-Go page.
@@ -9,8 +10,24 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
  *   3. each policy's qual references an org helper.
  *
  * Returns { ok, failures[] }. Never throws on policy gaps — only on infra errors.
+ *
+ * Auth: requires an authenticated user who is a platform admin. The handler
+ * uses supabaseAdmin (service-role) for the introspection queries, so the
+ * gate is enforced via has_role check against the caller's claims.
  */
-export const getPreflightStatus = createServerFn({ method: "GET" }).handler(async () => {
+export const getPreflightStatus = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    // Platform-admin gate: verify the caller has a platform_admins row.
+    const { data: paRow } = await supabaseAdmin
+      .from("platform_admins")
+      .select("email")
+      .ilike("email", (context.claims.email as string | undefined) ?? "")
+      .maybeSingle();
+    if (!paRow) {
+      return { ok: false, failures: ["Forbidden: platform admin only"] };
+    }
+
   // Tables to skip: not org-scoped or intentionally global.
   const allowlist = new Set([
     "platform_apps",
