@@ -176,6 +176,53 @@ export default function AccessCheckerPage() {
           </div>
         </header>
 
+        {attemptedPath && attemptedRequired.length > 0 && (
+          <Alert variant={missingSubroles.length > 0 ? "destructive" : "default"}>
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>
+              {missingSubroles.length > 0
+                ? `Access blocked for ${attemptedPath}`
+                : `You should have access to ${attemptedPath}`}
+            </AlertTitle>
+            <AlertDescription className="space-y-2">
+              <p>
+                That route requires one of these admin sub-roles:{" "}
+                {attemptedRequired.map((s) => (
+                  <Badge key={s} variant="outline" className="mr-1 font-mono">{s}</Badge>
+                ))}
+              </p>
+              {subrolesLoading ? (
+                <p className="flex items-center gap-2 text-xs"><Loader2 className="h-3 w-3 animate-spin" /> Resolving your sub-roles…</p>
+              ) : missingSubroles.length > 0 ? (
+                <>
+                  <p>
+                    You are missing:{" "}
+                    {missingSubroles.map((s) => (
+                      <Badge key={s} variant="destructive" className="mr-1 font-mono">{s}</Badge>
+                    ))}
+                  </p>
+                  <p className="text-xs">
+                    You currently hold:{" "}
+                    {subroles.size === 0
+                      ? <span className="italic">no admin sub-roles in this org</span>
+                      : Array.from(subroles).map((s) => (
+                          <Badge key={s} variant="secondary" className="mr-1 font-mono">{s}</Badge>
+                        ))}
+                  </p>
+                  <p className="text-xs">
+                    Ask an Org Owner or Platform Super Admin to grant one of the required sub-roles in{" "}
+                    <Link to="/admin/roles-matrix" className="underline">Roles Matrix</Link>.
+                  </p>
+                </>
+              ) : (
+                <p className="text-xs">Your current sub-roles satisfy the requirement — try opening the route again.</p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+
+
+
         {/* Current session summary */}
         <Card>
           <CardHeader>
