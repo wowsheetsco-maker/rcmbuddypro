@@ -287,6 +287,21 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+  // Authorization: caller must belong to the provider's org.
+  {
+    const { data: membership } = await supabase
+      .from("organization_members")
+      .select("role")
+      .eq("user_id", authed.id)
+      .eq("org_id", prov.org_id)
+      .maybeSingle();
+    if (!membership) {
+      return new Response(JSON.stringify({ error: "Forbidden: not a member of this organization" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+  }
   if (!prov.is_active) {
     return new Response(JSON.stringify({ error: `Provider "${prov.display_name}" is disabled.` }), {
       status: 400,
