@@ -6,6 +6,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import * as XLSX from "https://esm.sh/xlsx@0.18.5";
 import { resolveSender, sendWithSender, type AppUserRow } from "../_shared/smtpSender.ts";
+import { requireUserOrCron, assertCallerCanActAs } from "../_shared/auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
