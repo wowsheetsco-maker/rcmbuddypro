@@ -37,6 +37,39 @@ const STATUS_BADGE: Record<string, string> = {
   cancelled: "bg-muted text-muted-foreground line-through",
 };
 
+function toExportRows(rows: Invoice[], corpMap: Map<string, string>): InvoiceRow[] {
+  return rows.map((r) => ({
+    invoice_no: r.invoice_no,
+    corporate_name: corpMap.get(r.corporate_id) ?? "—",
+    period_start: r.period_start,
+    period_end: r.period_end,
+    visit_count: r.visit_count,
+    total_amount: Number(r.total_amount),
+    paid_amount: Number(r.paid_amount),
+    due_date: r.due_date,
+    status: r.status,
+    generated_at: r.generated_at,
+    submitted_at: r.submitted_at,
+  }));
+}
+
+async function exportOne(r: Invoice, corpMap: Map<string, string>, fmt: "xlsx" | "pdf") {
+  const inv = toExportRows([r], corpMap)[0];
+  const { data } = await supabase
+    .from("opd_invoice_items")
+    .select("amount, description, visit_id, opd_visits(visit_date, patient_name)")
+    .eq("invoice_id", r.id);
+  const lines: InvoiceLine[] = (data ?? []).map((row: any) => ({
+    amount: Number(row.amount),
+    description: row.description ?? null,
+    visit_date: row.opd_visits?.visit_date ?? "",
+    patient_name: row.opd_visits?.patient_name ?? "",
+  }));
+  if (fmt === "xlsx") exportSingleInvoiceXlsx(inv, lines);
+  else exportSingleInvoicePdf(inv, lines);
+}
+
+
 export default function OpdInvoicesPage() {
   const [rows, setRows] = useState<Invoice[]>([]);
   const [corps, setCorps] = useState<Corp[]>([]);
