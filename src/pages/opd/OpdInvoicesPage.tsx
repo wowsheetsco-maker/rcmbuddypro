@@ -237,8 +237,26 @@ function GenerateBulkDialog({ corps, onSaved }: { corps: Corp[]; onSaved: () => 
       due_date: dueDate,
       status: "draft",
     }).select("id").single();
+    if (error || !inv) {
+      setSaving(false);
+      return toast({ title: "Failed", description: error?.message ?? "Insert returned no row", variant: "destructive" });
+    }
+    // Populate invoice line items from the priced visits so per-invoice export shows detail.
+    const { data: visitRows } = await supabase
+      .from("opd_visits")
+      .select("id, payable_amount, patient_name, visit_date")
+      .eq("corporate_id", f.corporate_id)
+      .gte("visit_date", f.period_start)
+      .lte("visit_date", f.period_end);
+    if (visitRows && visitRows.length > 0) {
+      const items = visitRows.map((v: any) => ({
+        org_id: orgId, invoice_id: inv.id, visit_id: v.id,
+        description: `${v.visit_date} · ${v.patient_name ?? ""}`,
+        amount: Number(v.payable_amount),
+      }));
+      await supabase.from("opd_invoice_items").insert(items);
+    }
     setSaving(false);
-    if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: `Draft invoice ${invoiceNo} created`, description: `${preview.count} visits · ₹${Math.round(preview.amount).toLocaleString("en-IN")}` });
     onSaved();
   };
