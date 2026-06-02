@@ -8,10 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FilePlus2 } from "lucide-react";
+import { Plus, FilePlus2, FileSpreadsheet, FileText, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+import {
+  exportInvoicesXlsx, exportInvoicesPdf,
+  exportSingleInvoiceXlsx, exportSingleInvoicePdf,
+  type InvoiceRow, type InvoiceLine,
+} from "@/lib/opdInvoiceExport";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Invoice {
   id: string; invoice_no: string; corporate_id: string; period_start: string; period_end: string;
