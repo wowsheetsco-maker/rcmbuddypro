@@ -246,6 +246,12 @@ const ROUTES: Record<string, RouteEntry> = {
   "/opd/wellness-events": WellnessEventsPage,
   "/opd/bulk-submit": OpdBulkSubmitPage,
   "/opd/analytics": OpdAnalyticsPage,
+  "/opd/eligibility-check": OpdEligibilityCheckPage,
+  "/opd/appointments": OpdAppointmentsPage,
+  "/opd/reports": OpdReportsPage,
+  "/opd/follow-up": OpdFollowUpPage,
+  "/opd/invoices": OpdInvoicesPage,
+  "/opd/tasks": OpdTasksPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";
