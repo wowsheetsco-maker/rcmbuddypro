@@ -8,10 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, FilePlus2 } from "lucide-react";
+import { Plus, FilePlus2, FileSpreadsheet, FileText, Download } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+import {
+  exportInvoicesXlsx, exportInvoicesPdf,
+  exportSingleInvoiceXlsx, exportSingleInvoicePdf,
+  type InvoiceRow, type InvoiceLine,
+} from "@/lib/opdInvoiceExport";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface Invoice {
   id: string; invoice_no: string; corporate_id: string; period_start: string; period_end: string;
@@ -30,6 +36,39 @@ const STATUS_BADGE: Record<string, string> = {
   outstanding: "bg-red-500/15 text-red-700 border-red-500/30",
   cancelled: "bg-muted text-muted-foreground line-through",
 };
+
+function toExportRows(rows: Invoice[], corpMap: Map<string, string>): InvoiceRow[] {
+  return rows.map((r) => ({
+    invoice_no: r.invoice_no,
+    corporate_name: corpMap.get(r.corporate_id) ?? "—",
+    period_start: r.period_start,
+    period_end: r.period_end,
+    visit_count: r.visit_count,
+    total_amount: Number(r.total_amount),
+    paid_amount: Number(r.paid_amount),
+    due_date: r.due_date,
+    status: r.status,
+    generated_at: r.generated_at,
+    submitted_at: r.submitted_at,
+  }));
+}
+
+async function exportOne(r: Invoice, corpMap: Map<string, string>, fmt: "xlsx" | "pdf") {
+  const inv = toExportRows([r], corpMap)[0];
+  const { data } = await supabase
+    .from("opd_invoice_items")
+    .select("amount, description, visit_id, opd_visits(visit_date, patient_name)")
+    .eq("invoice_id", r.id);
+  const lines: InvoiceLine[] = (data ?? []).map((row: any) => ({
+    amount: Number(row.amount),
+    description: row.description ?? null,
+    visit_date: row.opd_visits?.visit_date ?? "",
+    patient_name: row.opd_visits?.patient_name ?? "",
+  }));
+  if (fmt === "xlsx") exportSingleInvoiceXlsx(inv, lines);
+  else exportSingleInvoicePdf(inv, lines);
+}
+
 
 export default function OpdInvoicesPage() {
   const [rows, setRows] = useState<Invoice[]>([]);
@@ -74,10 +113,18 @@ export default function OpdInvoicesPage() {
             <h1 className="text-2xl font-display">Invoices</h1>
             <p className="text-sm text-muted-foreground">Bulk corporate invoicing with status pipeline and aging.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><FilePlus2 className="h-4 w-4 mr-1" /> Generate bulk invoice</Button></DialogTrigger>
-            <GenerateBulkDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportInvoicesXlsx(toExportRows(filtered, corpMap))}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel ({filtered.length})
+            </Button>
+            <Button variant="outline" onClick={() => exportInvoicesPdf(toExportRows(filtered, corpMap))}>
+              <FileText className="h-4 w-4 mr-1" /> PDF
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><FilePlus2 className="h-4 w-4 mr-1" /> Generate bulk invoice</Button></DialogTrigger>
+              <GenerateBulkDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
+            </Dialog>
+          </div>
         </header>
 
         <div className="grid grid-cols-3 gap-3">
@@ -106,6 +153,7 @@ export default function OpdInvoicesPage() {
                     <TableHead>Invoice #</TableHead><TableHead>Corporate</TableHead><TableHead>Period</TableHead>
                     <TableHead className="text-right">Visits</TableHead><TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Paid</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead>
+                    <TableHead className="text-right">Export</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {filtered.map((r) => (
@@ -123,6 +171,17 @@ export default function OpdInvoicesPage() {
                             <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                           </Select>
                           <Badge className={`mt-1 ${STATUS_BADGE[r.status] ?? ""}`} variant="outline">{r.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-7"><Download className="h-3 w-3 mr-1" />Export</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => exportOne(r, corpMap, "xlsx")}><FileSpreadsheet className="h-3 w-3 mr-2" />Excel</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportOne(r, corpMap, "pdf")}><FileText className="h-3 w-3 mr-2" />PDF</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -178,8 +237,26 @@ function GenerateBulkDialog({ corps, onSaved }: { corps: Corp[]; onSaved: () => 
       due_date: dueDate,
       status: "draft",
     }).select("id").single();
+    if (error || !inv) {
+      setSaving(false);
+      return toast({ title: "Failed", description: error?.message ?? "Insert returned no row", variant: "destructive" });
+    }
+    // Populate invoice line items from the priced visits so per-invoice export shows detail.
+    const { data: visitRows } = await supabase
+      .from("opd_visits")
+      .select("id, payable_amount, patient_name, visit_date")
+      .eq("corporate_id", f.corporate_id)
+      .gte("visit_date", f.period_start)
+      .lte("visit_date", f.period_end);
+    if (visitRows && visitRows.length > 0) {
+      const items = visitRows.map((v: any) => ({
+        org_id: orgId, invoice_id: inv.id, visit_id: v.id,
+        description: `${v.visit_date} · ${v.patient_name ?? ""}`,
+        amount: Number(v.payable_amount),
+      }));
+      await supabase.from("opd_invoice_items").insert(items);
+    }
     setSaving(false);
-    if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     toast({ title: `Draft invoice ${invoiceNo} created`, description: `${preview.count} visits · ₹${Math.round(preview.amount).toLocaleString("en-IN")}` });
     onSaved();
   };

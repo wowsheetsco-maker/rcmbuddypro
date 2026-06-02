@@ -49,7 +49,8 @@ export default function OpdLanding() {
     { label: "Tasks", path: "/opd/tasks", icon: ClipboardList, desc: "Assign & track" },
     { label: "Wellness events", path: "/opd/wellness-events", icon: PartyPopper, desc: "Camps + AHC outcomes" },
     { label: "Bulk submit", path: "/opd/bulk-submit", icon: UploadCloud, desc: "Aggregator batches" },
-    { label: "Analytics", path: "/opd/analytics", icon: BarChart3, desc: "Revenue & utilization" },
+    { label: "Analytics", path: "/opd/analytics", icon: BarChart3, desc: "TAT, rejections, wallets" },
+    { label: "Corporate analytics", path: "/opd/corporate-analytics", icon: BarChart3, desc: "Revenue & utilization by corporate" },
   ];
 
   return (
