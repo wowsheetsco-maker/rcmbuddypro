@@ -36,6 +36,7 @@ import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './rout
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
 import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
+import { Route as ApiPublicHooksOpdAppointmentRemindersRouteImport } from './routes/api/public/hooks/opd-appointment-reminders'
 import { Route as ApiPublicHooksDispatchNotificationsRouteImport } from './routes/api/public/hooks/dispatch-notifications'
 
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -186,6 +187,12 @@ const ApiPublicHooksTeamDigestsRoute =
     path: '/api/public/hooks/team-digests',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksOpdAppointmentRemindersRoute =
+  ApiPublicHooksOpdAppointmentRemindersRouteImport.update({
+    id: '/api/public/hooks/opd-appointment-reminders',
+    path: '/api/public/hooks/opd-appointment-reminders',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDispatchNotificationsRoute =
   ApiPublicHooksDispatchNotificationsRouteImport.update({
     id: '/api/public/hooks/dispatch-notifications',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
@@ -247,6 +255,7 @@ export interface FileRoutesByTo {
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
@@ -278,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
+  '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/claims/'
     | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
     | '/api/public/hooks/whatsapp-delivery'
   fileRoutesByTo: FileRoutesByTo
@@ -337,6 +348,7 @@ export interface FileRouteTypes {
     | '/settings/users'
     | '/claims'
     | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
     | '/api/public/hooks/whatsapp-delivery'
   id:
@@ -367,6 +379,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/users'
     | '/_authenticated/claims/'
     | '/api/public/hooks/dispatch-notifications'
+    | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
     | '/api/public/hooks/whatsapp-delivery'
   fileRoutesById: FileRoutesById
@@ -379,6 +392,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicHooksDispatchNotificationsRoute: typeof ApiPublicHooksDispatchNotificationsRoute
+  ApiPublicHooksOpdAppointmentRemindersRoute: typeof ApiPublicHooksOpdAppointmentRemindersRoute
   ApiPublicHooksTeamDigestsRoute: typeof ApiPublicHooksTeamDigestsRoute
   ApiPublicHooksWhatsappDeliveryRoute: typeof ApiPublicHooksWhatsappDeliveryRoute
 }
@@ -574,6 +588,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksTeamDigestsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/opd-appointment-reminders': {
+      id: '/api/public/hooks/opd-appointment-reminders'
+      path: '/api/public/hooks/opd-appointment-reminders'
+      fullPath: '/api/public/hooks/opd-appointment-reminders'
+      preLoaderRoute: typeof ApiPublicHooksOpdAppointmentRemindersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/dispatch-notifications': {
       id: '/api/public/hooks/dispatch-notifications'
       path: '/api/public/hooks/dispatch-notifications'
@@ -686,19 +707,11 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicHooksDispatchNotificationsRoute:
     ApiPublicHooksDispatchNotificationsRoute,
+  ApiPublicHooksOpdAppointmentRemindersRoute:
+    ApiPublicHooksOpdAppointmentRemindersRoute,
   ApiPublicHooksTeamDigestsRoute: ApiPublicHooksTeamDigestsRoute,
   ApiPublicHooksWhatsappDeliveryRoute: ApiPublicHooksWhatsappDeliveryRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

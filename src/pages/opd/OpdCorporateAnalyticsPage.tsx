@@ -12,7 +12,7 @@ interface Visit {
   corporate_id: string | null; employee_id: string | null; department?: string | null; services?: any;
 }
 interface Corp { id: string; name: string; employee_limit?: number | null }
-interface Emp { id: string; corporate_id: string | null; wallet_total: number; wallet_balance: number; is_active?: boolean | null }
+interface Emp { id: string; corporate_id: string | null; wallet_total: number; wallet_balance: number }
 
 const inr = (n: number) => `₹${Math.round(n).toLocaleString("en-IN")}`;
 const today = () => new Date().toISOString().slice(0, 10);
@@ -35,7 +35,7 @@ export default function OpdCorporateAnalyticsPage() {
       supabase.from("opd_visits").select("id,visit_date,status,payable_amount,corporate_id,employee_id,department,services")
         .gte("visit_date", from).lte("visit_date", to).limit(5000),
       supabase.from("opd_corporates").select("id,name,employee_limit"),
-      supabase.from("opd_employees").select("id,corporate_id,wallet_total,wallet_balance,is_active").limit(5000),
+      supabase.from("opd_employees").select("id,corporate_id,wallet_total,wallet_balance").limit(5000),
     ]);
     setVisits((v.data ?? []) as Visit[]);
     setCorps((c.data ?? []) as Corp[]);
@@ -51,7 +51,7 @@ export default function OpdCorporateAnalyticsPage() {
   const byCorporate = useMemo(() => {
     const map = new Map<string, { name: string; visits: number; revenue: number; uniqueEmployees: Set<string>; eligible: number }>();
     const empByCorp = new Map<string, number>();
-    emps.filter((e) => e.is_active !== false).forEach((e) => {
+    emps.forEach((e) => {
       if (!e.corporate_id) return;
       empByCorp.set(e.corporate_id, (empByCorp.get(e.corporate_id) ?? 0) + 1);
     });
