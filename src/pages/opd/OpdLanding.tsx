@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Stethoscope, Calendar, Activity, Users } from "lucide-react";
+import { Link } from "@/lib/router-compat";
+import {
+  Stethoscope, Calendar, Activity, Users, ShieldCheck, CalendarClock,
+  FileText, ListChecks, Receipt, BarChart3, ClipboardList, Building2,
+  PartyPopper, UploadCloud,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
 export default function OpdLanding() {
@@ -32,6 +37,21 @@ export default function OpdLanding() {
     { label: "Active corporates", value: kpis.corporates, icon: Users, accent: "text-purple-500" },
   ];
 
+  const menu = [
+    { label: "Corporates", path: "/opd/corporates", icon: Building2, desc: "Master + contracts" },
+    { label: "Employees", path: "/opd/employees", icon: Users, desc: "Roster, wallets, dependents" },
+    { label: "Eligibility check", path: "/opd/eligibility-check", icon: ShieldCheck, desc: "Instant ✅ / ❌ lookup" },
+    { label: "Appointments", path: "/opd/appointments", icon: CalendarClock, desc: "Booking + provider confirmation" },
+    { label: "Visits", path: "/opd/visits", icon: Stethoscope, desc: "Quick capture register" },
+    { label: "Reports", path: "/opd/reports", icon: FileText, desc: "Submission tracker + SLA RAG" },
+    { label: "Outstanding follow-up", path: "/opd/follow-up", icon: ListChecks, desc: "All operational backlogs" },
+    { label: "Invoices", path: "/opd/invoices", icon: Receipt, desc: "Bulk per corporate + aging" },
+    { label: "Tasks", path: "/opd/tasks", icon: ClipboardList, desc: "Assign & track" },
+    { label: "Wellness events", path: "/opd/wellness-events", icon: PartyPopper, desc: "Camps + AHC outcomes" },
+    { label: "Bulk submit", path: "/opd/bulk-submit", icon: UploadCloud, desc: "Aggregator batches" },
+    { label: "Analytics", path: "/opd/analytics", icon: BarChart3, desc: "Revenue & utilization" },
+  ];
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -54,20 +74,22 @@ export default function OpdLanding() {
           ))}
         </div>
 
-        <Card>
-          <CardHeader><CardTitle>Module status</CardTitle></CardHeader>
-          <CardContent className="space-y-2 text-sm">
-            <p className="text-muted-foreground">All phases live: schema, navigation, capture, masters, bookings, events, batching, reconciliation and analytics.</p>
-            <ul className="list-disc pl-5 space-y-1 text-muted-foreground">
-              <li>Visits → quick-capture, batch submit, settlement reconciliation</li>
-              <li>Employees → roster, wallet balances, CSV import, eligibility sync</li>
-              <li>AHC → package master + booking funnel (booked → settled)</li>
-              <li>Wellness events → planner with revenue / expense / ROI</li>
-              <li>Analytics → aggregator revenue, rejection drivers, TAT, escalations &gt;14d</li>
-              <li>Aggregator eligibility APIs: stubbed sync — wire vendor credentials in Settings to enable live polling</li>
-            </ul>
-          </CardContent>
-        </Card>
+        <div>
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-2">Module menu</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {menu.map((m) => (
+              <Link key={m.path} to={m.path} className="group">
+                <Card className="h-full transition-colors hover:bg-accent/40 hover:border-primary/40">
+                  <CardContent className="pt-5 pb-4">
+                    <m.icon className="h-5 w-5 text-primary mb-2" />
+                    <div className="font-medium">{m.label}</div>
+                    <div className="text-xs text-muted-foreground">{m.desc}</div>
+                  </CardContent>
+                </Card>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </AppLayout>
   );

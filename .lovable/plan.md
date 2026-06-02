@@ -1,121 +1,48 @@
-## Goal
+## Wellness / OPD — full build plan
 
-Lock down RCM Buddy for hospital deployment by adding branch-scoped data access, admin sub-roles, tenant-isolation tests, and patching all remaining unauthenticated server functions.
+The spec covers ~9 functional areas. Rather than one huge migration + 20 pages in a single turn (high risk of breakage), I'll ship it in 4 phases. Each phase is independently usable and leaves the app green.
 
-## Scope (4 work streams, executed in order)
+### Phase 1 — Data model (1 migration)
 
-### 1. Branch-scoped authorization (DB + UI)
+Extend existing tables and add what's missing:
 
-**DB migration** — extend membership with optional branch scope:
+- `opd_corporates` — add `hr_contact_name/email/phone`, `billing_contact_name/email/phone`, `employee_limit`, `dependents_allowed`, `invoice_cycle` (monthly/quarterly), `package_id`.
+- `opd_employees` — already exists; ensure `status`, `department`, `mobile`, `email`, `corporate_id`. Add if missing.
+- New `opd_dependents` (employee_id, relation [spouse/child/parent], name, dob, gender, is_active).
+- New `opd_appointments` (corporate_id, employee_id, provider, specialty, scheduled_at, status [booked/confirmed/rescheduled/cancelled/completed/no_show], provider_confirmed_at, reminder_24h_sent_at, reminder_same_day_sent_at, notes).
+- New `opd_reports` (appointment_id OR visit_id, stage [awaiting_provider/received/qc/sent_employee/sent_corporate/closed], received_at, qc_at, sent_employee_at, sent_corporate_at, sla_target_at, file_path, file_name).
+- New `opd_invoices` (corporate_id, invoice_no, period_start, period_end, visit_count, gross_amount, tax_amount, total_amount, due_date, status [draft/submitted/part_paid/paid/outstanding], paid_amount, generated_at, submitted_at).
+- New `opd_invoice_items` (invoice_id, visit_id, amount).
+- New `opd_followup_tasks` (entity_type [appointment/report/invoice/payment], entity_id, title, due_at, assigned_to app_user_id, status [open/done], completed_at).
 
-```text
-organization_members
-  + branch_scope            uuid[]  NULL   -- NULL = all branches in org
-  + branch_scope_mode       text    'all' | 'restricted' (default 'all')
-```
+All tables: org_id NOT NULL, full GRANT + RLS via `is_org_member(org_id)` matching existing OPD tables.
 
-- New SECURITY DEFINER helper `can_access_branch(_org_id uuid, _branch_id uuid)`:
-  returns `is_platform_admin() OR (member of org AND (branch_scope_mode='all' OR _branch_id = ANY(branch_scope)))`.
-- Add branch-scoped RLS policies on tables that carry `hospital_branch_id`:
-  `claims`, `gov_claims`, `gov_empanelment`, `opd_corporates`, `ahc_bookings` (via package→branch is N/A; tables w/ branch column only).
-- Policies stay org-scoped but add `AND (hospital_branch_id IS NULL OR can_access_branch(org_id, hospital_branch_id))` on SELECT/UPDATE/DELETE.
-- Leave existing `is_org_member` SELECT policies intact for tables without `hospital_branch_id`.
+### Phase 2 — Operational pages
 
-**Frontend**
-- New `useBranchScope()` hook reading from `organization_members` for current `auth.uid()` + current org.
-- `BranchPicker` already exists — filter its options by `branch_scope` when `mode='restricted'`.
-- Hide branch-switcher option in UI when user has only one allowed branch.
+1. **Eligibility Check** (`/opd/eligibility`) — search by Employee ID / mobile / corporate, instant ✅/❌ card with employee + dependents + corporate validity dates.
+2. **Outstanding Follow-Up Dashboard** (`/opd/follow-up`) — 4 tile groups (Appointments / Reports / Invoices / Payments) with drill-through lists.
+3. **Report Tracking** (`/opd/reports`) — workflow board with RAG SLA chips (green <24h, amber 24-72h, red >72h).
+4. **Appointments** (`/opd/appointments`) — list + capture, status pipeline, provider-confirmation toggle, manual "send reminder" action.
 
-### 2. Admin sub-roles
+### Phase 3 — Revenue & invoicing
 
-**DB**
+5. **Invoices** (`/opd/invoices`) — list with status pipeline + aging; "Generate bulk invoice" dialog (corporate + period → preview visit count & amount → create draft → submit).
+6. **Invoice detail** drawer — items, status transitions, payment recording.
+7. Hook into existing OPD analytics for **Corporate-wise revenue + utilization** widgets.
 
-```text
-CREATE TYPE admin_subrole AS ENUM (
-  'super_admin',         -- platform-wide; matches existing platform_admins
-  'org_owner',           -- maps from organization_members.role='owner'
-  'org_admin',           -- maps from organization_members.role='admin'
-  'billing_admin',       -- can manage claims + users in own branch scope
-  'compliance_admin',    -- read-only across org for audit
-  'tech_admin'           -- integrations, AI, webhooks, no PHI write
-);
+### Phase 4 — Tasks & wellness events
 
-CREATE TABLE public.admin_role_assignments (
-  id uuid pk,
-  org_id uuid not null,
-  user_id uuid not null,
-  subrole admin_subrole not null,
-  granted_by uuid,
-  granted_at timestamptz default now(),
-  UNIQUE (org_id, user_id, subrole)
-);
-```
+8. **Follow-Up Tasks** (`/opd/tasks`) — Kanban / list, assign to team members, due dates, source entity link.
+9. **Wellness Events** — extend existing `WellnessEventsPage` with outcomes (screened, abnormal, follow-up required), team assignment, attendance log.
+10. **Navigation polish** — OPD landing tile grid matches the recommended menu in the spec (Dashboard / Corporates / Employees / Eligibility / Appointments / Visits / Reports / Follow-Up / Invoices / Events / Analytics).
 
-- `has_admin_subrole(_user uuid, _org uuid, _subrole admin_subrole)` SECURITY DEFINER helper.
-- GRANT block + RLS: only `org_owner`/`super_admin` can read/write assignments in their org.
+### What I will NOT change
 
-**Frontend route gating** in `src/lib/routeAccess.ts`:
+- Existing Visits / AHC / Bulk Submit / Corporates / Employees pages stay as-is; new pages link to them.
+- Auth, gov-schemes, claims modules untouched.
 
-```text
-/admin/control-panel       → super_admin | org_owner | tech_admin
-/admin/promote             → super_admin only
-/admin/org-access          → super_admin | org_owner
-/admin/roles-matrix        → super_admin | org_owner | org_admin
-/admin/access-checker      → any admin subrole
-/settings/users            → org_owner | org_admin | billing_admin (scoped)
-/settings/permissions      → super_admin | org_owner
-/settings/ai-providers     → super_admin | tech_admin
-/settings/integrations     → super_admin | tech_admin
-```
+### Sequencing
 
-Extend `_authenticated.tsx` `allowedRolesForPath` to call a new
-`canAccessAdminPath(path, subroles)` and redirect to `/access-denied` otherwise.
+I'll ship Phase 1 (single migration) first and wait for your approval, then Phases 2–4 as separate batches so each is reviewable. Each phase is ~half a day of work.
 
-### 3. Playwright tenant-isolation tests
-
-`e2e/tenant-isolation.spec.ts` — seed two orgs via Supabase admin client in
-`globalSetup`, then:
-
-1. Log in as Org A user, fetch `/claims` API → assert 0 rows from Org B's claim IDs.
-2. Attempt direct REST: `GET /rest/v1/claims?id=eq.<OrgB-claim-id>` with Org A bearer → expect empty.
-3. Branch-restricted user inside Org A: assert `/claims` returns only own-branch claims.
-4. Cross-org admin escalation attempt via `promote_to_super_admin` → expect 403.
-
-`e2e/admin-subroles.spec.ts` — log in as each subrole, assert which `/admin/*` routes render vs redirect to `/access-denied`.
-
-Add CI npm script `e2e:isolation`.
-
-### 4. Server-function auth patches
-
-Audit + fix:
-
-- `src/lib/preflight.functions.ts` — `getPreflightStatus` needs `requireSupabaseAuth` + platform-admin gate.
-- `src/lib/whatsapp.functions.ts` — `sendWhatsApp` needs `requireSupabaseAuth` + org-membership check.
-- `src/lib/orgs.functions.ts` — verify each fn has middleware.
-- `src/routes/api/public/hooks/dispatch-notifications.ts` — replace anon-key gate with `DISPATCH_WEBHOOK_SECRET` HMAC (add secret request).
-- `src/routes/api/public/hooks/team-digests.ts` — make token check unconditional (no `if (process.env.NODE_ENV)` bypass).
-- `src/routes/api/public/hooks/whatsapp-delivery.ts` — verify provider signature.
-- Confirm `src/start.ts` registers `attachSupabaseAuth` as global `functionMiddleware`.
-
-For each patched fn: keep behavior identical for happy path, return 401/403 for unauth.
-
-## Out of scope (deferred to later sprint)
-
-- Encrypting `ai_providers.api_key` with pgcrypto (separate DB task).
-- Audit-log viewer UI (#18).
-- Custom email domain (#22).
-- Rate limiting (#10) — needs Cloudflare/edge config.
-
-## Execution order
-
-1. Submit DB migration for branch scope + admin subroles + helpers + RLS (one migration, requires user approval).
-2. After approval: update `routeAccess.ts`, `_authenticated.tsx`, `BranchPicker`, add `useBranchScope`, `useAdminSubroles` hooks.
-3. Patch server functions; request `DISPATCH_WEBHOOK_SECRET` if not present.
-4. Add Playwright specs + globalSetup seed.
-5. Run `bunx playwright test e2e/tenant-isolation.spec.ts` and report.
-
-## Risk notes
-
-- Branch RLS change can hide existing rows from current users — migration sets `branch_scope_mode='all'` for every existing member, so no regression on day one.
-- Admin subrole migration is additive; existing `organization_members.role` continues to work as the primary gate. Subroles are *additional* grants.
-- Tests rely on a service-role key being available to `globalSetup`; that's already present (`SUPABASE_SERVICE_ROLE_KEY`).
+**Confirm and I'll start with the Phase 1 migration.**

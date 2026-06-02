@@ -1771,6 +1771,81 @@ export type Database = {
         }
         Relationships: []
       }
+      opd_appointments: {
+        Row: {
+          beneficiary_name: string
+          beneficiary_phone: string | null
+          corporate_id: string | null
+          created_at: string
+          employee_id: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          provider: string | null
+          provider_confirmed_at: string | null
+          reminder_24h_sent_at: string | null
+          reminder_same_day_sent_at: string | null
+          scheduled_at: string
+          specialty: string | null
+          status: string
+          updated_at: string
+          visit_id: string | null
+        }
+        Insert: {
+          beneficiary_name: string
+          beneficiary_phone?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          provider?: string | null
+          provider_confirmed_at?: string | null
+          reminder_24h_sent_at?: string | null
+          reminder_same_day_sent_at?: string | null
+          scheduled_at: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Update: {
+          beneficiary_name?: string
+          beneficiary_phone?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          provider?: string | null
+          provider_confirmed_at?: string | null
+          reminder_24h_sent_at?: string | null
+          reminder_same_day_sent_at?: string | null
+          scheduled_at?: string
+          specialty?: string | null
+          status?: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_appointments_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opd_appointments_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "opd_employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opd_batches: {
         Row: {
           ack_no: string | null
@@ -1827,11 +1902,21 @@ export type Database = {
       opd_corporates: {
         Row: {
           aggregator: string | null
+          billing_contact_email: string | null
+          billing_contact_name: string | null
+          billing_contact_phone: string | null
           contract_end: string | null
           contract_start: string | null
           created_at: string
+          default_package_id: string | null
+          dependents_allowed: boolean
+          employee_limit: number | null
           hospital_branch_id: string | null
+          hr_contact_email: string | null
+          hr_contact_name: string | null
+          hr_contact_phone: string | null
           id: string
+          invoice_cycle: string
           is_active: boolean
           name: string
           notes: string | null
@@ -1844,11 +1929,21 @@ export type Database = {
         }
         Insert: {
           aggregator?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string
+          default_package_id?: string | null
+          dependents_allowed?: boolean
+          employee_limit?: number | null
           hospital_branch_id?: string | null
+          hr_contact_email?: string | null
+          hr_contact_name?: string | null
+          hr_contact_phone?: string | null
           id?: string
+          invoice_cycle?: string
           is_active?: boolean
           name: string
           notes?: string | null
@@ -1861,11 +1956,21 @@ export type Database = {
         }
         Update: {
           aggregator?: string | null
+          billing_contact_email?: string | null
+          billing_contact_name?: string | null
+          billing_contact_phone?: string | null
           contract_end?: string | null
           contract_start?: string | null
           created_at?: string
+          default_package_id?: string | null
+          dependents_allowed?: boolean
+          employee_limit?: number | null
           hospital_branch_id?: string | null
+          hr_contact_email?: string | null
+          hr_contact_name?: string | null
+          hr_contact_phone?: string | null
           id?: string
+          invoice_cycle?: string
           is_active?: boolean
           name?: string
           notes?: string | null
@@ -1877,6 +1982,53 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      opd_dependents: {
+        Row: {
+          created_at: string
+          dob: string | null
+          employee_id: string
+          gender: string | null
+          id: string
+          is_active: boolean
+          name: string
+          org_id: string
+          relation: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dob?: string | null
+          employee_id: string
+          gender?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          org_id: string
+          relation: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dob?: string | null
+          employee_id?: string
+          gender?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          relation?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_dependents_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "opd_employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       opd_eligibility_sync_log: {
         Row: {
@@ -1938,6 +2090,7 @@ export type Database = {
         Row: {
           corporate_id: string
           created_at: string
+          department: string | null
           eligibility_synced_at: string | null
           email: string | null
           employee_code: string
@@ -1946,6 +2099,7 @@ export type Database = {
           id: string
           org_id: string
           phone: string | null
+          status: string
           updated_at: string
           valid_from: string | null
           valid_to: string | null
@@ -1955,6 +2109,7 @@ export type Database = {
         Insert: {
           corporate_id: string
           created_at?: string
+          department?: string | null
           eligibility_synced_at?: string | null
           email?: string | null
           employee_code: string
@@ -1963,6 +2118,7 @@ export type Database = {
           id?: string
           org_id: string
           phone?: string | null
+          status?: string
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
@@ -1972,6 +2128,7 @@ export type Database = {
         Update: {
           corporate_id?: string
           created_at?: string
+          department?: string | null
           eligibility_synced_at?: string | null
           email?: string | null
           employee_code?: string
@@ -1980,6 +2137,7 @@ export type Database = {
           id?: string
           org_id?: string
           phone?: string | null
+          status?: string
           updated_at?: string
           valid_from?: string | null
           valid_to?: string | null
@@ -1992,6 +2150,254 @@ export type Database = {
             columns: ["corporate_id"]
             isOneToOne: false
             referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opd_followup_tasks: {
+        Row: {
+          assigned_to: string | null
+          completed_at: string | null
+          created_at: string
+          description: string | null
+          due_at: string | null
+          entity_id: string | null
+          entity_type: string
+          id: string
+          org_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          org_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          completed_at?: string | null
+          created_at?: string
+          description?: string | null
+          due_at?: string | null
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          org_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      opd_invoice_items: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          invoice_id: string
+          org_id: string
+          visit_id: string | null
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id: string
+          org_id: string
+          visit_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          invoice_id?: string
+          org_id?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "opd_invoices"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opd_invoices: {
+        Row: {
+          corporate_id: string
+          created_at: string
+          due_date: string | null
+          generated_at: string
+          gross_amount: number
+          id: string
+          invoice_no: string
+          notes: string | null
+          org_id: string
+          paid_amount: number
+          paid_at: string | null
+          period_end: string
+          period_start: string
+          status: string
+          submitted_at: string | null
+          tax_amount: number
+          total_amount: number
+          updated_at: string
+          visit_count: number
+        }
+        Insert: {
+          corporate_id: string
+          created_at?: string
+          due_date?: string | null
+          generated_at?: string
+          gross_amount?: number
+          id?: string
+          invoice_no: string
+          notes?: string | null
+          org_id: string
+          paid_amount?: number
+          paid_at?: string | null
+          period_end: string
+          period_start: string
+          status?: string
+          submitted_at?: string | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          visit_count?: number
+        }
+        Update: {
+          corporate_id?: string
+          created_at?: string
+          due_date?: string | null
+          generated_at?: string
+          gross_amount?: number
+          id?: string
+          invoice_no?: string
+          notes?: string | null
+          org_id?: string
+          paid_amount?: number
+          paid_at?: string | null
+          period_end?: string
+          period_start?: string
+          status?: string
+          submitted_at?: string | null
+          tax_amount?: number
+          total_amount?: number
+          updated_at?: string
+          visit_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_invoices_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      opd_reports: {
+        Row: {
+          appointment_id: string | null
+          awaiting_since: string
+          beneficiary_name: string
+          closed_at: string | null
+          corporate_id: string | null
+          created_at: string
+          employee_id: string | null
+          file_name: string | null
+          file_path: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          qc_at: string | null
+          received_at: string | null
+          sent_corporate_at: string | null
+          sent_employee_at: string | null
+          sla_target_at: string | null
+          stage: string
+          updated_at: string
+          visit_id: string | null
+        }
+        Insert: {
+          appointment_id?: string | null
+          awaiting_since?: string
+          beneficiary_name: string
+          closed_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          qc_at?: string | null
+          received_at?: string | null
+          sent_corporate_at?: string | null
+          sent_employee_at?: string | null
+          sla_target_at?: string | null
+          stage?: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Update: {
+          appointment_id?: string | null
+          awaiting_since?: string
+          beneficiary_name?: string
+          closed_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          employee_id?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          qc_at?: string | null
+          received_at?: string | null
+          sent_corporate_at?: string | null
+          sent_employee_at?: string | null
+          sla_target_at?: string | null
+          stage?: string
+          updated_at?: string
+          visit_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opd_reports_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "opd_appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opd_reports_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opd_reports_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "opd_employees"
             referencedColumns: ["id"]
           },
         ]
