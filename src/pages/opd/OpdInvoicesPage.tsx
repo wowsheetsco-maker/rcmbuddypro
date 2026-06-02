@@ -80,10 +80,18 @@ export default function OpdInvoicesPage() {
             <h1 className="text-2xl font-display">Invoices</h1>
             <p className="text-sm text-muted-foreground">Bulk corporate invoicing with status pipeline and aging.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><FilePlus2 className="h-4 w-4 mr-1" /> Generate bulk invoice</Button></DialogTrigger>
-            <GenerateBulkDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportInvoicesXlsx(toExportRows(filtered, corpMap))}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel ({filtered.length})
+            </Button>
+            <Button variant="outline" onClick={() => exportInvoicesPdf(toExportRows(filtered, corpMap))}>
+              <FileText className="h-4 w-4 mr-1" /> PDF
+            </Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><FilePlus2 className="h-4 w-4 mr-1" /> Generate bulk invoice</Button></DialogTrigger>
+              <GenerateBulkDialog corps={corps} onSaved={() => { setOpen(false); load(); }} />
+            </Dialog>
+          </div>
         </header>
 
         <div className="grid grid-cols-3 gap-3">
@@ -112,6 +120,7 @@ export default function OpdInvoicesPage() {
                     <TableHead>Invoice #</TableHead><TableHead>Corporate</TableHead><TableHead>Period</TableHead>
                     <TableHead className="text-right">Visits</TableHead><TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Paid</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead>
+                    <TableHead className="text-right">Export</TableHead>
                   </TableRow></TableHeader>
                   <TableBody>
                     {filtered.map((r) => (
@@ -129,6 +138,17 @@ export default function OpdInvoicesPage() {
                             <SelectContent>{STATUSES.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                           </Select>
                           <Badge className={`mt-1 ${STATUS_BADGE[r.status] ?? ""}`} variant="outline">{r.status}</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button size="sm" variant="ghost" className="h-7"><Download className="h-3 w-3 mr-1" />Export</Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => exportOne(r, corpMap, "xlsx")}><FileSpreadsheet className="h-3 w-3 mr-2" />Excel</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => exportOne(r, corpMap, "pdf")}><FileText className="h-3 w-3 mr-2" />PDF</DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}
