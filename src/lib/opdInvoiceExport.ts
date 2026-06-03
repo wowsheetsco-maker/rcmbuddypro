@@ -107,9 +107,11 @@ export function exportSingleInvoicePdf(inv: InvoiceRow, lines: InvoiceLine[]) {
   doc.setFontSize(16);
   doc.text("Tax Invoice", 14, 16);
   doc.setFontSize(10);
-  doc.text(`Invoice #: ${inv.invoice_no}`, 14, 26);
-  doc.text(`Corporate: ${inv.corporate_name}`, 14, 32);
-  doc.text(`Period: ${inv.period_start} → ${inv.period_end}`, 14, 38);
+  doc.text(`Tracking #: ${inv.invoice_no}`, 14, 26);
+  doc.text(`(Invoice ref: ${inv.invoice_no})`, 14, 32);
+  doc.text(`Corporate: ${inv.corporate_name}`, 14, 38);
+  doc.text(`Period: ${inv.period_start} → ${inv.period_end}`, 14, 44);
+  doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 50);
   doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 44);
   doc.text(`Status: ${inv.status.toUpperCase()}`, 140, 26);
   doc.text(`Generated: ${(inv.generated_at ?? "").slice(0, 10)}`, 140, 32);
