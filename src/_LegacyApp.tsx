@@ -255,6 +255,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/opd/invoices": OpdInvoicesPage,
   "/opd/tasks": OpdTasksPage,
   "/opd/corporate-analytics": OpdCorporateAnalyticsPage,
+  "/opd/reminder-audit": OpdReminderAuditPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";
