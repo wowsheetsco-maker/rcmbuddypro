@@ -56,7 +56,7 @@ export function exportInvoicesPdf(rows: InvoiceRow[], filename = `opd-invoices-$
   doc.text(`Generated ${new Date().toLocaleString()} · ${rows.length} invoice(s)`, 14, 20);
   autoTable(doc, {
     startY: 24,
-    head: [["Invoice #", "Corporate", "Period", "Visits", "Total", "Paid", "Outstanding", "Due", "Status"]],
+    head: [["Tracking #", "Corporate", "Period", "Visits", "Total", "Paid", "Outstanding", "Due", "Status"]],
     body: rows.map((r) => [
       r.invoice_no,
       r.corporate_name,
