@@ -5,7 +5,7 @@ import { Link } from "@/lib/router-compat";
 import {
   Stethoscope, Calendar, Activity, Users, ShieldCheck, CalendarClock,
   FileText, ListChecks, Receipt, BarChart3, ClipboardList, Building2,
-  PartyPopper, UploadCloud,
+  PartyPopper, UploadCloud, BellRing,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
