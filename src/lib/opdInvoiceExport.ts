@@ -78,6 +78,7 @@ export function exportInvoicesPdf(rows: InvoiceRow[], filename = `opd-invoices-$
 export function exportSingleInvoiceXlsx(inv: InvoiceRow, lines: InvoiceLine[]) {
   const wb = XLSX.utils.book_new();
   const header = [
+    ["Tracking #", inv.invoice_no],
     ["Invoice #", inv.invoice_no],
     ["Corporate", inv.corporate_name],
     ["Period", `${inv.period_start} → ${inv.period_end}`],
