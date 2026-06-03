@@ -95,6 +95,18 @@ export default function OpdReportsPage() {
     else load();
   };
 
+  const metrics: SlaMetrics = { open_24h: open24, open_48h: open48, open_72h: open72, closed_today: closedToday, total_open: rows.filter((r) => r.stage !== "closed").length };
+  const exportRows: ReportRow[] = filtered.filter((r) => r.stage !== "closed").map((r) => ({
+    beneficiary_name: r.beneficiary_name,
+    stage: STAGE_LABEL[r.stage],
+    hours_open: hoursOpen(r),
+    rag: rag(hoursOpen(r)),
+    awaiting_since: r.awaiting_since,
+    sla_target_at: r.sla_target_at,
+    file_name: r.file_name,
+    notes: r.notes,
+  }));
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -103,10 +115,14 @@ export default function OpdReportsPage() {
             <h1 className="text-2xl font-display">Report tracker</h1>
             <p className="text-sm text-muted-foreground">Awaiting → received → QC → sent to employee → sent to corporate → closed. SLA RAG: green &lt;24h · amber 24-72h · red &gt;72h.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New report</Button></DialogTrigger>
-            <NewReportDialog onSaved={() => { setOpen(false); load(); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportReportsXlsx(metrics, exportRows)}><FileSpreadsheet className="h-4 w-4 mr-1" /> Excel</Button>
+            <Button variant="outline" onClick={() => exportReportsPdf(metrics, exportRows)}><FileText className="h-4 w-4 mr-1" /> PDF</Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New report</Button></DialogTrigger>
+              <NewReportDialog onSaved={() => { setOpen(false); load(); }} />
+            </Dialog>
+          </div>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
