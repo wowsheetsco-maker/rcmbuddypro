@@ -5,7 +5,7 @@ import { Link } from "@/lib/router-compat";
 import {
   Stethoscope, Calendar, Activity, Users, ShieldCheck, CalendarClock,
   FileText, ListChecks, Receipt, BarChart3, ClipboardList, Building2,
-  PartyPopper, UploadCloud,
+  PartyPopper, UploadCloud, BellRing,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -51,6 +51,7 @@ export default function OpdLanding() {
     { label: "Bulk submit", path: "/opd/bulk-submit", icon: UploadCloud, desc: "Aggregator batches" },
     { label: "Analytics", path: "/opd/analytics", icon: BarChart3, desc: "TAT, rejections, wallets" },
     { label: "Corporate analytics", path: "/opd/corporate-analytics", icon: BarChart3, desc: "Revenue & utilization by corporate" },
+    { label: "Reminder audit log", path: "/opd/reminder-audit", icon: BellRing, desc: "24h & same-day provider reminders + delivery" },
   ];
 
   return (

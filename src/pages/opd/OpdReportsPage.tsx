@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+import { exportReportsXlsx, exportReportsPdf, type ReportRow, type SlaMetrics } from "@/lib/opdReportsExport";
 
 const STAGES = ["awaiting_provider", "received", "qc", "sent_employee", "sent_corporate", "closed"] as const;
 type Stage = typeof STAGES[number];
@@ -94,6 +95,18 @@ export default function OpdReportsPage() {
     else load();
   };
 
+  const metrics: SlaMetrics = { open_24h: open24, open_48h: open48, open_72h: open72, closed_today: closedToday, total_open: rows.filter((r) => r.stage !== "closed").length };
+  const exportRows: ReportRow[] = filtered.filter((r) => r.stage !== "closed").map((r) => ({
+    beneficiary_name: r.beneficiary_name,
+    stage: STAGE_LABEL[r.stage],
+    hours_open: hoursOpen(r),
+    rag: rag(hoursOpen(r)),
+    awaiting_since: r.awaiting_since,
+    sla_target_at: r.sla_target_at,
+    file_name: r.file_name,
+    notes: r.notes,
+  }));
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -102,10 +115,14 @@ export default function OpdReportsPage() {
             <h1 className="text-2xl font-display">Report tracker</h1>
             <p className="text-sm text-muted-foreground">Awaiting → received → QC → sent to employee → sent to corporate → closed. SLA RAG: green &lt;24h · amber 24-72h · red &gt;72h.</p>
           </div>
-          <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New report</Button></DialogTrigger>
-            <NewReportDialog onSaved={() => { setOpen(false); load(); }} />
-          </Dialog>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => exportReportsXlsx(metrics, exportRows)}><FileSpreadsheet className="h-4 w-4 mr-1" /> Excel</Button>
+            <Button variant="outline" onClick={() => exportReportsPdf(metrics, exportRows)}><FileText className="h-4 w-4 mr-1" /> PDF</Button>
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild><Button><Plus className="h-4 w-4 mr-1" /> New report</Button></DialogTrigger>
+              <NewReportDialog onSaved={() => { setOpen(false); load(); }} />
+            </Dialog>
+          </div>
         </header>
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

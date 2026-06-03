@@ -28,6 +28,7 @@ const inr = (n: number) => `₹${Math.round(Number(n) || 0).toLocaleString("en-I
 /** Bulk export — one row per invoice. */
 export function exportInvoicesXlsx(rows: InvoiceRow[], filename = `opd-invoices-${Date.now()}.xlsx`) {
   const data = rows.map((r) => ({
+    "Tracking #": r.invoice_no,
     "Invoice #": r.invoice_no,
     Corporate: r.corporate_name,
     "Period start": r.period_start,
@@ -55,7 +56,7 @@ export function exportInvoicesPdf(rows: InvoiceRow[], filename = `opd-invoices-$
   doc.text(`Generated ${new Date().toLocaleString()} · ${rows.length} invoice(s)`, 14, 20);
   autoTable(doc, {
     startY: 24,
-    head: [["Invoice #", "Corporate", "Period", "Visits", "Total", "Paid", "Outstanding", "Due", "Status"]],
+    head: [["Tracking #", "Corporate", "Period", "Visits", "Total", "Paid", "Outstanding", "Due", "Status"]],
     body: rows.map((r) => [
       r.invoice_no,
       r.corporate_name,
@@ -77,6 +78,7 @@ export function exportInvoicesPdf(rows: InvoiceRow[], filename = `opd-invoices-$
 export function exportSingleInvoiceXlsx(inv: InvoiceRow, lines: InvoiceLine[]) {
   const wb = XLSX.utils.book_new();
   const header = [
+    ["Tracking #", inv.invoice_no],
     ["Invoice #", inv.invoice_no],
     ["Corporate", inv.corporate_name],
     ["Period", `${inv.period_start} → ${inv.period_end}`],
@@ -105,10 +107,11 @@ export function exportSingleInvoicePdf(inv: InvoiceRow, lines: InvoiceLine[]) {
   doc.setFontSize(16);
   doc.text("Tax Invoice", 14, 16);
   doc.setFontSize(10);
-  doc.text(`Invoice #: ${inv.invoice_no}`, 14, 26);
-  doc.text(`Corporate: ${inv.corporate_name}`, 14, 32);
-  doc.text(`Period: ${inv.period_start} → ${inv.period_end}`, 14, 38);
-  doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 44);
+  doc.text(`Tracking #: ${inv.invoice_no}`, 14, 26);
+  doc.text(`(Invoice ref: ${inv.invoice_no})`, 14, 32);
+  doc.text(`Corporate: ${inv.corporate_name}`, 14, 38);
+  doc.text(`Period: ${inv.period_start} → ${inv.period_end}`, 14, 44);
+  doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 50);
   doc.text(`Status: ${inv.status.toUpperCase()}`, 140, 26);
   doc.text(`Generated: ${(inv.generated_at ?? "").slice(0, 10)}`, 140, 32);
 

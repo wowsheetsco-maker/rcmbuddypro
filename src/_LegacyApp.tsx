@@ -89,6 +89,7 @@ import OpdFollowUpPage from "./pages/opd/OpdFollowUpPage";
 import OpdInvoicesPage from "./pages/opd/OpdInvoicesPage";
 import OpdTasksPage from "./pages/opd/OpdTasksPage";
 import OpdCorporateAnalyticsPage from "./pages/opd/OpdCorporateAnalyticsPage";
+import OpdReminderAuditPage from "./pages/opd/OpdReminderAuditPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
@@ -254,6 +255,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/opd/invoices": OpdInvoicesPage,
   "/opd/tasks": OpdTasksPage,
   "/opd/corporate-analytics": OpdCorporateAnalyticsPage,
+  "/opd/reminder-audit": OpdReminderAuditPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";

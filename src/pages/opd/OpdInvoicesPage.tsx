@@ -150,7 +150,7 @@ export default function OpdInvoicesPage() {
               <div className="overflow-auto">
                 <Table>
                   <TableHeader><TableRow>
-                    <TableHead>Invoice #</TableHead><TableHead>Corporate</TableHead><TableHead>Period</TableHead>
+                    <TableHead>Tracking #</TableHead><TableHead>Corporate</TableHead><TableHead>Period</TableHead>
                     <TableHead className="text-right">Visits</TableHead><TableHead className="text-right">Total</TableHead>
                     <TableHead className="text-right">Paid</TableHead><TableHead>Due</TableHead><TableHead>Status</TableHead>
                     <TableHead className="text-right">Export</TableHead>
@@ -158,7 +158,7 @@ export default function OpdInvoicesPage() {
                   <TableBody>
                     {filtered.map((r) => (
                       <TableRow key={r.id}>
-                        <TableCell className="font-medium">{r.invoice_no}</TableCell>
+                        <TableCell className="font-mono text-xs font-medium">{r.invoice_no}</TableCell>
                         <TableCell>{corpMap.get(r.corporate_id) ?? "—"}</TableCell>
                         <TableCell className="text-xs">{r.period_start} → {r.period_end}</TableCell>
                         <TableCell className="text-right tabular-nums">{r.visit_count}</TableCell>
