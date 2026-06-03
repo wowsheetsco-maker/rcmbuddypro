@@ -28,6 +28,7 @@ const inr = (n: number) => `₹${Math.round(Number(n) || 0).toLocaleString("en-I
 /** Bulk export — one row per invoice. */
 export function exportInvoicesXlsx(rows: InvoiceRow[], filename = `opd-invoices-${Date.now()}.xlsx`) {
   const data = rows.map((r) => ({
+    "Tracking #": r.invoice_no,
     "Invoice #": r.invoice_no,
     Corporate: r.corporate_name,
     "Period start": r.period_start,
