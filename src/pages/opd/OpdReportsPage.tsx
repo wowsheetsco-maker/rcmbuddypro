@@ -8,10 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus } from "lucide-react";
+import { Plus, FileSpreadsheet, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
+import { exportReportsXlsx, exportReportsPdf, type ReportRow, type SlaMetrics } from "@/lib/opdReportsExport";
 
 const STAGES = ["awaiting_provider", "received", "qc", "sent_employee", "sent_corporate", "closed"] as const;
 type Stage = typeof STAGES[number];
