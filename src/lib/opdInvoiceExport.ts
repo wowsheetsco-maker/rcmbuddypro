@@ -112,7 +112,6 @@ export function exportSingleInvoicePdf(inv: InvoiceRow, lines: InvoiceLine[]) {
   doc.text(`Corporate: ${inv.corporate_name}`, 14, 38);
   doc.text(`Period: ${inv.period_start} → ${inv.period_end}`, 14, 44);
   doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 50);
-  doc.text(`Due: ${inv.due_date ?? "—"}`, 14, 44);
   doc.text(`Status: ${inv.status.toUpperCase()}`, 140, 26);
   doc.text(`Generated: ${(inv.generated_at ?? "").slice(0, 10)}`, 140, 32);
 
