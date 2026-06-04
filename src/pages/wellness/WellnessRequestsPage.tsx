@@ -277,6 +277,7 @@ function RescheduleDialog({ req, sendMessages, onDone }: { req: Req; ctx: any; s
     }).eq("id", req.id);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     sendMessages();
+    await logWellnessEvent({ orgId: getCurrentOrgId(), requestId: req.id, action: "rescheduled", status: "logged", meta: { scheduled_at: iso } });
     toast({ title: "Rescheduled, message drafts opened" });
     onDone();
   };
@@ -352,8 +353,9 @@ function NewRequestDialog({ corps, pkgs, onSaved }: { corps: Corp[]; pkgs: Pkg[]
   const submit = async () => {
     if (!f.client_name) return toast({ title: "Client name required", variant: "destructive" });
     setSaving(true);
-    const { error } = await supabase.from("wellness_requests").insert({
-      org_id: getCurrentOrgId(),
+    const orgId = getCurrentOrgId();
+    const { data: inserted, error } = await supabase.from("wellness_requests").insert({
+      org_id: orgId,
       client_name: f.client_name,
       client_email: f.client_email || null,
       client_phone: f.client_phone || null,
@@ -364,9 +366,10 @@ function NewRequestDialog({ corps, pkgs, onSaved }: { corps: Corp[]; pkgs: Pkg[]
       notes: f.notes || null,
       source: "manual",
       status: "new",
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
+    if (inserted?.id) await logWellnessEvent({ orgId, requestId: inserted.id, action: "created", status: "logged", meta: { source: "manual" } });
     toast({ title: "Request added" });
     onSaved();
   };
