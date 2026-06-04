@@ -152,7 +152,7 @@ export default function WellnessRequestsPage() {
                           </TableCell>
                           <TableCell className="text-xs capitalize">{r.source}</TableCell>
                           <TableCell className="text-right">
-                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} onTimeline={() => setTimelineFor({ id: r.id, name: r.client_name })} />
+                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} onTimeline={() => setTimelineFor({ id: r.id, name: r.client_name, email: r.client_email, phone: r.client_phone, provider })} />
                           </TableCell>
                         </TableRow>
                       );
