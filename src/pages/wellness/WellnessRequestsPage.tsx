@@ -311,9 +311,19 @@ function ReportDialog({ req, ctx, onDone }: { req: Req; ctx: any; onDone: () => 
     setUploading(false);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
 
-    const { subject, body } = buildReport({ ...ctx, reportUrl: url });
-    if (req.client_email) window.open(mailto(req.client_email, subject, body), "_blank");
-    if (req.client_phone) window.open(whatsappLink(req.client_phone, `${subject}\n\n${body}`), "_blank");
+    const templates = await loadTemplates();
+    const ctx2 = { ...ctx, reportUrl: url };
+    const email = renderTemplate("report", "email", ctx2, templates);
+    const wa = renderTemplate("report", "whatsapp", ctx2, templates);
+    if (req.client_email) {
+      window.open(mailto(req.client_email, email.subject, email.body), "_blank");
+      await logWellnessEvent({ orgId, requestId: req.id, action: "email_sent", channel: "email", status: "drafted", recipient: req.client_email, message: `${email.subject}\n\n${email.body}`, meta: { kind: "report" } });
+    }
+    if (req.client_phone) {
+      window.open(whatsappLink(req.client_phone, wa.body), "_blank");
+      await logWellnessEvent({ orgId, requestId: req.id, action: "whatsapp_sent", channel: "whatsapp", status: "drafted", recipient: req.client_phone, message: wa.body, meta: { kind: "report" } });
+    }
+    await logWellnessEvent({ orgId, requestId: req.id, action: "report_sent", status: "logged", meta: { url } });
     toast({ title: "Report uploaded & message drafts opened" });
     onDone();
   };
