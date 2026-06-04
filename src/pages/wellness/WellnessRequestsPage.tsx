@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Mail, MessageCircle, Phone, Upload, CheckCircle2, XCircle, CalendarClock, Inbox } from "lucide-react";
+import { Plus, Mail, MessageCircle, Phone, Upload, CheckCircle2, XCircle, CalendarClock, Inbox, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
 import {
-  buildConfirmation, buildReschedule, buildCancellation, buildReport,
-  mailto, whatsappLink, telLink,
+  renderTemplate, loadTemplates, mailto, whatsappLink, telLink,
+  type TemplateKind,
 } from "@/lib/wellnessMessaging";
+import { WellnessRequestTimeline, logWellnessEvent } from "@/components/WellnessRequestTimeline";
 
 const STATUSES = ["new", "confirmed", "rescheduled", "cancelled", "completed"];
 
@@ -39,6 +40,7 @@ export default function WellnessRequestsPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [timelineFor, setTimelineFor] = useState<{ id: string; name: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -150,7 +152,7 @@ export default function WellnessRequestsPage() {
                           </TableCell>
                           <TableCell className="text-xs capitalize">{r.source}</TableCell>
                           <TableCell className="text-right">
-                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} />
+                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} onTimeline={() => setTimelineFor({ id: r.id, name: r.client_name })} />
                           </TableCell>
                         </TableRow>
                       );
@@ -161,33 +163,59 @@ export default function WellnessRequestsPage() {
             }
           </CardContent>
         </Card>
+        <WellnessRequestTimeline
+          requestId={timelineFor?.id ?? null}
+          clientName={timelineFor?.name}
+          open={!!timelineFor}
+          onOpenChange={(v) => !v && setTimelineFor(null)}
+        />
       </div>
     </AppLayout>
   );
 }
 
 function RowActions({
-  req, ctx, onChange, updateStatus,
+  req, ctx, onChange, updateStatus, onTimeline,
 }: {
   req: Req;
   ctx: { clientName: string; providerName?: string; serviceName?: string; scheduledAt?: string | null; reportUrl?: string | null };
   onChange: () => void;
   updateStatus: (id: string, status: string, extra?: Partial<Req>) => Promise<void>;
+  onTimeline: () => void;
 }) {
   const [schedOpen, setSchedOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
-  const sendMessages = (kind: "confirm" | "reschedule" | "cancel" | "report") => {
-    const builder = kind === "confirm" ? buildConfirmation : kind === "reschedule" ? buildReschedule : kind === "cancel" ? buildCancellation : buildReport;
-    const { subject, body } = builder(ctx);
-    if (req.client_email) window.open(mailto(req.client_email, subject, body), "_blank");
-    if (req.client_phone) window.open(whatsappLink(req.client_phone, `${subject}\n\n${body}`), "_blank");
+  const sendMessages = async (kind: TemplateKind) => {
+    const templates = await loadTemplates();
+    const orgId = getCurrentOrgId();
+    const email = renderTemplate(kind, "email", ctx, templates);
+    const wa = renderTemplate(kind, "whatsapp", ctx, templates);
+    if (req.client_email) {
+      window.open(mailto(req.client_email, email.subject, email.body), "_blank");
+      await logWellnessEvent({
+        orgId, requestId: req.id, action: "email_sent", channel: "email",
+        status: "drafted", recipient: req.client_email, message: `${email.subject}\n\n${email.body}`,
+        meta: { kind },
+      });
+    }
+    if (req.client_phone) {
+      window.open(whatsappLink(req.client_phone, wa.body), "_blank");
+      await logWellnessEvent({
+        orgId, requestId: req.id, action: "whatsapp_sent", channel: "whatsapp",
+        status: "drafted", recipient: req.client_phone, message: wa.body,
+        meta: { kind },
+      });
+    }
   };
 
   return (
     <div className="flex items-center justify-end gap-1 flex-wrap">
+      <Button size="sm" variant="ghost" className="h-7 px-2" title="Timeline" onClick={onTimeline}>
+        <History className="h-3 w-3" />
+      </Button>
       {req.client_phone && (
-        <a href={telLink(req.client_phone)}>
+        <a href={telLink(req.client_phone)} onClick={() => logWellnessEvent({ orgId: getCurrentOrgId(), requestId: req.id, action: "call_logged", channel: "call", status: "logged", recipient: req.client_phone })}>
           <Button size="sm" variant="ghost" className="h-7 px-2" title="Call client"><Phone className="h-3 w-3" /></Button>
         </a>
       )}
@@ -205,8 +233,9 @@ function RowActions({
       {req.status !== "completed" && req.status !== "cancelled" && (
         <>
           <Button size="sm" variant="outline" className="h-7" onClick={async () => {
-            sendMessages("confirm");
+            await sendMessages("confirm");
             await updateStatus(req.id, "confirmed", { confirmation_sent_at: new Date().toISOString() as any });
+            await logWellnessEvent({ orgId: getCurrentOrgId(), requestId: req.id, action: "confirmed", status: "logged" });
           }}>
             <CheckCircle2 className="h-3 w-3 mr-1" /> Confirm
           </Button>
@@ -218,8 +247,9 @@ function RowActions({
           </Dialog>
           <Button size="sm" variant="ghost" className="h-7 text-destructive" onClick={async () => {
             if (!confirm("Cancel this request and notify client?")) return;
-            sendMessages("cancel");
+            await sendMessages("cancel");
             await updateStatus(req.id, "cancelled");
+            await logWellnessEvent({ orgId: getCurrentOrgId(), requestId: req.id, action: "cancelled", status: "logged" });
           }}>
             <XCircle className="h-3 w-3 mr-1" /> Cancel
           </Button>
@@ -247,6 +277,7 @@ function RescheduleDialog({ req, sendMessages, onDone }: { req: Req; ctx: any; s
     }).eq("id", req.id);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
     sendMessages();
+    await logWellnessEvent({ orgId: getCurrentOrgId(), requestId: req.id, action: "rescheduled", status: "logged", meta: { scheduled_at: iso } });
     toast({ title: "Rescheduled, message drafts opened" });
     onDone();
   };
@@ -281,9 +312,19 @@ function ReportDialog({ req, ctx, onDone }: { req: Req; ctx: any; onDone: () => 
     setUploading(false);
     if (error) return toast({ title: "Save failed", description: error.message, variant: "destructive" });
 
-    const { subject, body } = buildReport({ ...ctx, reportUrl: url });
-    if (req.client_email) window.open(mailto(req.client_email, subject, body), "_blank");
-    if (req.client_phone) window.open(whatsappLink(req.client_phone, `${subject}\n\n${body}`), "_blank");
+    const templates = await loadTemplates();
+    const ctx2 = { ...ctx, reportUrl: url };
+    const email = renderTemplate("report", "email", ctx2, templates);
+    const wa = renderTemplate("report", "whatsapp", ctx2, templates);
+    if (req.client_email) {
+      window.open(mailto(req.client_email, email.subject, email.body), "_blank");
+      await logWellnessEvent({ orgId, requestId: req.id, action: "email_sent", channel: "email", status: "drafted", recipient: req.client_email, message: `${email.subject}\n\n${email.body}`, meta: { kind: "report" } });
+    }
+    if (req.client_phone) {
+      window.open(whatsappLink(req.client_phone, wa.body), "_blank");
+      await logWellnessEvent({ orgId, requestId: req.id, action: "whatsapp_sent", channel: "whatsapp", status: "drafted", recipient: req.client_phone, message: wa.body, meta: { kind: "report" } });
+    }
+    await logWellnessEvent({ orgId, requestId: req.id, action: "report_sent", status: "logged", meta: { url } });
     toast({ title: "Report uploaded & message drafts opened" });
     onDone();
   };
@@ -312,8 +353,9 @@ function NewRequestDialog({ corps, pkgs, onSaved }: { corps: Corp[]; pkgs: Pkg[]
   const submit = async () => {
     if (!f.client_name) return toast({ title: "Client name required", variant: "destructive" });
     setSaving(true);
-    const { error } = await supabase.from("wellness_requests").insert({
-      org_id: getCurrentOrgId(),
+    const orgId = getCurrentOrgId();
+    const { data: inserted, error } = await supabase.from("wellness_requests").insert({
+      org_id: orgId,
       client_name: f.client_name,
       client_email: f.client_email || null,
       client_phone: f.client_phone || null,
@@ -324,9 +366,10 @@ function NewRequestDialog({ corps, pkgs, onSaved }: { corps: Corp[]; pkgs: Pkg[]
       notes: f.notes || null,
       source: "manual",
       status: "new",
-    });
+    }).select("id").single();
     setSaving(false);
     if (error) return toast({ title: "Failed", description: error.message, variant: "destructive" });
+    if (inserted?.id) await logWellnessEvent({ orgId, requestId: inserted.id, action: "created", status: "logged", meta: { source: "manual" } });
     toast({ title: "Request added" });
     onSaved();
   };

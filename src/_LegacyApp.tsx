@@ -77,6 +77,7 @@ import WellnessPackagesPage from "./pages/wellness/WellnessPackagesPage";
 import WellnessRequestsPage from "./pages/wellness/WellnessRequestsPage";
 import WellnessInvoicesPage from "./pages/wellness/WellnessInvoicesPage";
 import WellnessDashboardPage from "./pages/wellness/WellnessDashboardPage";
+import WellnessTemplatesPage from "./pages/wellness/WellnessTemplatesPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
@@ -228,6 +229,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/wellness/providers": WellnessProvidersPage,
   "/wellness/packages": WellnessPackagesPage,
   "/wellness/requests": WellnessRequestsPage,
+  "/wellness/templates": WellnessTemplatesPage,
   "/wellness/invoices": WellnessInvoicesPage,
   "/wellness/dashboard": WellnessDashboardPage,
 };

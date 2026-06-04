@@ -3364,6 +3364,78 @@ export type Database = {
         }
         Relationships: []
       }
+      wellness_invoice_runs: {
+        Row: {
+          emails_sent: number
+          errors: Json | null
+          id: string
+          invoices_created: number
+          org_id: string | null
+          period_end: string
+          period_start: string
+          providers_total: number
+          ran_at: string
+        }
+        Insert: {
+          emails_sent?: number
+          errors?: Json | null
+          id?: string
+          invoices_created?: number
+          org_id?: string | null
+          period_end: string
+          period_start: string
+          providers_total?: number
+          ran_at?: string
+        }
+        Update: {
+          emails_sent?: number
+          errors?: Json | null
+          id?: string
+          invoices_created?: number
+          org_id?: string | null
+          period_end?: string
+          period_start?: string
+          providers_total?: number
+          ran_at?: string
+        }
+        Relationships: []
+      }
+      wellness_message_templates: {
+        Row: {
+          body: string
+          channel: string
+          created_at: string
+          id: string
+          kind: string
+          org_id: string
+          subject: string | null
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          body: string
+          channel: string
+          created_at?: string
+          id?: string
+          kind: string
+          org_id: string
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          body?: string
+          channel?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          org_id?: string
+          subject?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       wellness_packages: {
         Row: {
           corporate_id: string
@@ -3407,6 +3479,62 @@ export type Database = {
             columns: ["corporate_id"]
             isOneToOne: false
             referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_request_events: {
+        Row: {
+          action: string
+          channel: string | null
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          id: string
+          message: string | null
+          meta: Json | null
+          opened_at: string | null
+          org_id: string
+          recipient: string | null
+          request_id: string
+          status: string
+        }
+        Insert: {
+          action: string
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          message?: string | null
+          meta?: Json | null
+          opened_at?: string | null
+          org_id: string
+          recipient?: string | null
+          request_id: string
+          status?: string
+        }
+        Update: {
+          action?: string
+          channel?: string | null
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          id?: string
+          message?: string | null
+          meta?: Json | null
+          opened_at?: string | null
+          org_id?: string
+          recipient?: string | null
+          request_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_requests"
             referencedColumns: ["id"]
           },
         ]

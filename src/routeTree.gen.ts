@@ -35,6 +35,7 @@ import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_a
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
+import { Route as ApiPublicHooksWellnessMonthlyInvoicesRouteImport } from './routes/api/public/hooks/wellness-monthly-invoices'
 import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
 import { Route as ApiPublicHooksOpdAppointmentRemindersRouteImport } from './routes/api/public/hooks/opd-appointment-reminders'
 import { Route as ApiPublicHooksDispatchNotificationsRouteImport } from './routes/api/public/hooks/dispatch-notifications'
@@ -181,6 +182,12 @@ const ApiPublicHooksWhatsappDeliveryRoute =
     path: '/api/public/hooks/whatsapp-delivery',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksWellnessMonthlyInvoicesRoute =
+  ApiPublicHooksWellnessMonthlyInvoicesRouteImport.update({
+    id: '/api/public/hooks/wellness-monthly-invoices',
+    path: '/api/public/hooks/wellness-monthly-invoices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksTeamDigestsRoute =
   ApiPublicHooksTeamDigestsRouteImport.update({
     id: '/api/public/hooks/team-digests',
@@ -228,6 +235,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/wellness-monthly-invoices': typeof ApiPublicHooksWellnessMonthlyInvoicesRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRoutesByTo {
@@ -257,6 +265,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/wellness-monthly-invoices': typeof ApiPublicHooksWellnessMonthlyInvoicesRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRoutesById {
@@ -289,6 +298,7 @@ export interface FileRoutesById {
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
+  '/api/public/hooks/wellness-monthly-invoices': typeof ApiPublicHooksWellnessMonthlyInvoicesRoute
   '/api/public/hooks/whatsapp-delivery': typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 export interface FileRouteTypes {
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/wellness-monthly-invoices'
     | '/api/public/hooks/whatsapp-delivery'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -350,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/wellness-monthly-invoices'
     | '/api/public/hooks/whatsapp-delivery'
   id:
     | '__root__'
@@ -381,6 +393,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
+    | '/api/public/hooks/wellness-monthly-invoices'
     | '/api/public/hooks/whatsapp-delivery'
   fileRoutesById: FileRoutesById
 }
@@ -394,6 +407,7 @@ export interface RootRouteChildren {
   ApiPublicHooksDispatchNotificationsRoute: typeof ApiPublicHooksDispatchNotificationsRoute
   ApiPublicHooksOpdAppointmentRemindersRoute: typeof ApiPublicHooksOpdAppointmentRemindersRoute
   ApiPublicHooksTeamDigestsRoute: typeof ApiPublicHooksTeamDigestsRoute
+  ApiPublicHooksWellnessMonthlyInvoicesRoute: typeof ApiPublicHooksWellnessMonthlyInvoicesRoute
   ApiPublicHooksWhatsappDeliveryRoute: typeof ApiPublicHooksWhatsappDeliveryRoute
 }
 
@@ -581,6 +595,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksWhatsappDeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/wellness-monthly-invoices': {
+      id: '/api/public/hooks/wellness-monthly-invoices'
+      path: '/api/public/hooks/wellness-monthly-invoices'
+      fullPath: '/api/public/hooks/wellness-monthly-invoices'
+      preLoaderRoute: typeof ApiPublicHooksWellnessMonthlyInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/team-digests': {
       id: '/api/public/hooks/team-digests'
       path: '/api/public/hooks/team-digests'
@@ -710,6 +731,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksOpdAppointmentRemindersRoute:
     ApiPublicHooksOpdAppointmentRemindersRoute,
   ApiPublicHooksTeamDigestsRoute: ApiPublicHooksTeamDigestsRoute,
+  ApiPublicHooksWellnessMonthlyInvoicesRoute:
+    ApiPublicHooksWellnessMonthlyInvoicesRoute,
   ApiPublicHooksWhatsappDeliveryRoute: ApiPublicHooksWhatsappDeliveryRoute,
 }
 export const routeTree = rootRouteImport

@@ -1,13 +1,14 @@
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Link } from "@tanstack/react-router";
-import { Users, Package, Inbox, FileText, BarChart3 } from "lucide-react";
+import { Users, Package, Inbox, FileText, BarChart3, MessageSquare } from "lucide-react";
 
 const TILES = [
   { to: "/wellness/providers", icon: Users, title: "Providers & Contracts", desc: "Wellness payors, contract dates, SPOC, billing email." },
   { to: "/wellness/packages",  icon: Package, title: "Packages", desc: "Per-provider consultations and health checks with pricing." },
-  { to: "/wellness/requests",  icon: Inbox, title: "Requests Inbox", desc: "Incoming requests — confirm, reschedule, cancel, send report." },
-  { to: "/wellness/invoices",  icon: FileText, title: "Invoices", desc: "Monthly invoices to wellness payors with Excel & PDF export." },
+  { to: "/wellness/requests",  icon: Inbox, title: "Requests Inbox", desc: "Incoming requests — confirm, reschedule, cancel, send report. Audit timeline per request." },
+  { to: "/wellness/templates", icon: MessageSquare, title: "Message Templates", desc: "Customize confirmation, reschedule, cancel and report messages (email + WhatsApp)." },
+  { to: "/wellness/invoices",  icon: FileText, title: "Invoices", desc: "Monthly invoices to wellness payors. Auto-generated on the 1st of each month." },
   { to: "/wellness/dashboard", icon: BarChart3, title: "Management Report", desc: "Per-provider revenue, utilisation, outstanding by month." },
 ];
 
