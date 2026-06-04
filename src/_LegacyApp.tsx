@@ -65,31 +65,18 @@ import PromoteUserPage from "./pages/admin/PromoteUserPage";
 import RolesMatrixPage from "./pages/admin/RolesMatrixPage";
 import AccessCheckerPage from "./pages/admin/AccessCheckerPage";
 import LaunchPage from "./pages/LaunchPage";
-// Gov Schemes + OPD/Wellness
+// Gov Schemes
 import GovSchemesLanding from "./pages/gov-schemes/GovSchemesLanding";
 import GovPreAuthPage from "./pages/gov-schemes/GovPreAuthPage";
 import GovClaimsPage from "./pages/gov-schemes/GovClaimsPage";
 import GovPackagesPage from "./pages/gov-schemes/GovPackagesPage";
+// Wellness (simplified module)
 import OpdLanding from "./pages/opd/OpdLanding";
-import OpdVisitsPage from "./pages/opd/OpdVisitsPage";
-import OpdVisitCapturePage from "./pages/opd/OpdVisitCapturePage";
-import OpdVisitImportPage from "./pages/opd/OpdVisitImportPage";
-import OpdCorporatesPage from "./pages/opd/OpdCorporatesPage";
-import OpdBulkSubmitPage from "./pages/opd/OpdBulkSubmitPage";
-import OpdEmployeesPage from "./pages/opd/OpdEmployeesPage";
-import OpdEligibilitySyncPage from "./pages/opd/OpdEligibilitySyncPage";
-import AhcPackagesPage from "./pages/opd/AhcPackagesPage";
-import AhcBookingsPage from "./pages/opd/AhcBookingsPage";
-import WellnessEventsPage from "./pages/opd/WellnessEventsPage";
-import OpdAnalyticsPage from "./pages/opd/OpdAnalyticsPage";
-import OpdEligibilityCheckPage from "./pages/opd/OpdEligibilityCheckPage";
-import OpdAppointmentsPage from "./pages/opd/OpdAppointmentsPage";
-import OpdReportsPage from "./pages/opd/OpdReportsPage";
-import OpdFollowUpPage from "./pages/opd/OpdFollowUpPage";
-import OpdInvoicesPage from "./pages/opd/OpdInvoicesPage";
-import OpdTasksPage from "./pages/opd/OpdTasksPage";
-import OpdCorporateAnalyticsPage from "./pages/opd/OpdCorporateAnalyticsPage";
-import OpdReminderAuditPage from "./pages/opd/OpdReminderAuditPage";
+import WellnessProvidersPage from "./pages/wellness/WellnessProvidersPage";
+import WellnessPackagesPage from "./pages/wellness/WellnessPackagesPage";
+import WellnessRequestsPage from "./pages/wellness/WellnessRequestsPage";
+import WellnessInvoicesPage from "./pages/wellness/WellnessInvoicesPage";
+import WellnessDashboardPage from "./pages/wellness/WellnessDashboardPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
@@ -234,28 +221,15 @@ const ROUTES: Record<string, RouteEntry> = {
   "/gov-schemes/deduction-analytics": () => <PlaceholderPage title="Deduction Analytics" description="Top deduction heads, scheme-wise rate-cut % and recoverable vs non-recoverable — Phase 4." />,
   "/gov-schemes/import": () => <PlaceholderPage title="Import Government Claims" description="PMJAY / state portal Excel import — Phase 4." />,
 
-  // OPD & Wellness
+  // Wellness / OPD (simplified)
   "/opd": OpdLanding,
   "/opd/dashboard": OpdLanding,
-  "/opd/visits": OpdVisitsPage,
-  "/opd/visits/new": OpdVisitCapturePage,
-  "/opd/visits/import": OpdVisitImportPage,
-  "/opd/corporates": OpdCorporatesPage,
-  "/opd/employees": OpdEmployeesPage,
-  "/opd/eligibility": OpdEligibilitySyncPage,
-  "/opd/packages": AhcPackagesPage,
-  "/opd/ahc-bookings": AhcBookingsPage,
-  "/opd/wellness-events": WellnessEventsPage,
-  "/opd/bulk-submit": OpdBulkSubmitPage,
-  "/opd/analytics": OpdAnalyticsPage,
-  "/opd/eligibility-check": OpdEligibilityCheckPage,
-  "/opd/appointments": OpdAppointmentsPage,
-  "/opd/reports": OpdReportsPage,
-  "/opd/follow-up": OpdFollowUpPage,
-  "/opd/invoices": OpdInvoicesPage,
-  "/opd/tasks": OpdTasksPage,
-  "/opd/corporate-analytics": OpdCorporateAnalyticsPage,
-  "/opd/reminder-audit": OpdReminderAuditPage,
+  "/wellness": OpdLanding,
+  "/wellness/providers": WellnessProvidersPage,
+  "/wellness/packages": WellnessPackagesPage,
+  "/wellness/requests": WellnessRequestsPage,
+  "/wellness/invoices": WellnessInvoicesPage,
+  "/wellness/dashboard": WellnessDashboardPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";
