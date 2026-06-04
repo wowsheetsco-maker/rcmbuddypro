@@ -40,7 +40,7 @@ export default function WellnessRequestsPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [timelineFor, setTimelineFor] = useState<{ id: string; name: string } | null>(null);
+  const [timelineFor, setTimelineFor] = useState<{ id: string; name: string; email: string | null; phone: string | null; provider?: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -152,7 +152,7 @@ export default function WellnessRequestsPage() {
                           </TableCell>
                           <TableCell className="text-xs capitalize">{r.source}</TableCell>
                           <TableCell className="text-right">
-                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} onTimeline={() => setTimelineFor({ id: r.id, name: r.client_name })} />
+                            <RowActions req={r} ctx={ctx} onChange={load} updateStatus={updateStatus} onTimeline={() => setTimelineFor({ id: r.id, name: r.client_name, email: r.client_email, phone: r.client_phone, provider })} />
                           </TableCell>
                         </TableRow>
                       );
@@ -166,6 +166,9 @@ export default function WellnessRequestsPage() {
         <WellnessRequestTimeline
           requestId={timelineFor?.id ?? null}
           clientName={timelineFor?.name}
+          clientEmail={timelineFor?.email}
+          clientPhone={timelineFor?.phone}
+          providerName={timelineFor?.provider}
           open={!!timelineFor}
           onOpenChange={(v) => !v && setTimelineFor(null)}
         />

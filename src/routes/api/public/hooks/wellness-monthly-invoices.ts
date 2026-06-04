@@ -153,31 +153,40 @@ The detailed invoice (Excel/PDF) is available in the portal under Wellness → I
 
 Thank you.`;
 
-          // Try to send via Resend if available
+          // Try to send via Resend with retry (3 attempts, exponential backoff)
           let emailStatus: "sent" | "drafted" | "failed" = "drafted";
           let emailError: string | undefined;
+          let attempts = 0;
 
           if (billingEmail && resendKey && lovableKey) {
-            try {
-              const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                  Authorization: `Bearer ${lovableKey}`,
-                  "X-Connection-Api-Key": resendKey,
-                },
-                body: JSON.stringify({
-                  from: "Wellness <onboarding@resend.dev>",
-                  to: [billingEmail],
-                  subject,
-                  text: body,
-                }),
-              });
-              if (resp.ok) { emailStatus = "sent"; emailsSent++; }
-              else { emailStatus = "failed"; emailError = `Resend ${resp.status}`; }
-            } catch (e) {
-              emailStatus = "failed";
-              emailError = e instanceof Error ? e.message : String(e);
+            const MAX_ATTEMPTS = 3;
+            for (let i = 0; i < MAX_ATTEMPTS; i++) {
+              attempts = i + 1;
+              try {
+                const resp = await fetch("https://connector-gateway.lovable.dev/resend/emails", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${lovableKey}`,
+                    "X-Connection-Api-Key": resendKey,
+                  },
+                  body: JSON.stringify({
+                    from: "Wellness <onboarding@resend.dev>",
+                    to: [billingEmail],
+                    subject,
+                    text: body,
+                  }),
+                });
+                if (resp.ok) { emailStatus = "sent"; emailsSent++; emailError = undefined; break; }
+                emailStatus = "failed";
+                emailError = `Resend ${resp.status}: ${await resp.text().catch(() => "")}`.slice(0, 500);
+                // Don't retry 4xx (except 429)
+                if (resp.status >= 400 && resp.status < 500 && resp.status !== 429) break;
+              } catch (e) {
+                emailStatus = "failed";
+                emailError = e instanceof Error ? e.message : String(e);
+              }
+              if (i < MAX_ATTEMPTS - 1) await new Promise((r) => setTimeout(r, 500 * Math.pow(2, i)));
             }
           }
 
@@ -191,7 +200,9 @@ Thank you.`;
               status: emailStatus,
               recipient: billingEmail ?? null,
               message: `${subject}\n\n${body}`,
-              meta: { invoice_id: invoiceId, invoice_no: invoiceNo, request_ids: items.map((r: any) => r.id), error: emailError ?? null },
+              meta: { invoice_id: invoiceId, invoice_no: invoiceNo, request_ids: items.map((r: any) => r.id), attempts },
+              last_error: emailError ?? null,
+              retry_count: Math.max(0, attempts - 1),
               delivered_at: emailStatus === "sent" ? new Date().toISOString() : null,
             });
           }

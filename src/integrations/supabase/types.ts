@@ -3491,12 +3491,15 @@ export type Database = {
           created_by: string | null
           delivered_at: string | null
           id: string
+          last_error: string | null
           message: string | null
           meta: Json | null
           opened_at: string | null
           org_id: string
           recipient: string | null
           request_id: string
+          resent_from_event_id: string | null
+          retry_count: number
           status: string
         }
         Insert: {
@@ -3506,12 +3509,15 @@ export type Database = {
           created_by?: string | null
           delivered_at?: string | null
           id?: string
+          last_error?: string | null
           message?: string | null
           meta?: Json | null
           opened_at?: string | null
           org_id: string
           recipient?: string | null
           request_id: string
+          resent_from_event_id?: string | null
+          retry_count?: number
           status?: string
         }
         Update: {
@@ -3521,12 +3527,15 @@ export type Database = {
           created_by?: string | null
           delivered_at?: string | null
           id?: string
+          last_error?: string | null
           message?: string | null
           meta?: Json | null
           opened_at?: string | null
           org_id?: string
           recipient?: string | null
           request_id?: string
+          resent_from_event_id?: string | null
+          retry_count?: number
           status?: string
         }
         Relationships: [
@@ -3535,6 +3544,13 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "wellness_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_request_events_resent_from_event_id_fkey"
+            columns: ["resent_from_event_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_request_events"
             referencedColumns: ["id"]
           },
         ]
