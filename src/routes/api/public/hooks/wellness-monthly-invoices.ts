@@ -123,7 +123,7 @@ export const Route = createFileRoute("/api/public/hooks/wellness-monthly-invoice
               patient_name: r.client_name,
               description: pkgMap.get(r.package_id)?.name ?? r.service_type ?? "Service",
               amount: Number(pkgMap.get(r.package_id)?.price ?? 0),
-            })));
+            })) as any);
           }
 
           const corp = corpMap.get(corporateId);
