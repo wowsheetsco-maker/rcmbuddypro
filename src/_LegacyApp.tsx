@@ -78,6 +78,7 @@ import WellnessRequestsPage from "./pages/wellness/WellnessRequestsPage";
 import WellnessInvoicesPage from "./pages/wellness/WellnessInvoicesPage";
 import WellnessDashboardPage from "./pages/wellness/WellnessDashboardPage";
 import WellnessTemplatesPage from "./pages/wellness/WellnessTemplatesPage";
+import WellnessCasesPage from "./pages/wellness/WellnessCasesPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
