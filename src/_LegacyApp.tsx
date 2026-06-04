@@ -230,6 +230,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/wellness/providers": WellnessProvidersPage,
   "/wellness/packages": WellnessPackagesPage,
   "/wellness/requests": WellnessRequestsPage,
+  "/wellness/cases": WellnessCasesPage,
   "/wellness/templates": WellnessTemplatesPage,
   "/wellness/invoices": WellnessInvoicesPage,
   "/wellness/dashboard": WellnessDashboardPage,
