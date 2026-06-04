@@ -166,6 +166,9 @@ export default function WellnessRequestsPage() {
         <WellnessRequestTimeline
           requestId={timelineFor?.id ?? null}
           clientName={timelineFor?.name}
+          clientEmail={timelineFor?.email}
+          clientPhone={timelineFor?.phone}
+          providerName={timelineFor?.provider}
           open={!!timelineFor}
           onOpenChange={(v) => !v && setTimelineFor(null)}
         />
