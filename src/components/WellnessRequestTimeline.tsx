@@ -64,8 +64,8 @@ export function WellnessRequestTimeline({
         return;
       }
       // Bump retry count on original + log a new resend event
-      await supabase.from("wellness_request_events" as never)
-        .update({ retry_count: (ev.retry_count ?? 0) + 1 } as any)
+      await (supabase.from("wellness_request_events" as never) as any)
+        .update({ retry_count: (ev.retry_count ?? 0) + 1 })
         .eq("id", ev.id);
       await supabase.from("wellness_request_events" as never).insert({
         org_id: getCurrentOrgId(),
