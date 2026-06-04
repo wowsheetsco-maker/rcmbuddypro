@@ -18,11 +18,11 @@ interface Req {
   source: string; report_url: string | null; report_sent_at: string | null;
   confirmation_sent_at: string | null;
 }
-interface Corp { id: string; name: string; billing_email?: string | null }
+interface Corp { id: string; name: string }
 interface Pkg { id: string; name: string; price: number }
 interface Evt { request_id: string; action: string; status: string; channel: string | null; created_at: string; delivered_at: string | null }
 interface InvItem { visit_id: string | null; invoice_id: string; amount: number }
-interface Inv { id: string; status: string; invoice_number: string | null; total_amount: number | null }
+interface Inv { id: string; status: string; invoice_no: string | null; total_amount: number | null }
 
 const STATUS_COLORS: Record<string, string> = {
   new: "bg-blue-500/10 text-blue-700 border-blue-500/20",
