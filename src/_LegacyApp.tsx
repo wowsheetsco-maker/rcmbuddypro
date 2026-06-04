@@ -221,28 +221,15 @@ const ROUTES: Record<string, RouteEntry> = {
   "/gov-schemes/deduction-analytics": () => <PlaceholderPage title="Deduction Analytics" description="Top deduction heads, scheme-wise rate-cut % and recoverable vs non-recoverable — Phase 4." />,
   "/gov-schemes/import": () => <PlaceholderPage title="Import Government Claims" description="PMJAY / state portal Excel import — Phase 4." />,
 
-  // OPD & Wellness
+  // Wellness / OPD (simplified)
   "/opd": OpdLanding,
   "/opd/dashboard": OpdLanding,
-  "/opd/visits": OpdVisitsPage,
-  "/opd/visits/new": OpdVisitCapturePage,
-  "/opd/visits/import": OpdVisitImportPage,
-  "/opd/corporates": OpdCorporatesPage,
-  "/opd/employees": OpdEmployeesPage,
-  "/opd/eligibility": OpdEligibilitySyncPage,
-  "/opd/packages": AhcPackagesPage,
-  "/opd/ahc-bookings": AhcBookingsPage,
-  "/opd/wellness-events": WellnessEventsPage,
-  "/opd/bulk-submit": OpdBulkSubmitPage,
-  "/opd/analytics": OpdAnalyticsPage,
-  "/opd/eligibility-check": OpdEligibilityCheckPage,
-  "/opd/appointments": OpdAppointmentsPage,
-  "/opd/reports": OpdReportsPage,
-  "/opd/follow-up": OpdFollowUpPage,
-  "/opd/invoices": OpdInvoicesPage,
-  "/opd/tasks": OpdTasksPage,
-  "/opd/corporate-analytics": OpdCorporateAnalyticsPage,
-  "/opd/reminder-audit": OpdReminderAuditPage,
+  "/wellness": OpdLanding,
+  "/wellness/providers": WellnessProvidersPage,
+  "/wellness/packages": WellnessPackagesPage,
+  "/wellness/requests": WellnessRequestsPage,
+  "/wellness/invoices": WellnessInvoicesPage,
+  "/wellness/dashboard": WellnessDashboardPage,
 };
 
 import AccessDenied from "@/components/auth/AccessDenied";
