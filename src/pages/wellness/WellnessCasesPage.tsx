@@ -50,11 +50,11 @@ export default function WellnessCasesPage() {
       setLoading(true);
       const [r, c, p, e, ii, iv] = await Promise.all([
         supabase.from("wellness_requests").select("*").order("requested_at", { ascending: false }).limit(1000),
-        supabase.from("opd_corporates").select("id,name,billing_email").order("name"),
+        supabase.from("opd_corporates").select("id,name").order("name"),
         supabase.from("wellness_packages").select("id,name,price"),
         supabase.from("wellness_request_events").select("request_id,action,status,channel,created_at,delivered_at").order("created_at", { ascending: false }).limit(1000),
         supabase.from("opd_invoice_items").select("visit_id,invoice_id,amount"),
-        supabase.from("opd_invoices").select("id,status,invoice_number,total_amount"),
+        supabase.from("opd_invoices").select("id,status,invoice_no,total_amount"),
       ]);
       setRows((r.data ?? []) as Req[]);
       setCorps((c.data ?? []) as Corp[]);
@@ -137,7 +137,7 @@ export default function WellnessCasesPage() {
         r.source,
         r.lastEvent?.action ?? "",
         r.lastEvent?.delivered_at ? "delivered" : r.lastEvent?.status ?? "",
-        r.invoice?.invoice_number ?? "",
+        r.invoice?.invoice_no ?? "",
         r.invoice?.status ?? "",
         r.amount,
       ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
@@ -276,7 +276,7 @@ export default function WellnessCasesPage() {
                       <TableCell className="text-xs">
                         {r.invoice ? (
                           <div>
-                            <div className="font-medium">{r.invoice.invoice_number ?? r.invoice.id.slice(0,8)}</div>
+                            <div className="font-medium">{r.invoice.invoice_no ?? r.invoice.id.slice(0,8)}</div>
                             <div className="text-muted-foreground">{r.invoice.status}</div>
                           </div>
                         ) : <span className="text-muted-foreground">—</span>}
