@@ -65,7 +65,12 @@ import PromoteUserPage from "./pages/admin/PromoteUserPage";
 import RolesMatrixPage from "./pages/admin/RolesMatrixPage";
 import AccessCheckerPage from "./pages/admin/AccessCheckerPage";
 import LaunchPage from "./pages/LaunchPage";
-// Gov Schemes + Wellness
+// Gov Schemes
+import GovSchemesLanding from "./pages/gov-schemes/GovSchemesLanding";
+import GovPreAuthPage from "./pages/gov-schemes/GovPreAuthPage";
+import GovClaimsPage from "./pages/gov-schemes/GovClaimsPage";
+import GovPackagesPage from "./pages/gov-schemes/GovPackagesPage";
+// Wellness (simplified module)
 import OpdLanding from "./pages/opd/OpdLanding";
 import WellnessProvidersPage from "./pages/wellness/WellnessProvidersPage";
 import WellnessPackagesPage from "./pages/wellness/WellnessPackagesPage";
