@@ -56,8 +56,8 @@ export const Route = createFileRoute("/api/public/hooks/wellness-monthly-invoice
         }
 
         // Group by (org_id, corporate_id)
-        const groups = new Map<string, typeof reqs>();
-        for (const r of reqs ?? []) {
+        const groups = new Map<string, any[]>();
+        for (const r of (reqs ?? []) as any[]) {
           const key = `${r.org_id}::${r.corporate_id}`;
           if (!groups.has(key)) groups.set(key, []);
           groups.get(key)!.push(r);
@@ -118,7 +118,7 @@ export const Route = createFileRoute("/api/public/hooks/wellness-monthly-invoice
 
             await supabaseAdmin.from("opd_invoice_items").insert(items.map((r: any) => ({
               org_id: orgId,
-              invoice_id: invoiceId,
+              invoice_id: invoiceId as string,
               visit_date: (r.scheduled_at ?? r.requested_at)?.slice(0, 10),
               patient_name: r.client_name,
               description: pkgMap.get(r.package_id)?.name ?? r.service_type ?? "Service",
