@@ -65,31 +65,13 @@ import PromoteUserPage from "./pages/admin/PromoteUserPage";
 import RolesMatrixPage from "./pages/admin/RolesMatrixPage";
 import AccessCheckerPage from "./pages/admin/AccessCheckerPage";
 import LaunchPage from "./pages/LaunchPage";
-// Gov Schemes + OPD/Wellness
-import GovSchemesLanding from "./pages/gov-schemes/GovSchemesLanding";
-import GovPreAuthPage from "./pages/gov-schemes/GovPreAuthPage";
-import GovClaimsPage from "./pages/gov-schemes/GovClaimsPage";
-import GovPackagesPage from "./pages/gov-schemes/GovPackagesPage";
+// Gov Schemes + Wellness
 import OpdLanding from "./pages/opd/OpdLanding";
-import OpdVisitsPage from "./pages/opd/OpdVisitsPage";
-import OpdVisitCapturePage from "./pages/opd/OpdVisitCapturePage";
-import OpdVisitImportPage from "./pages/opd/OpdVisitImportPage";
-import OpdCorporatesPage from "./pages/opd/OpdCorporatesPage";
-import OpdBulkSubmitPage from "./pages/opd/OpdBulkSubmitPage";
-import OpdEmployeesPage from "./pages/opd/OpdEmployeesPage";
-import OpdEligibilitySyncPage from "./pages/opd/OpdEligibilitySyncPage";
-import AhcPackagesPage from "./pages/opd/AhcPackagesPage";
-import AhcBookingsPage from "./pages/opd/AhcBookingsPage";
-import WellnessEventsPage from "./pages/opd/WellnessEventsPage";
-import OpdAnalyticsPage from "./pages/opd/OpdAnalyticsPage";
-import OpdEligibilityCheckPage from "./pages/opd/OpdEligibilityCheckPage";
-import OpdAppointmentsPage from "./pages/opd/OpdAppointmentsPage";
-import OpdReportsPage from "./pages/opd/OpdReportsPage";
-import OpdFollowUpPage from "./pages/opd/OpdFollowUpPage";
-import OpdInvoicesPage from "./pages/opd/OpdInvoicesPage";
-import OpdTasksPage from "./pages/opd/OpdTasksPage";
-import OpdCorporateAnalyticsPage from "./pages/opd/OpdCorporateAnalyticsPage";
-import OpdReminderAuditPage from "./pages/opd/OpdReminderAuditPage";
+import WellnessProvidersPage from "./pages/wellness/WellnessProvidersPage";
+import WellnessPackagesPage from "./pages/wellness/WellnessPackagesPage";
+import WellnessRequestsPage from "./pages/wellness/WellnessRequestsPage";
+import WellnessInvoicesPage from "./pages/wellness/WellnessInvoicesPage";
+import WellnessDashboardPage from "./pages/wellness/WellnessDashboardPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
