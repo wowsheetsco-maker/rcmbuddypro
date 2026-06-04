@@ -3331,6 +3331,173 @@ export type Database = {
           },
         ]
       }
+      wellness_gmail_sync: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          id: string
+          last_error: string | null
+          last_polled_at: string | null
+          org_id: string
+          query_filter: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_polled_at?: string | null
+          org_id: string
+          query_filter?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          id?: string
+          last_error?: string | null
+          last_polled_at?: string | null
+          org_id?: string
+          query_filter?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      wellness_packages: {
+        Row: {
+          corporate_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          org_id: string
+          price: number
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          corporate_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          org_id: string
+          price?: number
+          service_type?: string
+          updated_at?: string
+        }
+        Update: {
+          corporate_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          org_id?: string
+          price?: number
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_packages_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      wellness_requests: {
+        Row: {
+          client_email: string | null
+          client_name: string
+          client_phone: string | null
+          confirmation_sent_at: string | null
+          corporate_id: string | null
+          created_at: string
+          id: string
+          notes: string | null
+          org_id: string
+          package_id: string | null
+          report_sent_at: string | null
+          report_url: string | null
+          requested_at: string
+          scheduled_at: string | null
+          service_type: string | null
+          source: string
+          source_message_id: string | null
+          source_snippet: string | null
+          source_subject: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          client_email?: string | null
+          client_name: string
+          client_phone?: string | null
+          confirmation_sent_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id: string
+          package_id?: string | null
+          report_sent_at?: string | null
+          report_url?: string | null
+          requested_at?: string
+          scheduled_at?: string | null
+          service_type?: string | null
+          source?: string
+          source_message_id?: string | null
+          source_snippet?: string | null
+          source_subject?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          client_email?: string | null
+          client_name?: string
+          client_phone?: string | null
+          confirmation_sent_at?: string | null
+          corporate_id?: string | null
+          created_at?: string
+          id?: string
+          notes?: string | null
+          org_id?: string
+          package_id?: string | null
+          report_sent_at?: string | null
+          report_url?: string | null
+          requested_at?: string
+          scheduled_at?: string | null
+          service_type?: string | null
+          source?: string
+          source_message_id?: string | null
+          source_snippet?: string | null
+          source_subject?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_requests_corporate_id_fkey"
+            columns: ["corporate_id"]
+            isOneToOne: false
+            referencedRelation: "opd_corporates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_requests_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_packages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       whatsapp_templates: {
         Row: {
           audience_role: string
