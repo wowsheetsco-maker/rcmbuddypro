@@ -8,14 +8,15 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Mail, MessageCircle, Phone, Upload, CheckCircle2, XCircle, CalendarClock, Inbox } from "lucide-react";
+import { Plus, Mail, MessageCircle, Phone, Upload, CheckCircle2, XCircle, CalendarClock, Inbox, History } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
 import {
-  buildConfirmation, buildReschedule, buildCancellation, buildReport,
-  mailto, whatsappLink, telLink,
+  renderTemplate, loadTemplates, mailto, whatsappLink, telLink,
+  type TemplateKind,
 } from "@/lib/wellnessMessaging";
+import { WellnessRequestTimeline, logWellnessEvent } from "@/components/WellnessRequestTimeline";
 
 const STATUSES = ["new", "confirmed", "rescheduled", "cancelled", "completed"];
 
