@@ -1,48 +1,88 @@
-## Wellness / OPD — full build plan
+## Simplified Wellness / OPD module
 
-The spec covers ~9 functional areas. Rather than one huge migration + 20 pages in a single turn (high risk of breakage), I'll ship it in 4 phases. Each phase is independently usable and leaves the app green.
+Replace the existing 15+ OPD pages with a focused 5-screen workflow. Old DB tables stay (no data loss) but old pages are removed from navigation.
 
-### Phase 1 — Data model (1 migration)
+### Screens
 
-Extend existing tables and add what's missing:
+1. **Providers & Contracts**
+   - List wellness providers (corporates / payors) with contract dates, billing cycle, contact person, email, phone.
+   - Reuses `opd_corporates` table (already has these fields).
+   - Add / edit / archive.
 
-- `opd_corporates` — add `hr_contact_name/email/phone`, `billing_contact_name/email/phone`, `employee_limit`, `dependents_allowed`, `invoice_cycle` (monthly/quarterly), `package_id`.
-- `opd_employees` — already exists; ensure `status`, `department`, `mobile`, `email`, `corporate_id`. Add if missing.
-- New `opd_dependents` (employee_id, relation [spouse/child/parent], name, dob, gender, is_active).
-- New `opd_appointments` (corporate_id, employee_id, provider, specialty, scheduled_at, status [booked/confirmed/rescheduled/cancelled/completed/no_show], provider_confirmed_at, reminder_24h_sent_at, reminder_same_day_sent_at, notes).
-- New `opd_reports` (appointment_id OR visit_id, stage [awaiting_provider/received/qc/sent_employee/sent_corporate/closed], received_at, qc_at, sent_employee_at, sent_corporate_at, sla_target_at, file_path, file_name).
-- New `opd_invoices` (corporate_id, invoice_no, period_start, period_end, visit_count, gross_amount, tax_amount, total_amount, due_date, status [draft/submitted/part_paid/paid/outstanding], paid_amount, generated_at, submitted_at).
-- New `opd_invoice_items` (invoice_id, visit_id, amount).
-- New `opd_followup_tasks` (entity_type [appointment/report/invoice/payment], entity_id, title, due_at, assigned_to app_user_id, status [open/done], completed_at).
+2. **Packages**
+   - Per-provider package catalogue (name, type: Consultation / Health Check, price, includes).
+   - New table `wellness_packages` linked to corporate.
 
-All tables: org_id NOT NULL, full GRANT + RLS via `is_org_member(org_id)` matching existing OPD tables.
+3. **Requests Inbox** (the heart of the module)
+   - Auto-pulls new emails from connected Gmail (label filter, e.g. `Wellness`) every 5 min via cron → creates rows in `wellness_requests`.
+   - Manual "Add request" button as fallback.
+   - Each row: client name, contact, requested service, provider, status (`new`, `confirmed`, `cancelled`, `rescheduled`, `completed`).
+   - Row actions: **Confirm**, **Cancel**, **Reschedule** → opens dialog → on submit sends:
+     - Email (Lovable Emails)
+     - WhatsApp (existing `whatsapp.functions` integration)
+     - "Call" button = `tel:` link (no backend call needed)
+   - After consultation/health check: **Send Report** action → upload PDF → emails + WhatsApps it to client, marks request `completed`.
 
-### Phase 2 — Operational pages
+4. **Invoices** (monthly, per provider)
+   - "Generate monthly invoice" picks a provider + month → aggregates all `completed` requests in that period × package price → creates invoice → email to provider's billing contact.
+   - Excel + PDF export (reuse existing `opdInvoiceExport.ts`).
 
-1. **Eligibility Check** (`/opd/eligibility`) — search by Employee ID / mobile / corporate, instant ✅/❌ card with employee + dependents + corporate validity dates.
-2. **Outstanding Follow-Up Dashboard** (`/opd/follow-up`) — 4 tile groups (Appointments / Reports / Invoices / Payments) with drill-through lists.
-3. **Report Tracking** (`/opd/reports`) — workflow board with RAG SLA chips (green <24h, amber 24-72h, red >72h).
-4. **Appointments** (`/opd/appointments`) — list + capture, status pipeline, provider-confirmation toggle, manual "send reminder" action.
+5. **Management Dashboard**
+   - Month filter + per-provider breakdown: requests received, confirmed, completed, cancelled, revenue, outstanding.
+   - PDF export button.
 
-### Phase 3 — Revenue & invoicing
+### Technical details
 
-5. **Invoices** (`/opd/invoices`) — list with status pipeline + aging; "Generate bulk invoice" dialog (corporate + period → preview visit count & amount → create draft → submit).
-6. **Invoice detail** drawer — items, status transitions, payment recording.
-7. Hook into existing OPD analytics for **Corporate-wise revenue + utilization** widgets.
+**Database migration**
+- New table `wellness_packages` (corporate_id, name, type, price, description, active).
+- New table `wellness_requests` (corporate_id, package_id, client_name, client_email, client_phone, requested_at, scheduled_at, status, source: `email`/`manual`, source_message_id, report_url, report_sent_at, confirmation_sent_at, notes).
+- New table `wellness_gmail_sync` (single row per org: last_history_id, label_filter, enabled).
+- RLS: org-scoped, same pattern as existing OPD tables.
 
-### Phase 4 — Tasks & wellness events
+**Gmail intake**
+- Connect Google Mail via `standard_connectors--connect` (`google_mail`).
+- Server route `/api/public/hooks/wellness-gmail-poll` — lists unread messages matching configured query (default `label:wellness is:unread newer_than:7d`), extracts sender / subject / snippet, inserts into `wellness_requests`, marks message read.
+- pg_cron schedule every 5 minutes.
 
-8. **Follow-Up Tasks** (`/opd/tasks`) — Kanban / list, assign to team members, due dates, source entity link.
-9. **Wellness Events** — extend existing `WellnessEventsPage` with outcomes (screened, abnormal, follow-up required), team assignment, attendance log.
-10. **Navigation polish** — OPD landing tile grid matches the recommended menu in the spec (Dashboard / Corporates / Employees / Eligibility / Appointments / Visits / Reports / Follow-Up / Invoices / Events / Analytics).
+**Client messaging**
+- Email: scaffold transactional template `wellness-confirmation`, `wellness-reschedule`, `wellness-cancellation`, `wellness-report`.
+- WhatsApp: reuse `src/lib/whatsapp.functions.ts` `sendWhatsAppMessage`.
+- Call: `tel:` link in UI.
 
-### What I will NOT change
+**Report upload**
+- Storage bucket `wellness-reports` (private, signed URL for client email).
 
-- Existing Visits / AHC / Bulk Submit / Corporates / Employees pages stay as-is; new pages link to them.
-- Auth, gov-schemes, claims modules untouched.
+**Navigation cleanup**
+- `OpdLanding.tsx` becomes a 5-tile hub for the new screens.
+- Remove old OPD pages from `_LegacyApp.tsx` routes; keep files in place (unreferenced) so no build break, but they won't be reachable.
 
-### Sequencing
+### Files
 
-I'll ship Phase 1 (single migration) first and wait for your approval, then Phases 2–4 as separate batches so each is reviewable. Each phase is ~half a day of work.
+**New**
+- `src/pages/wellness/WellnessProvidersPage.tsx` (thin wrapper around existing corporates query)
+- `src/pages/wellness/WellnessPackagesPage.tsx`
+- `src/pages/wellness/WellnessRequestsPage.tsx` (Inbox + actions)
+- `src/pages/wellness/WellnessInvoicesPage.tsx`
+- `src/pages/wellness/WellnessDashboardPage.tsx`
+- `src/routes/api/public/hooks/wellness-gmail-poll.ts`
+- `src/lib/wellnessMessaging.ts` (helpers wrapping email + WhatsApp sends)
+- `src/lib/email-templates/wellness-confirmation.tsx` (+ reschedule / cancel / report)
 
-**Confirm and I'll start with the Phase 1 migration.**
+**Modified**
+- `src/pages/opd/OpdLanding.tsx` — replace tile grid with 5 new tiles.
+- `src/_LegacyApp.tsx` — register new routes, remove old OPD routes.
+
+**Migration**
+- 3 new tables + RLS + storage bucket + pg_cron job.
+
+### Order of operations
+
+1. DB migration (tables + bucket + cron).
+2. Connect Gmail connector (will prompt you).
+3. Build screens 1→5.
+4. Build Gmail poll route + reminder templates.
+5. Rewire `OpdLanding` and routes.
+
+I'll need you to connect your Gmail account when prompted (mid-build). Estimated end state: ~6 new files, 1 migration, old OPD UI hidden.
+
+Approve to proceed.
