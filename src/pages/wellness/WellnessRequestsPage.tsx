@@ -40,7 +40,7 @@ export default function WellnessRequestsPage() {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [timelineFor, setTimelineFor] = useState<{ id: string; name: string } | null>(null);
+  const [timelineFor, setTimelineFor] = useState<{ id: string; name: string; email: string | null; phone: string | null; provider?: string } | null>(null);
 
   const load = async () => {
     setLoading(true);
