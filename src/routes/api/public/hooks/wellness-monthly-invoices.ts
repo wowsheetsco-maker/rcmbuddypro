@@ -183,7 +183,7 @@ Thank you.`;
 
           // Log event against the first request in the batch so it shows in timeline
           if (items[0]) {
-            await supabaseAdmin.from("wellness_request_events").insert({
+            await (supabaseAdmin.from as any)("wellness_request_events").insert({
               org_id: orgId,
               request_id: items[0].id,
               action: "invoice_generated",
@@ -197,7 +197,7 @@ Thank you.`;
           }
         }
 
-        await supabaseAdmin.from("wellness_invoice_runs").insert({
+        await (supabaseAdmin.from as any)("wellness_invoice_runs").insert({
           period_start: periodStartStr,
           period_end: periodEndStr,
           providers_total: providers.size,
