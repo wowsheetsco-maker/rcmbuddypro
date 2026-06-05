@@ -7,7 +7,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useActionCentreCounts } from "@/hooks/useActionCentreCounts";
+import { useAdminSubroles } from "@/hooks/useAdminSubroles";
+import { ADMIN_CONSOLE_SECTIONS, isSectionVisible } from "@/pages/settings/AdminConsolePage";
 import { cn } from "@/lib/utils";
+
 
 const MAX_VISIBLE_TABS = 6;
 
@@ -99,6 +102,7 @@ export default function HubTabBar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const counts = useActionCentreCounts();
+  const { subroles } = useAdminSubroles();
   const hub = useMemo(() => getHubForPath(pathname), [pathname]);
   const tabRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
@@ -106,6 +110,7 @@ export default function HubTabBar() {
   useEffect(() => { tabRefs.current = []; }, [hub?.key]);
 
   if (!hub) return null;
+
 
   const badgeFor = (tab: HubTab): { text: string; tone: "danger" | "warn" } | null => {
     if (!tab.badge) return null;
@@ -122,7 +127,13 @@ export default function HubTabBar() {
   };
 
   const HubIcon = hub.icon;
-  const tabs = hub.tabs;
+  const tabs = hub.key === "admin"
+    ? hub.tabs.filter((t) => {
+        const s = ADMIN_CONSOLE_SECTIONS.find((sec) => sec.path === t.path);
+        return !s || isSectionVisible(s, subroles);
+      })
+    : hub.tabs;
+  if (tabs.length === 0) return null;
   const activeIdx = tabs.findIndex((t) => t.path === pathname);
   const overflow = tabs.length > MAX_VISIBLE_TABS;
   let visible = tabs.slice(0, MAX_VISIBLE_TABS);
