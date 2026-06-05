@@ -14,6 +14,8 @@ import { Download, ExternalLink, Save, Trash2, FileSpreadsheet, Package } from "
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { exportMonthlyInvoiceXlsx, type MonthlyCaseRow } from "@/lib/wellnessMonthlyExport";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { WellnessRequestsBody } from "./WellnessRequestsPage";
 
 interface Req {
   id: string; org_id: string; corporate_id: string | null; package_id: string | null;
@@ -81,6 +83,7 @@ export default function WellnessCasesPage() {
   const [newViewShared, setNewViewShared] = useState(false);
   const [exportMonth, setExportMonth] = useState(() => new Date().toISOString().slice(0, 7));
   const [userId, setUserId] = useState<string>("");
+  const [tab, setTab] = useState<"cases" | "inbox">("cases");
 
   const loadAll = async () => {
     setLoading(true);
@@ -262,16 +265,28 @@ export default function WellnessCasesPage() {
       <div className="space-y-4">
         <header className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h1 className="text-2xl font-display">All Cases</h1>
-            <p className="text-sm text-muted-foreground">Master tracker for every wellness request — status, schedule, invoice and last delivery.</p>
+            <h1 className="text-2xl font-display">Wellness Cases</h1>
+            <p className="text-sm text-muted-foreground">Inbox for new requests + master tracker for every case.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-[150px]" />
-            <Button variant="outline" onClick={exportMonthly}><FileSpreadsheet className="h-4 w-4 mr-2" />Monthly Export</Button>
-            <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2" />CSV</Button>
-            <Link to={"/wellness/requests" as any}><Button variant="outline">Inbox <ExternalLink className="h-4 w-4 ml-2" /></Button></Link>
+          <div className="flex flex-wrap gap-2 items-center">
+            <Tabs value={tab} onValueChange={(v) => setTab(v as "cases" | "inbox")}>
+              <TabsList>
+                <TabsTrigger value="inbox">Inbox{counts.new ? ` (${counts.new})` : ""}</TabsTrigger>
+                <TabsTrigger value="cases">All Cases</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            {tab === "cases" && (<>
+              <Input type="month" value={exportMonth} onChange={(e) => setExportMonth(e.target.value)} className="w-[150px]" />
+              <Button variant="outline" onClick={exportMonthly}><FileSpreadsheet className="h-4 w-4 mr-2" />Monthly Export</Button>
+              <Button variant="outline" onClick={exportCSV}><Download className="h-4 w-4 mr-2" />CSV</Button>
+            </>)}
           </div>
         </header>
+
+        {tab === "inbox" && <WellnessRequestsBody />}
+        {tab === "cases" && (<>
+
+
 
         <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
           {[
@@ -458,6 +473,7 @@ export default function WellnessCasesPage() {
             </Table>
           </CardContent>
         </Card>
+        </>)}
       </div>
     </AppLayout>
   );
