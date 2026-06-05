@@ -49,6 +49,7 @@ import FollowupAutomationPage from "./pages/settings/FollowupAutomationPage";
 import TeamDigestsPage from "./pages/settings/TeamDigestsPage";
 import WhatsAppTemplatesPage from "./pages/settings/WhatsAppTemplatesPage";
 import DataManagementPage from "./pages/settings/DataManagementPage";
+import AdminConsolePage from "./pages/settings/AdminConsolePage";
 // AI Center
 import AiCenterPage from "./pages/AiCenterPage";
 import AiCreationPage from "./pages/ai/AiCreationPage";
