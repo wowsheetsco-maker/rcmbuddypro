@@ -595,6 +595,185 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_submission_documents: {
+        Row: {
+          claim_id: string
+          created_at: string
+          doc_key: string
+          doc_path: string | null
+          doc_url: string | null
+          id: string
+          label: string
+          notes: string | null
+          org_id: string
+          required_for_courier: boolean
+          required_for_portal: boolean
+          sort_order: number
+          status: string
+          submission_id: string
+          updated_at: string
+          uploaded_at: string | null
+          uploaded_by: string | null
+        }
+        Insert: {
+          claim_id: string
+          created_at?: string
+          doc_key: string
+          doc_path?: string | null
+          doc_url?: string | null
+          id?: string
+          label: string
+          notes?: string | null
+          org_id: string
+          required_for_courier?: boolean
+          required_for_portal?: boolean
+          sort_order?: number
+          status?: string
+          submission_id: string
+          updated_at?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Update: {
+          claim_id?: string
+          created_at?: string
+          doc_key?: string
+          doc_path?: string | null
+          doc_url?: string | null
+          id?: string
+          label?: string
+          notes?: string | null
+          org_id?: string
+          required_for_courier?: boolean
+          required_for_portal?: boolean
+          sort_order?: number
+          status?: string
+          submission_id?: string
+          updated_at?: string
+          uploaded_at?: string | null
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_submission_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_documents_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "claim_submission_documents_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "claim_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_documents_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_submission_events: {
+        Row: {
+          actor_id: string | null
+          claim_id: string
+          created_at: string
+          event_type: string
+          id: string
+          org_id: string
+          payload: Json
+          submission_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          claim_id: string
+          created_at?: string
+          event_type: string
+          id?: string
+          org_id: string
+          payload?: Json
+          submission_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          claim_id?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          org_id?: string
+          payload?: Json
+          submission_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_submission_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submission_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "claim_submission_events_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "claim_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_submissions: {
         Row: {
           ack_doc_path: string | null
@@ -4123,6 +4302,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_create_submission_tasks: { Args: never; Returns: number }
       can_access_branch: {
         Args: { _branch_id: string; _org_id: string }
         Returns: boolean
@@ -4163,6 +4343,10 @@ export type Database = {
         Returns: Json
       }
       seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
+      seed_submission_checklist: {
+        Args: { _submission_id: string }
+        Returns: undefined
+      }
       user_org_ids: { Args: never; Returns: string[] }
     }
     Enums: {

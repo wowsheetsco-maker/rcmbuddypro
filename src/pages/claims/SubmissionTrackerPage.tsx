@@ -18,12 +18,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import {
-  Upload, FileCheck2, Loader2, UserPlus, Inbox, CheckCircle2, Building2, Download,
+  Upload, FileCheck2, Loader2, UserPlus, Inbox, CheckCircle2, Building2, Download, Eye,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { useHospitals } from "@/hooks/useHospitals";
 import { useAppUsers } from "@/hooks/useAppUsers";
+import SubmissionDetailDrawer from "@/components/SubmissionDetailDrawer";
 
 const BUCKET = "claim-documents";
 const SETTLED = new Set(["settled", "paid", "closed", "claim settled"]);
@@ -64,6 +65,7 @@ export default function SubmissionTrackerPage() {
   const [assignDialog, setAssignDialog] = useState<{ claimId: string } | null>(null);
   const [submitDialog, setSubmitDialog] = useState<{ sub: Submission } | null>(null);
   const [ackDialog, setAckDialog] = useState<{ sub: Submission } | null>(null);
+  const [detailDrawer, setDetailDrawer] = useState<{ sub: Submission; label: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const [officerEdits, setOfficerEdits] = useState<Record<string, string>>({});
 
@@ -344,6 +346,11 @@ export default function SubmissionTrackerPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right space-x-1">
+                            {sub && (
+                              <Button size="sm" variant="ghost" onClick={() => setDetailDrawer({ sub, label: `${claim.claim_number || claim.ihx_ref_id} · ${claim.patient_name}` })}>
+                                <Eye className="h-3 w-3 mr-1" /> View
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline" onClick={() => setAssignDialog({ claimId: claim.id })}>
                               <UserPlus className="h-3 w-3 mr-1" /> Assign
                             </Button>
@@ -402,6 +409,14 @@ export default function SubmissionTrackerPage() {
           fileRef={fileRef}
         />
       )}
+      <SubmissionDetailDrawer
+        open={!!detailDrawer}
+        onClose={() => setDetailDrawer(null)}
+        submissionId={detailDrawer?.sub.id ?? null}
+        claimId={detailDrawer?.sub.claim_id ?? null}
+        claimLabel={detailDrawer?.label ?? ""}
+        submissionMode={detailDrawer?.sub.submission_mode ?? null}
+      />
     </AppLayout>
   );
 }
