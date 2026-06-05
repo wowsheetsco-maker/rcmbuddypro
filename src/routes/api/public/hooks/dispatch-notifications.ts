@@ -26,6 +26,8 @@ interface DispatchResult {
   sla_candidates: number;
   followup_candidates: number;
   contract_expiry_candidates: number;
+  submission_auto_created: number;
+  submission_reminder_candidates: number;
 }
 
 /** Days from "today" before a contract expires that should trigger an alert. */
@@ -54,7 +56,17 @@ async function runDispatcher(): Promise<DispatchResult> {
     sla_candidates: 0,
     followup_candidates: 0,
     contract_expiry_candidates: 0,
+    submission_auto_created: 0,
+    submission_reminder_candidates: 0,
   };
+
+  // Auto-create submission tasks for newly discharged claims (assigns branch officer when set).
+  try {
+    const { data: autoCount } = await supabaseAdmin.rpc("auto_create_submission_tasks" as never);
+    if (typeof autoCount === "number") result.submission_auto_created = autoCount;
+  } catch (e) {
+    console.error("[dispatch-notifications] auto_create_submission_tasks failed", e);
+  }
 
   // Pull all (user_id, org_id) memberships and prefs in two queries.
   const { data: members, error: mErr } = await supabaseAdmin
