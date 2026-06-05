@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/command";
 import {
   LayoutDashboard, Search, ListChecks, ShieldAlert, Receipt, Upload,
-  Calendar as CalendarIcon, Bot, Users, Landmark,
+  Calendar as CalendarIcon, Bot, Users, Landmark, Settings,
   CreditCard, FileWarning, User as UserIcon, Building2, Mail, Phone,
   Hospital, Clock, History, AlertTriangle,
 } from "lucide-react";
+import { markAdminConsoleOverviewIntent } from "@/pages/settings/AdminConsolePage";
 import { Badge } from "@/components/ui/badge";
 import { formatInrShort, formatDays, getStatusColor } from "@/data/mockClaims";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
@@ -61,9 +62,7 @@ const NAV_COMMANDS = [
   { label: "Outstanding Reminders", path: "/communications/outstanding", icon: CalendarIcon,    keywords: "" },
   { label: "Contacts",             path: "/providers/contacts",          icon: Users,           keywords: "spoc" },
   { label: "TPA / Insurers",       path: "/providers",                   icon: Landmark,        keywords: "" },
-  { label: "Hospital Branches",    path: "/settings/hospital-branches",  icon: Hospital,        keywords: "groups merge" },
-  { label: "AI Providers",         path: "/settings/ai-providers",       icon: Bot,             keywords: "openai gemini" },
-  { label: "Settings · Users",     path: "/settings/users",              icon: Users,           keywords: "team" },
+  { label: "Admin Console",        path: "/settings",                    icon: Settings,        keywords: "settings users permissions branches integrations ai providers templates notifications automation digests data quality dq" },
 ];
 
 const RECENTS_KEY = "rcm-buddy-search-recents";
@@ -249,6 +248,7 @@ export default function CommandPalette({ open, onOpenChange, initialQuery = "" }
 
   const handleSelect = (path: string) => {
     saveRecent(query);
+    if (path === "/settings") markAdminConsoleOverviewIntent();
     onOpenChange(false);
     navigate(path);
   };

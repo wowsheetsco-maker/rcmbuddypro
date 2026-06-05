@@ -21,6 +21,7 @@ import { Route as AuthenticatedMyTasksRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated.claims'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated.claims.index'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated.settings.users'
 import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
@@ -99,6 +100,12 @@ const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
 const AuthenticatedClaimsIndexRoute =
   AuthenticatedClaimsIndexRouteImport.update({
     id: '/',
@@ -232,6 +239,7 @@ export interface FileRoutesByFullPath {
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
@@ -247,7 +255,6 @@ export interface FileRoutesByTo {
   '/analytics': typeof AuthenticatedAnalyticsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
-  '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
+  '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
@@ -295,6 +303,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
   '/api/public/hooks/team-digests': typeof ApiPublicHooksTeamDigestsRoute
@@ -328,6 +337,7 @@ export interface FileRouteTypes {
     | '/settings/permissions'
     | '/settings/users'
     | '/claims/'
+    | '/settings/'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
@@ -343,7 +353,6 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/dashboard'
     | '/my-tasks'
-    | '/settings'
     | '/today'
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
@@ -358,6 +367,7 @@ export interface FileRouteTypes {
     | '/settings/permissions'
     | '/settings/users'
     | '/claims'
+    | '/settings'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
@@ -390,6 +400,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/permissions'
     | '/_authenticated/settings/users'
     | '/_authenticated/claims/'
+    | '/_authenticated/settings/'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
     | '/api/public/hooks/team-digests'
@@ -496,6 +507,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/analytics'
       preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
     }
     '/_authenticated/claims/': {
       id: '/_authenticated/claims/'
@@ -685,11 +703,13 @@ const AuthenticatedDashboardRouteWithChildren =
 interface AuthenticatedSettingsRouteChildren {
   AuthenticatedSettingsPermissionsRoute: typeof AuthenticatedSettingsPermissionsRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
+  AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
 
 const AuthenticatedSettingsRouteChildren: AuthenticatedSettingsRouteChildren = {
   AuthenticatedSettingsPermissionsRoute: AuthenticatedSettingsPermissionsRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
+  AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }
 
 const AuthenticatedSettingsRouteWithChildren =
