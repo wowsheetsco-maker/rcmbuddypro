@@ -228,10 +228,34 @@ function daysBetween(a: string | null, b: string | null): number {
   return Math.abs(da - db) / 86_400_000;
 }
 
-export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[]): MatchSuggestion[] {
+/** Normalize a payer / payee name: lowercase, strip punctuation and common suffixes. */
+export function normalizePayer(s: string | null | undefined): string {
+  if (!s) return "";
+  const stop = /\b(pvt|private|ltd|limited|insurance|assurance|general|health|tpa|services|service|india|co|company|corp|corporation|the|of|and|&)\b/g;
+  return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(stop, " ").replace(/\s+/g, " ").trim();
+}
+
+function tokenOverlap(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const at = new Set(a.split(" ").filter((t) => t.length >= 3));
+  const bt = b.split(" ").filter((t) => t.length >= 3);
+  if (at.size === 0 || bt.length === 0) return 0;
+  let hit = 0;
+  for (const t of bt) if (at.has(t)) hit++;
+  return hit / Math.max(at.size, bt.length);
+}
+
+export interface ScoreOptions {
+  /** Second pass uses looser tolerances. */
+  secondPass?: boolean;
+}
+
+export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[], opts: ScoreOptions = {}): MatchSuggestion[] {
   const out: MatchSuggestion[] = [];
   const entryUtr = stripUtr(entry.utr_ref);
-  const payer = (entry.payer_hint ?? "").toLowerCase();
+  const payerNorm = normalizePayer(entry.payer_hint ?? entry.narration);
+  const looseAmtPct = opts.secondPass ? 2 : 1;
+  const looseDays = opts.secondPass ? 45 : 30;
 
   for (const c of claims) {
     const reasons: string[] = [];
@@ -262,27 +286,35 @@ export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[]): Ma
         score = Math.max(score, 70);
         if (method === "fuzzy_payer") method = "auto_amount_date";
         reasons.push(`Amount ~${pctDiff.toFixed(1)}% diff within ${Math.round(dDays)}d`);
-      } else if (pctDiff < 5 && dDays <= 30) {
-        score = Math.max(score, 50);
+      } else if (pctDiff < looseAmtPct && dDays <= looseDays) {
+        score = Math.max(score, opts.secondPass ? 60 : 50);
         reasons.push(`Amount ~${pctDiff.toFixed(1)}% diff within ${Math.round(dDays)}d`);
       }
     }
 
-    // Payer hint vs TPA / insurer
-    if (payer.length >= 3) {
-      const tpa = (c.tpa_name ?? "").toLowerCase();
-      const ins = (c.insurance_company_name ?? "").toLowerCase();
-      if ((tpa && tpa.includes(payer)) || (ins && ins.includes(payer)) ||
-          (payer.includes(tpa) && tpa) || (payer.includes(ins) && ins)) {
+    // Payer hint vs TPA / insurer — normalized + token overlap
+    const tpaNorm = normalizePayer(c.tpa_name);
+    const insNorm = normalizePayer(c.insurance_company_name);
+    if (payerNorm.length >= 3) {
+      const ov = Math.max(tokenOverlap(tpaNorm, payerNorm), tokenOverlap(insNorm, payerNorm));
+      if (ov >= 0.5) {
+        score = Math.min(100, score + 15);
+        reasons.push(`Payer matches TPA/insurer (${Math.round(ov * 100)}%)`);
+      } else if (ov > 0) {
+        score = Math.min(100, score + 8);
+        reasons.push(`Payer partial match (${Math.round(ov * 100)}%)`);
+      } else if ((tpaNorm && payerNorm.includes(tpaNorm)) || (insNorm && payerNorm.includes(insNorm))) {
         score = Math.min(100, score + 10);
-        reasons.push("Payer name matches TPA/insurer");
+        reasons.push("Payer name contains TPA/insurer");
       }
     }
 
-    if (score >= 50) {
+    const floor = opts.secondPass ? 45 : 50;
+    if (score >= floor) {
       out.push({ claim: c, confidence: score, method, reasons });
     }
   }
   out.sort((a, b) => b.confidence - a.confidence);
   return out.slice(0, 5);
 }
+
