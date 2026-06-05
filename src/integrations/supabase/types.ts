@@ -3266,6 +3266,60 @@ export type Database = {
           },
         ]
       }
+      wellness_case_invoices: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          invoice_id: string
+          notes: string | null
+          org_id: string
+          period_month: string
+          request_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id: string
+          notes?: string | null
+          org_id: string
+          period_month: string
+          request_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          notes?: string | null
+          org_id?: string
+          period_month?: string
+          request_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wellness_case_invoices_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "opd_invoices"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wellness_case_invoices_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "wellness_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wellness_events: {
         Row: {
           actual_count: number
@@ -3641,6 +3695,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      wellness_saved_views: {
+        Row: {
+          created_at: string
+          filters: Json
+          id: string
+          is_default: boolean
+          is_shared: boolean
+          name: string
+          org_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name: string
+          org_id: string
+          updated_at?: string
+          user_id?: string
+        }
+        Update: {
+          created_at?: string
+          filters?: Json
+          id?: string
+          is_default?: boolean
+          is_shared?: boolean
+          name?: string
+          org_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       whatsapp_templates: {
         Row: {
