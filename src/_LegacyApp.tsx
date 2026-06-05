@@ -24,6 +24,7 @@ import TdsReportPage from "./pages/claims/TdsReportPage";
 import ImportClaimsPage from "./pages/claims/ImportClaimsPage";
 import DataQualityPage from "./pages/claims/DataQualityPage";
 import DiscrepancyTrackerPage from "./pages/claims/DiscrepancyTrackerPage";
+import BankReconciliationPage from "./pages/claims/BankReconciliationPage";
 import QueryPage from "./pages/claims/QueryPage";
 // Communications
 import FollowUpCalendarPage from "./pages/communications/FollowUpCalendarPage";
@@ -164,6 +165,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/claims/import": ImportClaimsPage,
   "/claims/data-quality": DataQualityPage,
   "/claims/discrepancy": DiscrepancyTrackerPage,
+  "/claims/reconciliation": BankReconciliationPage,
   "/claims/query": QueryPage,
 
   // Communications
