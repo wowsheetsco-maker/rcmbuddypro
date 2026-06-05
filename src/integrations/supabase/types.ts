@@ -556,6 +556,111 @@ export type Database = {
           },
         ]
       }
+      ar_collections_placements: {
+        Row: {
+          agency_contact: string | null
+          agency_name: string
+          claim_id: string
+          closed_at: string | null
+          created_at: string
+          handoff_packet: Json
+          id: string
+          notes: string | null
+          org_id: string
+          placed_at: string
+          placed_by: string | null
+          recovered_amount: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          agency_contact?: string | null
+          agency_name: string
+          claim_id: string
+          closed_at?: string | null
+          created_at?: string
+          handoff_packet?: Json
+          id?: string
+          notes?: string | null
+          org_id: string
+          placed_at?: string
+          placed_by?: string | null
+          recovered_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          agency_contact?: string | null
+          agency_name?: string
+          claim_id?: string
+          closed_at?: string | null
+          created_at?: string
+          handoff_packet?: Json
+          id?: string
+          notes?: string | null
+          org_id?: string
+          placed_at?: string
+          placed_by?: string | null
+          recovered_amount?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      ar_writeoff_requests: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          claim_id: string
+          created_at: string
+          id: string
+          justification: string | null
+          org_id: string
+          posted_at: string | null
+          reason: string
+          rejected_reason: string | null
+          requested_by: string | null
+          required_approver_role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_id: string
+          created_at?: string
+          id?: string
+          justification?: string | null
+          org_id: string
+          posted_at?: string | null
+          reason: string
+          rejected_reason?: string | null
+          requested_by?: string | null
+          required_approver_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          claim_id?: string
+          created_at?: string
+          id?: string
+          justification?: string | null
+          org_id?: string
+          posted_at?: string | null
+          reason?: string
+          rejected_reason?: string | null
+          requested_by?: string | null
+          required_approver_role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       bank_reconciliation_matches: {
         Row: {
           claim_id: string | null
