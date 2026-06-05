@@ -106,8 +106,7 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "Gov Schemes", icon: Landmark,       path: "/gov-schemes" },
   { label: "OPD & Wellness", icon: Stethoscope, path: "/opd" },
   { label: "Analytics",  icon: BarChart3,       path: "/analytics/payer-scorecard", orgRoles: ["owner", "admin"] },
-  { label: "Automation", icon: Sparkles,        path: "/settings/whatsapp-templates", roles: ["admin", "ops", "billing"], orgRoles: ["owner", "admin"] },
-  { label: "Setup",      icon: Settings,        path: "/providers", roles: ["admin", "ops"], orgRoles: ["owner", "admin"] },
+  { label: "Admin Console", icon: Settings, path: "/settings/users", roles: ["admin", "ops", "billing"], orgRoles: ["owner", "admin"] },
 ];
 
 
@@ -285,23 +284,14 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
       "Claims":     ["/claims"],
       "Follow-Ups": ["/communications"],
       "Analytics":  ["/analytics", "/dashboard/executive"],
-      "Automation": [
-        "/settings/whatsapp-templates",
-        "/settings/subject-templates",
-        "/settings/team-digests",
-        "/settings/followup-automation",
-        "/settings/my-email",
-      ],
-      "Setup":      ["/providers", "/settings"],
+      "Admin Console": ["/settings", "/providers"],
     };
     const prefixes = sectionPrefixes[g.label] ?? [g.path!];
     const path = location.pathname;
     const isActive =
       g.label === "Dashboard"
         ? path === "/"
-        : prefixes.some((p) => path === p || path.startsWith(p + "/")) &&
-          // Don't let Setup steal Automation routes
-          !(g.label === "Setup" && (sectionPrefixes["Automation"] ?? []).some((p) => path === p || path.startsWith(p + "/")));
+        : prefixes.some((p) => path === p || path.startsWith(p + "/"));
     const Icon = g.icon;
     const badge = badgeByPath[g.path!];
     const link = (
