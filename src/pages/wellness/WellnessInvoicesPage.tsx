@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileSpreadsheet, FileText, Mail, Sparkles } from "lucide-react";
+import { FileSpreadsheet, FileText, Mail, Sparkles, FileBarChart2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
 import { exportSingleInvoicePdf, exportSingleInvoiceXlsx, type InvoiceRow, type InvoiceLine } from "@/lib/opdInvoiceExport";
+import { exportMonthlyManagementPdf } from "@/lib/wellnessMonthlyPdf";
 
 interface Inv {
   id: string; invoice_no: string; corporate_id: string;
@@ -93,10 +94,24 @@ export default function WellnessInvoicesPage() {
                               const { data } = await supabase.from("opd_invoice_items").select("*").eq("invoice_id", r.id);
                               exportSingleInvoiceXlsx(invRow, (data ?? []) as InvoiceLine[]);
                             }}><FileSpreadsheet className="h-3 w-3" /></Button>
-                            <Button size="sm" variant="ghost" className="h-7" onClick={async () => {
+                            <Button size="sm" variant="ghost" className="h-7" title="Per-invoice PDF" onClick={async () => {
                               const { data } = await supabase.from("opd_invoice_items").select("*").eq("invoice_id", r.id);
                               exportSingleInvoicePdf(invRow, (data ?? []) as InvoiceLine[]);
                             }}><FileText className="h-3 w-3" /></Button>
+                            <Button size="sm" variant="ghost" className="h-7" title="Management PDF (provider totals + line items)" onClick={async () => {
+                              const { data } = await supabase.from("opd_invoice_items").select("*").eq("invoice_id", r.id);
+                              exportMonthlyManagementPdf(r.period_start.slice(0, 7), [{
+                                invoice_no: r.invoice_no,
+                                corporate_name: corp?.name ?? "—",
+                                period_start: r.period_start,
+                                period_end: r.period_end,
+                                visit_count: r.visit_count,
+                                total_amount: Number(r.total_amount),
+                                paid_amount: Number(r.paid_amount),
+                                status: r.status,
+                                lines: (data ?? []) as any,
+                              }], `wellness-${r.invoice_no}-management.pdf`);
+                            }}><FileBarChart2 className="h-3 w-3" /></Button>
                             {corp?.billing_contact_email && (
                               <a href={`mailto:${corp.billing_contact_email}?subject=${encodeURIComponent(`Invoice ${r.invoice_no} - ${corp.name}`)}&body=${encodeURIComponent(`Please find attached invoice ${r.invoice_no} for ${r.period_start} to ${r.period_end}. Total: ₹${Math.round(Number(r.total_amount)).toLocaleString("en-IN")}.`)}`}>
                                 <Button size="sm" variant="ghost" className="h-7"><Mail className="h-3 w-3" /></Button>

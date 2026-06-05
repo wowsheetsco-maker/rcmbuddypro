@@ -126,6 +126,20 @@ export const Route = createFileRoute("/api/public/hooks/wellness-monthly-invoice
             })) as any);
           }
 
+          // Auto-link each completed case to the invoice in wellness_case_invoices
+          // (idempotent — unique (request_id, invoice_id) prevents duplicates on re-run).
+          await (supabaseAdmin.from as any)("wellness_case_invoices").upsert(
+            items.map((r: any) => ({
+              org_id: orgId,
+              request_id: r.id,
+              invoice_id: invoiceId as string,
+              period_month: periodStartStr,
+              amount: Number(pkgMap.get(r.package_id)?.price ?? 0),
+              status: "invoiced",
+            })),
+            { onConflict: "request_id,invoice_id", ignoreDuplicates: false },
+          );
+
           const corp = corpMap.get(corporateId);
           const billingEmail = corp?.billing_contact_email as string | undefined;
           const total = items.reduce((s: number, r: any) => s + Number(pkgMap.get(r.package_id)?.price ?? 0), 0);
