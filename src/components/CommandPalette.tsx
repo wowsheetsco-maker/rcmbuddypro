@@ -11,10 +11,11 @@ import {
 } from "@/components/ui/command";
 import {
   LayoutDashboard, Search, ListChecks, ShieldAlert, Receipt, Upload,
-  Calendar as CalendarIcon, Bot, Users, Landmark,
+  Calendar as CalendarIcon, Bot, Users, Landmark, Settings,
   CreditCard, FileWarning, User as UserIcon, Building2, Mail, Phone,
   Hospital, Clock, History, AlertTriangle,
 } from "lucide-react";
+import { markAdminConsoleOverviewIntent } from "@/pages/settings/AdminConsolePage";
 import { Badge } from "@/components/ui/badge";
 import { formatInrShort, formatDays, getStatusColor } from "@/data/mockClaims";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
