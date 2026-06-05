@@ -83,6 +83,8 @@ import PlaceholderPage from "./pages/PlaceholderPage";
 
 // suppress unused-import warnings — kept for reference and future use
 void OutstandingRemindersPage;
+void WellnessRequestsPage;
+void PlaceholderPage;
 
 const REDIRECT_GATE = "rcm-mobile-redirected";
 const DESKTOP_HOME_ROUTES = new Set<string>(["/", "/dashboard/executive"]);
