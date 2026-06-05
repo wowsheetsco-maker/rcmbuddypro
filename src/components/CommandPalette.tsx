@@ -248,6 +248,7 @@ export default function CommandPalette({ open, onOpenChange, initialQuery = "" }
 
   const handleSelect = (path: string) => {
     saveRecent(query);
+    if (path === "/settings") markAdminConsoleOverviewIntent();
     onOpenChange(false);
     navigate(path);
   };
