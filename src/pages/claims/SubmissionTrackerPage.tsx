@@ -533,7 +533,7 @@ function AckDialog({
   sub: Submission;
   onClose: () => void;
   onUpload: (sub: Submission, file: File) => void;
-  fileRef: React.RefObject<HTMLInputElement>;
+  fileRef: React.RefObject<HTMLInputElement | null>;
 }) {
   const [file, setFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
