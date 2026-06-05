@@ -102,6 +102,7 @@ export default function HubTabBar() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const counts = useActionCentreCounts();
+  const { subroles } = useAdminSubroles();
   const hub = useMemo(() => getHubForPath(pathname), [pathname]);
   const tabRefs = useRef<Array<HTMLAnchorElement | null>>([]);
 
@@ -109,6 +110,7 @@ export default function HubTabBar() {
   useEffect(() => { tabRefs.current = []; }, [hub?.key]);
 
   if (!hub) return null;
+
 
   const badgeFor = (tab: HubTab): { text: string; tone: "danger" | "warn" } | null => {
     if (!tab.badge) return null;
