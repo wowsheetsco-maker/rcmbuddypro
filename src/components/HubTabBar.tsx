@@ -127,7 +127,13 @@ export default function HubTabBar() {
   };
 
   const HubIcon = hub.icon;
-  const tabs = hub.tabs;
+  const tabs = hub.key === "admin"
+    ? hub.tabs.filter((t) => {
+        const s = ADMIN_CONSOLE_SECTIONS.find((sec) => sec.path === t.path);
+        return !s || isSectionVisible(s, subroles);
+      })
+    : hub.tabs;
+  if (tabs.length === 0) return null;
   const activeIdx = tabs.findIndex((t) => t.path === pathname);
   const overflow = tabs.length > MAX_VISIBLE_TABS;
   let visible = tabs.slice(0, MAX_VISIBLE_TABS);
