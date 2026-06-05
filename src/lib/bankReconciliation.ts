@@ -121,36 +121,70 @@ export function extractUtr(narration: string): { utr: string | null; channel: st
   return { utr: null, channel: null, payer: null };
 }
 
-export async function parseBankStatement(file: File): Promise<ParsedBankRow[]> {
+export interface ColumnMapping {
+  /** 1-based row that contains headers (1 = first row). */
+  header_row?: number;
+  txn_date?: string;
+  value_date?: string;
+  credit?: string;
+  debit?: string;
+  narration?: string;
+  ref?: string;
+  balance?: string;
+}
+
+/** Read the raw rows + detected headers from a bank statement file. */
+export async function readBankStatementSheet(
+  file: File,
+  headerRow = 1,
+): Promise<{ headers: string[]; rows: Record<string, unknown>[]; preview: Record<string, unknown>[] }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  if (!sheet) return [];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  if (!sheet) return { headers: [], rows: [], preview: [] };
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", blankrows: false });
+  const hIdx = Math.max(0, headerRow - 1);
+  const headers = (aoa[hIdx] ?? []).map((h) => String(h ?? "").trim()).filter(Boolean);
+  const dataRows = aoa.slice(hIdx + 1).map((arr) => {
+    const o: Record<string, unknown> = {};
+    headers.forEach((h, i) => { o[h] = arr[i] ?? ""; });
+    return o;
+  });
+  return { headers, rows: dataRows, preview: dataRows.slice(0, 5) };
+}
+
+export async function parseBankStatement(file: File, mapping?: ColumnMapping): Promise<ParsedBankRow[]> {
+  const { headers, rows } = await readBankStatementSheet(file, mapping?.header_row ?? 1);
   if (rows.length === 0) return [];
 
-  return rows.map((row): ParsedBankRow => {
-    const dateK = findKey(row, HEADER_ALIASES.txn_date) ?? "";
-    const valDateK = findKey(row, HEADER_ALIASES.value_date) ?? "";
-    const creditK = findKey(row, HEADER_ALIASES.amount) ?? "";
-    const debitK = findKey(row, HEADER_ALIASES.debit) ?? "";
-    const narrK = findKey(row, HEADER_ALIASES.narration) ?? "";
-    const balK = findKey(row, HEADER_ALIASES.balance) ?? "";
+  const resolve = (mapped: string | undefined, aliases: string[]): string => {
+    if (mapped && headers.includes(mapped)) return mapped;
+    return findKey(rows[0], aliases) ?? "";
+  };
 
+  const dateK = resolve(mapping?.txn_date, HEADER_ALIASES.txn_date);
+  const valDateK = resolve(mapping?.value_date, HEADER_ALIASES.value_date);
+  const creditK = resolve(mapping?.credit, HEADER_ALIASES.amount);
+  const debitK = resolve(mapping?.debit, HEADER_ALIASES.debit);
+  const narrK = resolve(mapping?.narration, HEADER_ALIASES.narration);
+  const refK = resolve(mapping?.ref, HEADER_ALIASES.ref);
+  const balK = resolve(mapping?.balance, HEADER_ALIASES.balance);
+
+  return rows.map((row): ParsedBankRow => {
     const credit = toNumber(row[creditK]);
     const debit = toNumber(row[debitK]);
     const amount = credit > 0 ? credit : debit;
     const txn_type: "credit" | "debit" | null = credit > 0 ? "credit" : debit > 0 ? "debit" : null;
     const narration = String(row[narrK] ?? "");
-    const { utr, channel, payer } = extractUtr(narration);
-
+    const refCell = refK ? String(row[refK] ?? "").trim() : "";
+    const { utr, channel, payer } = extractUtr(`${refCell} ${narration}`);
     return {
       txn_date: toDate(row[dateK]),
       value_date: toDate(row[valDateK]),
       amount,
       txn_type,
       channel,
-      utr_ref: utr,
+      utr_ref: utr ?? (refCell && /^[A-Z0-9]{8,}$/i.test(refCell.replace(/\s+/g, "")) ? refCell.replace(/\s+/g, "").toUpperCase() : null),
       narration,
       payer_hint: payer,
       balance: balK ? toNumber(row[balK]) : null,
@@ -158,6 +192,7 @@ export async function parseBankStatement(file: File): Promise<ParsedBankRow[]> {
     };
   });
 }
+
 
 // ---------- Matching ----------
 
