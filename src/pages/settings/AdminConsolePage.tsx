@@ -91,7 +91,6 @@ function timeAgo(iso: string | null | undefined): string {
 }
 
 export default function AdminConsolePage() {
-  const navigate = useNavigate();
   const { subroles, isLoading: subrolesLoading } = useAdminSubroles();
   const { orgId } = useAuth();
 
@@ -104,7 +103,6 @@ export default function AdminConsolePage() {
   useEffect(() => {
     if (typeof window !== "undefined") sessionStorage.removeItem(REDIRECT_KEY);
   }, []);
-  void navigate;
 
 
   const [stats, setStats] = useState<Stats>({
