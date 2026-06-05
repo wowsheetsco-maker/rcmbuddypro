@@ -62,6 +62,42 @@ export default function SubmissionDetailDrawer({
   );
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadingFor, setUploadingFor] = useState<string | null>(null);
+  const [resending, setResending] = useState(false);
+  const resendFn = useServerFn(resendSubmissionReminder);
+
+  const resend = async () => {
+    if (!submissionId) return;
+    setResending(true);
+    try {
+      const res = await resendFn({ data: { submissionId } });
+      if (!res.ok) {
+        toast.error(res.error ?? "Failed to send reminder");
+        return;
+      }
+      const c = res.channels_used ?? { in_app: 0, email: 0, whatsapp: 0 };
+      const parts: string[] = [];
+      if (c.in_app) parts.push(`${c.in_app} in-app`);
+      if (c.email) parts.push(`${c.email} email`);
+      if (c.whatsapp) parts.push(`${c.whatsapp} WhatsApp`);
+      toast.success(
+        parts.length ? `Reminder sent: ${parts.join(", ")}` : "No recipients had channels configured",
+      );
+      const failed = (res.recipients ?? []).flatMap((r) => {
+        const errs: string[] = [];
+        if (r.email && !r.email.ok && r.email.error && r.email.error !== "email_not_configured")
+          errs.push(`Email to ${r.name}: ${r.email.error}`);
+        if (r.whatsapp && !r.whatsapp.ok && r.whatsapp.error && r.whatsapp.error !== "whatsapp_not_configured")
+          errs.push(`WhatsApp to ${r.name}: ${r.whatsapp.error}`);
+        return errs;
+      });
+      if (failed.length) toast.warning(failed.join(" · "));
+      void load();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Failed to send reminder");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const userName = useMemo(() => {
     const m = new Map(users.map((u) => [u.id, u.name]));
