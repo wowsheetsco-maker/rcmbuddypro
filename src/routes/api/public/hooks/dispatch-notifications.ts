@@ -224,6 +224,117 @@ async function runDispatcher(): Promise<DispatchResult> {
         });
       }
     }
+
+    // (d) Claim submission reminders — pending/in_progress with due_date in the past
+    // (overdue) or within 2 days (upcoming). Notifies assignee + branch officer.
+    const upcomingCutoff = ymdOffset(2);
+    const { data: pendingSubs } = await supabaseAdmin
+      .from("claim_submissions")
+      .select("id, claim_id, assignee_id, branch_id, status, due_date")
+      .eq("org_id", orgId)
+      .in("status", ["pending", "in_progress", "submitted"])
+      .not("due_date", "is", null)
+      .lte("due_date", upcomingCutoff)
+      .limit(500);
+    result.submission_reminder_candidates += pendingSubs?.length ?? 0;
+
+    if (pendingSubs && pendingSubs.length > 0) {
+      const subClaimIds = Array.from(new Set(pendingSubs.map((s) => s.claim_id as string)));
+      const subBranchIds = Array.from(
+        new Set(pendingSubs.map((s) => s.branch_id as string | null).filter(Boolean) as string[]),
+      );
+      const subClaimMeta = new Map<string, { claim_number: string | null; patient_name: string | null }>();
+      if (subClaimIds.length > 0) {
+        const { data: cs } = await supabaseAdmin
+          .from("claims")
+          .select("id, claim_number, patient_name")
+          .in("id", subClaimIds);
+        for (const c of cs ?? []) {
+          subClaimMeta.set(c.id as string, {
+            claim_number: (c.claim_number as string | null) ?? null,
+            patient_name: (c.patient_name as string | null) ?? null,
+          });
+        }
+      }
+      const branchOfficer = new Map<string, string | null>();
+      if (subBranchIds.length > 0) {
+        const { data: bs } = await supabaseAdmin
+          .from("hospital_branches")
+          .select("id, submission_officer_id")
+          .in("id", subBranchIds);
+        for (const b of bs ?? []) {
+          branchOfficer.set(b.id as string, (b.submission_officer_id as string | null) ?? null);
+        }
+      }
+      // Map app_users.id -> auth_user_id for notification routing
+      const recipientAppIds = Array.from(
+        new Set(
+          pendingSubs.flatMap((s) => {
+            const ids: string[] = [];
+            if (s.assignee_id) ids.push(s.assignee_id as string);
+            const off = s.branch_id ? branchOfficer.get(s.branch_id as string) : null;
+            if (off) ids.push(off);
+            return ids;
+          }),
+        ),
+      );
+      const authIdByApp = new Map<string, string>();
+      if (recipientAppIds.length > 0) {
+        const { data: au } = await supabaseAdmin
+          .from("app_users")
+          .select("id, auth_user_id")
+          .in("id", recipientAppIds);
+        for (const u of au ?? []) {
+          if (u.auth_user_id) authIdByApp.set(u.id as string, u.auth_user_id as string);
+        }
+      }
+
+      for (const s of pendingSubs) {
+        const meta = subClaimMeta.get(s.claim_id as string);
+        const due = s.due_date as string;
+        const overdue = due < dayBucket;
+        const prefKey = overdue ? "submission_overdue" : "submission_due";
+        const evType = overdue ? "submission_overdue" : "submission_due";
+        const title = overdue
+          ? `Submission overdue: ${meta?.claim_number ?? s.claim_id}`
+          : `Submission due ${due}: ${meta?.claim_number ?? s.claim_id}`;
+        const message = `${meta?.patient_name ?? "Claim"} — ${s.status === "submitted" ? "acknowledgement pending" : "documents not yet submitted"} (due ${due}).`;
+
+        const recipients = new Set<string>();
+        if (s.assignee_id) {
+          const auth = authIdByApp.get(s.assignee_id as string);
+          if (auth) recipients.add(auth);
+        }
+        if (s.branch_id) {
+          const officer = branchOfficer.get(s.branch_id as string);
+          if (officer) {
+            const auth = authIdByApp.get(officer);
+            if (auth) recipients.add(auth);
+          }
+        }
+        for (const uid of recipients) {
+          if (!isEnabled(uid, prefKey) && !isEnabled(uid, "submission_due")) continue;
+          inserts.push({
+            org_id: orgId,
+            user_id: uid,
+            type: evType,
+            title,
+            message,
+            ref_claim_id: s.claim_id as string,
+            dedupe_key: `${evType}:${s.id}:${dayBucket}`,
+          });
+        }
+        // Audit a reminder_sent event (once per day per submission).
+        await supabaseAdmin.from("claim_submission_events").insert({
+          org_id: orgId,
+          submission_id: s.id as string,
+          claim_id: s.claim_id as string,
+          actor_id: null,
+          event_type: "reminder_sent",
+          payload: { due_date: due, overdue, recipients: Array.from(recipients) },
+        });
+      }
+    }
   }
 
   // Batch insert; dedupe_key uniqueness silently rejects duplicates.
