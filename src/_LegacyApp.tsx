@@ -17,6 +17,7 @@ import TrendsAnalyticsPage from "./pages/analytics/TrendsAnalyticsPage";
 import StaffScorecardPage from "./pages/analytics/StaffScorecardPage";
 // Claims sub-pages
 import PriorityWorklistPage from "./pages/claims/PriorityWorklistPage";
+import SubmissionTrackerPage from "./pages/claims/SubmissionTrackerPage";
 import DenialsPage from "./pages/claims/DenialsPage";
 
 import TdsReportPage from "./pages/claims/TdsReportPage";
@@ -154,6 +155,7 @@ const ROUTES: Record<string, RouteEntry> = {
 
   // Claims sub-pages
   "/claims/priority": PriorityWorklistPage,
+  "/claims/submission": SubmissionTrackerPage,
   "/claims/outstanding": FollowUpEnginePage,
   "/claims/follow-up": FollowUpCalendarPage,
   "/claims/denials": DenialsPage,

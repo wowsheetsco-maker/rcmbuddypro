@@ -27,6 +27,7 @@ import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
 import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
 import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
+import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
 import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
@@ -135,6 +136,12 @@ const AuthenticatedClaimsTdsRoute = AuthenticatedClaimsTdsRouteImport.update({
   path: '/tds',
   getParentRoute: () => AuthenticatedClaimsRoute,
 } as any)
+const AuthenticatedClaimsSubmissionRoute =
+  AuthenticatedClaimsSubmissionRouteImport.update({
+    id: '/submission',
+    path: '/submission',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsPriorityRoute =
   AuthenticatedClaimsPriorityRouteImport.update({
     id: '/priority',
@@ -234,6 +241,7 @@ export interface FileRoutesByFullPath {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
@@ -264,6 +272,7 @@ export interface FileRoutesByTo {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
@@ -298,6 +307,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/_authenticated/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/_authenticated/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/_authenticated/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/_authenticated/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/priority'
+    | '/claims/submission'
     | '/claims/tds'
     | '/dashboard/executive'
     | '/settings/permissions'
@@ -362,6 +373,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/priority'
+    | '/claims/submission'
     | '/claims/tds'
     | '/dashboard/executive'
     | '/settings/permissions'
@@ -395,6 +407,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
     | '/_authenticated/claims/priority'
+    | '/_authenticated/claims/submission'
     | '/_authenticated/claims/tds'
     | '/_authenticated/dashboard/executive'
     | '/_authenticated/settings/permissions'
@@ -550,6 +563,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsTdsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/submission': {
+      id: '/_authenticated/claims/submission'
+      path: '/submission'
+      fullPath: '/claims/submission'
+      preLoaderRoute: typeof AuthenticatedClaimsSubmissionRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/priority': {
       id: '/_authenticated/claims/priority'
       path: '/priority'
@@ -669,6 +689,7 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
   AuthenticatedClaimsPriorityRoute: typeof AuthenticatedClaimsPriorityRoute
+  AuthenticatedClaimsSubmissionRoute: typeof AuthenticatedClaimsSubmissionRoute
   AuthenticatedClaimsTdsRoute: typeof AuthenticatedClaimsTdsRoute
   AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
 }
@@ -679,6 +700,7 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
   AuthenticatedClaimsPriorityRoute: AuthenticatedClaimsPriorityRoute,
+  AuthenticatedClaimsSubmissionRoute: AuthenticatedClaimsSubmissionRoute,
   AuthenticatedClaimsTdsRoute: AuthenticatedClaimsTdsRoute,
   AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
 }

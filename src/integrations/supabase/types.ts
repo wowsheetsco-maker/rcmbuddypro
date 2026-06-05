@@ -595,6 +595,129 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_submissions: {
+        Row: {
+          ack_doc_path: string | null
+          ack_doc_url: string | null
+          ack_received_at: string | null
+          assigned_by: string | null
+          assignee_id: string | null
+          branch_id: string | null
+          claim_id: string
+          courier_awb: string | null
+          courier_partner: string | null
+          created_at: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          org_id: string
+          portal_ref: string | null
+          status: string
+          submission_mode: string | null
+          submitted_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          ack_doc_path?: string | null
+          ack_doc_url?: string | null
+          ack_received_at?: string | null
+          assigned_by?: string | null
+          assignee_id?: string | null
+          branch_id?: string | null
+          claim_id: string
+          courier_awb?: string | null
+          courier_partner?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id: string
+          portal_ref?: string | null
+          status?: string
+          submission_mode?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          ack_doc_path?: string | null
+          ack_doc_url?: string | null
+          ack_received_at?: string | null
+          assigned_by?: string | null
+          assignee_id?: string | null
+          branch_id?: string | null
+          claim_id?: string
+          courier_awb?: string | null
+          courier_partner?: string | null
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          org_id?: string
+          portal_ref?: string | null
+          status?: string
+          submission_mode?: string | null
+          submitted_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_submissions_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_assigned_by_fkey"
+            columns: ["assigned_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_submissions_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: true
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
       claims: {
         Row: {
           action_plan: string | null
@@ -1494,6 +1617,7 @@ export type Database = {
           notes: string | null
           org_id: string
           raw_name: string | null
+          submission_officer_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1505,6 +1629,7 @@ export type Database = {
           notes?: string | null
           org_id: string
           raw_name?: string | null
+          submission_officer_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1516,6 +1641,7 @@ export type Database = {
           notes?: string | null
           org_id?: string
           raw_name?: string | null
+          submission_officer_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1531,6 +1657,20 @@ export type Database = {
             columns: ["org_id"]
             isOneToOne: false
             referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_branches_submission_officer_id_fkey"
+            columns: ["submission_officer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hospital_branches_submission_officer_id_fkey"
+            columns: ["submission_officer_id"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
             referencedColumns: ["id"]
           },
         ]
