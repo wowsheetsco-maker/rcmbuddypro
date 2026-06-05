@@ -62,9 +62,7 @@ const NAV_COMMANDS = [
   { label: "Outstanding Reminders", path: "/communications/outstanding", icon: CalendarIcon,    keywords: "" },
   { label: "Contacts",             path: "/providers/contacts",          icon: Users,           keywords: "spoc" },
   { label: "TPA / Insurers",       path: "/providers",                   icon: Landmark,        keywords: "" },
-  { label: "Hospital Branches",    path: "/settings/hospital-branches",  icon: Hospital,        keywords: "groups merge" },
-  { label: "AI Providers",         path: "/settings/ai-providers",       icon: Bot,             keywords: "openai gemini" },
-  { label: "Settings · Users",     path: "/settings/users",              icon: Users,           keywords: "team" },
+  { label: "Admin Console",        path: "/settings",                    icon: Settings,        keywords: "settings users permissions branches integrations ai providers templates notifications automation digests data quality dq" },
 ];
 
 const RECENTS_KEY = "rcm-buddy-search-recents";
