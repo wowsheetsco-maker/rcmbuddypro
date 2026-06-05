@@ -182,6 +182,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/providers/contracts": () => <Navigate to="/providers" replace />,
 
   // Settings
+  "/settings": AdminConsolePage,
   "/settings/users": UsersPage,
   "/settings/permissions": PermissionsPage,
   "/settings/effective-permissions": EffectivePermissionsPage,
