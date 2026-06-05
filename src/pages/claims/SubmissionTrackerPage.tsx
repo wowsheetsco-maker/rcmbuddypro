@@ -74,7 +74,7 @@ export default function SubmissionTrackerPage() {
       .select("*")
       .order("created_at", { ascending: false });
     if (error) toast.error(error.message);
-    setSubs((data ?? []) as Submission[]);
+    setSubs((data ?? []) as unknown as Submission[]);
     setLoading(false);
   };
 
