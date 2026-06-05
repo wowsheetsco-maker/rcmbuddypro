@@ -121,36 +121,70 @@ export function extractUtr(narration: string): { utr: string | null; channel: st
   return { utr: null, channel: null, payer: null };
 }
 
-export async function parseBankStatement(file: File): Promise<ParsedBankRow[]> {
+export interface ColumnMapping {
+  /** 1-based row that contains headers (1 = first row). */
+  header_row?: number;
+  txn_date?: string;
+  value_date?: string;
+  credit?: string;
+  debit?: string;
+  narration?: string;
+  ref?: string;
+  balance?: string;
+}
+
+/** Read the raw rows + detected headers from a bank statement file. */
+export async function readBankStatementSheet(
+  file: File,
+  headerRow = 1,
+): Promise<{ headers: string[]; rows: Record<string, unknown>[]; preview: Record<string, unknown>[] }> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: true });
   const sheet = wb.Sheets[wb.SheetNames[0]];
-  if (!sheet) return [];
-  const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: "" });
+  if (!sheet) return { headers: [], rows: [], preview: [] };
+  const aoa = XLSX.utils.sheet_to_json<unknown[]>(sheet, { header: 1, defval: "", blankrows: false });
+  const hIdx = Math.max(0, headerRow - 1);
+  const headers = (aoa[hIdx] ?? []).map((h) => String(h ?? "").trim()).filter(Boolean);
+  const dataRows = aoa.slice(hIdx + 1).map((arr) => {
+    const o: Record<string, unknown> = {};
+    headers.forEach((h, i) => { o[h] = arr[i] ?? ""; });
+    return o;
+  });
+  return { headers, rows: dataRows, preview: dataRows.slice(0, 5) };
+}
+
+export async function parseBankStatement(file: File, mapping?: ColumnMapping): Promise<ParsedBankRow[]> {
+  const { headers, rows } = await readBankStatementSheet(file, mapping?.header_row ?? 1);
   if (rows.length === 0) return [];
 
-  return rows.map((row): ParsedBankRow => {
-    const dateK = findKey(row, HEADER_ALIASES.txn_date) ?? "";
-    const valDateK = findKey(row, HEADER_ALIASES.value_date) ?? "";
-    const creditK = findKey(row, HEADER_ALIASES.amount) ?? "";
-    const debitK = findKey(row, HEADER_ALIASES.debit) ?? "";
-    const narrK = findKey(row, HEADER_ALIASES.narration) ?? "";
-    const balK = findKey(row, HEADER_ALIASES.balance) ?? "";
+  const resolve = (mapped: string | undefined, aliases: string[]): string => {
+    if (mapped && headers.includes(mapped)) return mapped;
+    return findKey(rows[0], aliases) ?? "";
+  };
 
+  const dateK = resolve(mapping?.txn_date, HEADER_ALIASES.txn_date);
+  const valDateK = resolve(mapping?.value_date, HEADER_ALIASES.value_date);
+  const creditK = resolve(mapping?.credit, HEADER_ALIASES.amount);
+  const debitK = resolve(mapping?.debit, HEADER_ALIASES.debit);
+  const narrK = resolve(mapping?.narration, HEADER_ALIASES.narration);
+  const refK = resolve(mapping?.ref, HEADER_ALIASES.ref);
+  const balK = resolve(mapping?.balance, HEADER_ALIASES.balance);
+
+  return rows.map((row): ParsedBankRow => {
     const credit = toNumber(row[creditK]);
     const debit = toNumber(row[debitK]);
     const amount = credit > 0 ? credit : debit;
     const txn_type: "credit" | "debit" | null = credit > 0 ? "credit" : debit > 0 ? "debit" : null;
     const narration = String(row[narrK] ?? "");
-    const { utr, channel, payer } = extractUtr(narration);
-
+    const refCell = refK ? String(row[refK] ?? "").trim() : "";
+    const { utr, channel, payer } = extractUtr(`${refCell} ${narration}`);
     return {
       txn_date: toDate(row[dateK]),
       value_date: toDate(row[valDateK]),
       amount,
       txn_type,
       channel,
-      utr_ref: utr,
+      utr_ref: utr ?? (refCell && /^[A-Z0-9]{8,}$/i.test(refCell.replace(/\s+/g, "")) ? refCell.replace(/\s+/g, "").toUpperCase() : null),
       narration,
       payer_hint: payer,
       balance: balK ? toNumber(row[balK]) : null,
@@ -158,6 +192,7 @@ export async function parseBankStatement(file: File): Promise<ParsedBankRow[]> {
     };
   });
 }
+
 
 // ---------- Matching ----------
 
@@ -193,10 +228,34 @@ function daysBetween(a: string | null, b: string | null): number {
   return Math.abs(da - db) / 86_400_000;
 }
 
-export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[]): MatchSuggestion[] {
+/** Normalize a payer / payee name: lowercase, strip punctuation and common suffixes. */
+export function normalizePayer(s: string | null | undefined): string {
+  if (!s) return "";
+  const stop = /\b(pvt|private|ltd|limited|insurance|assurance|general|health|tpa|services|service|india|co|company|corp|corporation|the|of|and|&)\b/g;
+  return String(s).toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(stop, " ").replace(/\s+/g, " ").trim();
+}
+
+function tokenOverlap(a: string, b: string): number {
+  if (!a || !b) return 0;
+  const at = new Set(a.split(" ").filter((t) => t.length >= 3));
+  const bt = b.split(" ").filter((t) => t.length >= 3);
+  if (at.size === 0 || bt.length === 0) return 0;
+  let hit = 0;
+  for (const t of bt) if (at.has(t)) hit++;
+  return hit / Math.max(at.size, bt.length);
+}
+
+export interface ScoreOptions {
+  /** Second pass uses looser tolerances. */
+  secondPass?: boolean;
+}
+
+export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[], opts: ScoreOptions = {}): MatchSuggestion[] {
   const out: MatchSuggestion[] = [];
   const entryUtr = stripUtr(entry.utr_ref);
-  const payer = (entry.payer_hint ?? "").toLowerCase();
+  const payerNorm = normalizePayer(entry.payer_hint ?? entry.narration);
+  const looseAmtPct = opts.secondPass ? 2 : 1;
+  const looseDays = opts.secondPass ? 45 : 30;
 
   for (const c of claims) {
     const reasons: string[] = [];
@@ -227,27 +286,35 @@ export function scoreMatches(entry: ParsedBankRow, claims: MatchableClaim[]): Ma
         score = Math.max(score, 70);
         if (method === "fuzzy_payer") method = "auto_amount_date";
         reasons.push(`Amount ~${pctDiff.toFixed(1)}% diff within ${Math.round(dDays)}d`);
-      } else if (pctDiff < 5 && dDays <= 30) {
-        score = Math.max(score, 50);
+      } else if (pctDiff < looseAmtPct && dDays <= looseDays) {
+        score = Math.max(score, opts.secondPass ? 60 : 50);
         reasons.push(`Amount ~${pctDiff.toFixed(1)}% diff within ${Math.round(dDays)}d`);
       }
     }
 
-    // Payer hint vs TPA / insurer
-    if (payer.length >= 3) {
-      const tpa = (c.tpa_name ?? "").toLowerCase();
-      const ins = (c.insurance_company_name ?? "").toLowerCase();
-      if ((tpa && tpa.includes(payer)) || (ins && ins.includes(payer)) ||
-          (payer.includes(tpa) && tpa) || (payer.includes(ins) && ins)) {
+    // Payer hint vs TPA / insurer — normalized + token overlap
+    const tpaNorm = normalizePayer(c.tpa_name);
+    const insNorm = normalizePayer(c.insurance_company_name);
+    if (payerNorm.length >= 3) {
+      const ov = Math.max(tokenOverlap(tpaNorm, payerNorm), tokenOverlap(insNorm, payerNorm));
+      if (ov >= 0.5) {
+        score = Math.min(100, score + 15);
+        reasons.push(`Payer matches TPA/insurer (${Math.round(ov * 100)}%)`);
+      } else if (ov > 0) {
+        score = Math.min(100, score + 8);
+        reasons.push(`Payer partial match (${Math.round(ov * 100)}%)`);
+      } else if ((tpaNorm && payerNorm.includes(tpaNorm)) || (insNorm && payerNorm.includes(insNorm))) {
         score = Math.min(100, score + 10);
-        reasons.push("Payer name matches TPA/insurer");
+        reasons.push("Payer name contains TPA/insurer");
       }
     }
 
-    if (score >= 50) {
+    const floor = opts.secondPass ? 45 : 50;
+    if (score >= floor) {
       out.push({ claim: c, confidence: score, method, reasons });
     }
   }
   out.sort((a, b) => b.confidence - a.confidence);
   return out.slice(0, 5);
 }
+
