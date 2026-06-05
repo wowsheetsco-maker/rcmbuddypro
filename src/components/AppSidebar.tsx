@@ -106,7 +106,7 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "Gov Schemes", icon: Landmark,       path: "/gov-schemes" },
   { label: "OPD & Wellness", icon: Stethoscope, path: "/opd" },
   { label: "Analytics",  icon: BarChart3,       path: "/analytics/payer-scorecard", orgRoles: ["owner", "admin"] },
-  { label: "Admin Console", icon: Settings, path: "/settings/users", roles: ["admin", "ops", "billing"], orgRoles: ["owner", "admin"] },
+  { label: "Admin Console", icon: Settings, path: "/settings", roles: ["admin", "ops", "billing"], orgRoles: ["owner", "admin"] },
 ];
 
 
