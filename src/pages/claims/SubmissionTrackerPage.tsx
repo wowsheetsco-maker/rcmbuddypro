@@ -346,6 +346,11 @@ export default function SubmissionTrackerPage() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right space-x-1">
+                            {sub && (
+                              <Button size="sm" variant="ghost" onClick={() => setDetailDrawer({ sub, label: `${claim.claim_number || claim.ihx_ref_id} · ${claim.patient_name}` })}>
+                                <Eye className="h-3 w-3 mr-1" /> View
+                              </Button>
+                            )}
                             <Button size="sm" variant="outline" onClick={() => setAssignDialog({ claimId: claim.id })}>
                               <UserPlus className="h-3 w-3 mr-1" /> Assign
                             </Button>
@@ -404,6 +409,14 @@ export default function SubmissionTrackerPage() {
           fileRef={fileRef}
         />
       )}
+      <SubmissionDetailDrawer
+        open={!!detailDrawer}
+        onClose={() => setDetailDrawer(null)}
+        submissionId={detailDrawer?.sub.id ?? null}
+        claimId={detailDrawer?.sub.claim_id ?? null}
+        claimLabel={detailDrawer?.label ?? ""}
+        submissionMode={detailDrawer?.sub.submission_mode ?? null}
+      />
     </AppLayout>
   );
 }
