@@ -32,7 +32,7 @@ interface Req {
 interface Corp { id: string; name: string }
 interface Pkg { id: string; name: string; corporate_id: string; service_type: string; price: number }
 
-export default function WellnessRequestsPage() {
+export function WellnessRequestsBody() {
   const [rows, setRows] = useState<Req[]>([]);
   const [corps, setCorps] = useState<Corp[]>([]);
   const [pkgs, setPkgs] = useState<Pkg[]>([]);
@@ -77,8 +77,7 @@ export default function WellnessRequestsPage() {
   };
 
   return (
-    <AppLayout>
-      <div className="space-y-6">
+    <div className="space-y-6">
         <header className="flex items-end justify-between flex-wrap gap-3">
           <div>
             <h1 className="text-2xl font-display">Requests Inbox</h1>
@@ -172,9 +171,12 @@ export default function WellnessRequestsPage() {
           open={!!timelineFor}
           onOpenChange={(v) => !v && setTimelineFor(null)}
         />
-      </div>
-    </AppLayout>
+    </div>
   );
+}
+
+export default function WellnessRequestsPage() {
+  return <AppLayout><WellnessRequestsBody /></AppLayout>;
 }
 
 function RowActions({
