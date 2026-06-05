@@ -40,6 +40,7 @@ const HUBS: Hub[] = [
       { label: "Follow-Up",   path: "/claims/follow-up", badge: "overdue" },
       { label: "Priority",    path: "/claims/priority" },
       { label: "Discrepancy", path: "/claims/discrepancy" },
+      { label: "Reconciliation", path: "/claims/reconciliation" },
       { label: "Query",       path: "/claims/query" },
       { label: "Denials",     path: "/claims/denials" },
     ],

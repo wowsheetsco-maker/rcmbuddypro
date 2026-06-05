@@ -28,6 +28,7 @@ import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_
 import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
 import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
 import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
+import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
 import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
@@ -142,6 +143,12 @@ const AuthenticatedClaimsSubmissionRoute =
     path: '/submission',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsReconciliationRoute =
+  AuthenticatedClaimsReconciliationRouteImport.update({
+    id: '/reconciliation',
+    path: '/reconciliation',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsPriorityRoute =
   AuthenticatedClaimsPriorityRouteImport.update({
     id: '/priority',
@@ -241,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
@@ -272,6 +280,7 @@ export interface FileRoutesByTo {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
@@ -307,6 +316,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/_authenticated/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/_authenticated/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/_authenticated/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/_authenticated/claims/tds': typeof AuthenticatedClaimsTdsRoute
   '/_authenticated/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
@@ -342,6 +352,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/priority'
+    | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
     | '/dashboard/executive'
@@ -373,6 +384,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/priority'
+    | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
     | '/dashboard/executive'
@@ -407,6 +419,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
     | '/_authenticated/claims/priority'
+    | '/_authenticated/claims/reconciliation'
     | '/_authenticated/claims/submission'
     | '/_authenticated/claims/tds'
     | '/_authenticated/dashboard/executive'
@@ -570,6 +583,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsSubmissionRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/reconciliation': {
+      id: '/_authenticated/claims/reconciliation'
+      path: '/reconciliation'
+      fullPath: '/claims/reconciliation'
+      preLoaderRoute: typeof AuthenticatedClaimsReconciliationRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/priority': {
       id: '/_authenticated/claims/priority'
       path: '/priority'
@@ -689,6 +709,7 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
   AuthenticatedClaimsPriorityRoute: typeof AuthenticatedClaimsPriorityRoute
+  AuthenticatedClaimsReconciliationRoute: typeof AuthenticatedClaimsReconciliationRoute
   AuthenticatedClaimsSubmissionRoute: typeof AuthenticatedClaimsSubmissionRoute
   AuthenticatedClaimsTdsRoute: typeof AuthenticatedClaimsTdsRoute
   AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
@@ -700,6 +721,8 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
   AuthenticatedClaimsPriorityRoute: AuthenticatedClaimsPriorityRoute,
+  AuthenticatedClaimsReconciliationRoute:
+    AuthenticatedClaimsReconciliationRoute,
   AuthenticatedClaimsSubmissionRoute: AuthenticatedClaimsSubmissionRoute,
   AuthenticatedClaimsTdsRoute: AuthenticatedClaimsTdsRoute,
   AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
@@ -780,13 +803,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
