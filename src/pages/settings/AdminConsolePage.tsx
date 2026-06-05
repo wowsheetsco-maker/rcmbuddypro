@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useNavigate } from "@/lib/router-compat";
+import { Link } from "@/lib/router-compat";
 import {
   Users, ShieldCheck, Hospital, Landmark, Bot, Mail, MessageSquare,
   FileText, Bell, Zap, BarChart3, Sparkles, Database, ArrowRight,
