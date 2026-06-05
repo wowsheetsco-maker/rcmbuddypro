@@ -155,6 +155,7 @@ const ROUTES: Record<string, RouteEntry> = {
 
   // Claims sub-pages
   "/claims/priority": PriorityWorklistPage,
+  "/claims/submission": SubmissionTrackerPage,
   "/claims/outstanding": FollowUpEnginePage,
   "/claims/follow-up": FollowUpCalendarPage,
   "/claims/denials": DenialsPage,
