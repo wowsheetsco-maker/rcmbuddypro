@@ -193,6 +193,12 @@ export default function SubmissionDetailDrawer({
         <SheetHeader>
           <SheetTitle>Submission Details</SheetTitle>
           <SheetDescription>{claimLabel}</SheetDescription>
+          <div className="pt-2">
+            <Button size="sm" variant="outline" onClick={resend} disabled={resending || !submissionId}>
+              {resending ? <Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> : <BellRing className="h-3.5 w-3.5 mr-1" />}
+              Resend reminder
+            </Button>
+          </div>
         </SheetHeader>
 
         <Tabs defaultValue="checklist" className="mt-4">
