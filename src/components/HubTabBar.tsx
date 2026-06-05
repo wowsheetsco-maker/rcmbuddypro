@@ -7,7 +7,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useActionCentreCounts } from "@/hooks/useActionCentreCounts";
+import { useAdminSubroles } from "@/hooks/useAdminSubroles";
+import { ADMIN_CONSOLE_SECTIONS, isSectionVisible } from "@/pages/settings/AdminConsolePage";
 import { cn } from "@/lib/utils";
+
 
 const MAX_VISIBLE_TABS = 6;
 
