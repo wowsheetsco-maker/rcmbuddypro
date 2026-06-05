@@ -812,6 +812,45 @@ export type Database = {
           },
         ]
       }
+      bank_statement_mappings: {
+        Row: {
+          bank_name: string | null
+          column_map: Json
+          created_at: string
+          created_by: string | null
+          header_row: number
+          id: string
+          is_default: boolean
+          name: string
+          org_id: string
+          updated_at: string
+        }
+        Insert: {
+          bank_name?: string | null
+          column_map?: Json
+          created_at?: string
+          created_by?: string | null
+          header_row?: number
+          id?: string
+          is_default?: boolean
+          name: string
+          org_id: string
+          updated_at?: string
+        }
+        Update: {
+          bank_name?: string | null
+          column_map?: Json
+          created_at?: string
+          created_by?: string | null
+          header_row?: number
+          id?: string
+          is_default?: boolean
+          name?: string
+          org_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       claim_appeals: {
         Row: {
           approved_by: string | null
