@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { FileSpreadsheet, FileText, Mail, Sparkles } from "lucide-react";
+import { FileSpreadsheet, FileText, Mail, Sparkles, FileBarChart2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getCurrentOrgId } from "@/lib/currentOrg";
 import { toast } from "@/hooks/use-toast";
 import { exportSingleInvoicePdf, exportSingleInvoiceXlsx, type InvoiceRow, type InvoiceLine } from "@/lib/opdInvoiceExport";
+import { exportMonthlyManagementPdf } from "@/lib/wellnessMonthlyPdf";
 
 interface Inv {
   id: string; invoice_no: string; corporate_id: string;
