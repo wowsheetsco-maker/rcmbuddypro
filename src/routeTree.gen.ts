@@ -34,6 +34,7 @@ import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_au
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
 import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
 import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
+import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
@@ -179,6 +180,11 @@ const AuthenticatedClaimsDenialsRoute =
     path: '/denials',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsArRoute = AuthenticatedClaimsArRouteImport.update({
+  id: '/ar',
+  path: '/ar',
+  getParentRoute: () => AuthenticatedClaimsRoute,
+} as any)
 const AuthenticatedAnalyticsTpaReportRoute =
   AuthenticatedAnalyticsTpaReportRouteImport.update({
     id: '/tpa-report',
@@ -243,6 +249,7 @@ export interface FileRoutesByFullPath {
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
@@ -275,6 +282,7 @@ export interface FileRoutesByTo {
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
@@ -311,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/_authenticated/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/_authenticated/claims/ar': typeof AuthenticatedClaimsArRoute
   '/_authenticated/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/_authenticated/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
@@ -347,6 +356,7 @@ export interface FileRouteTypes {
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
     | '/analytics/tpa-report'
+    | '/claims/ar'
     | '/claims/denials'
     | '/claims/discrepancy'
     | '/claims/import'
@@ -379,6 +389,7 @@ export interface FileRouteTypes {
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
     | '/analytics/tpa-report'
+    | '/claims/ar'
     | '/claims/denials'
     | '/claims/discrepancy'
     | '/claims/import'
@@ -414,6 +425,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics/cash-flow'
     | '/_authenticated/analytics/payer-scorecard'
     | '/_authenticated/analytics/tpa-report'
+    | '/_authenticated/claims/ar'
     | '/_authenticated/claims/denials'
     | '/_authenticated/claims/discrepancy'
     | '/_authenticated/claims/import'
@@ -625,6 +637,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsDenialsRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/ar': {
+      id: '/_authenticated/claims/ar'
+      path: '/ar'
+      fullPath: '/claims/ar'
+      preLoaderRoute: typeof AuthenticatedClaimsArRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/analytics/tpa-report': {
       id: '/_authenticated/analytics/tpa-report'
       path: '/tpa-report'
@@ -704,6 +723,7 @@ const AuthenticatedAnalyticsRouteWithChildren =
   )
 
 interface AuthenticatedClaimsRouteChildren {
+  AuthenticatedClaimsArRoute: typeof AuthenticatedClaimsArRoute
   AuthenticatedClaimsDenialsRoute: typeof AuthenticatedClaimsDenialsRoute
   AuthenticatedClaimsDiscrepancyRoute: typeof AuthenticatedClaimsDiscrepancyRoute
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
@@ -716,6 +736,7 @@ interface AuthenticatedClaimsRouteChildren {
 }
 
 const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
+  AuthenticatedClaimsArRoute: AuthenticatedClaimsArRoute,
   AuthenticatedClaimsDenialsRoute: AuthenticatedClaimsDenialsRoute,
   AuthenticatedClaimsDiscrepancyRoute: AuthenticatedClaimsDiscrepancyRoute,
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
