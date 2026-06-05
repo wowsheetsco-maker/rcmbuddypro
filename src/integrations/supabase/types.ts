@@ -556,6 +556,372 @@ export type Database = {
           },
         ]
       }
+      bank_reconciliation_matches: {
+        Row: {
+          claim_id: string | null
+          confidence: number
+          created_at: string
+          decided_by: string | null
+          decision: string
+          entry_id: string
+          id: string
+          method: string
+          notes: string | null
+          org_id: string
+        }
+        Insert: {
+          claim_id?: string | null
+          confidence?: number
+          created_at?: string
+          decided_by?: string | null
+          decision: string
+          entry_id: string
+          id?: string
+          method: string
+          notes?: string | null
+          org_id: string
+        }
+        Update: {
+          claim_id?: string | null
+          confidence?: number
+          created_at?: string
+          decided_by?: string | null
+          decision?: string
+          entry_id?: string
+          id?: string
+          method?: string
+          notes?: string | null
+          org_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_reconciliation_matches_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_reconciliation_matches_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statement_entries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_statement_entries: {
+        Row: {
+          amount: number
+          balance: number | null
+          channel: string | null
+          created_at: string
+          id: string
+          import_id: string
+          match_confidence: number
+          match_method: string | null
+          match_status: string
+          matched_claim_id: string | null
+          narration: string | null
+          org_id: string
+          payer_hint: string | null
+          raw: Json | null
+          txn_date: string | null
+          txn_type: string | null
+          updated_at: string
+          utr_ref: string | null
+          value_date: string | null
+        }
+        Insert: {
+          amount?: number
+          balance?: number | null
+          channel?: string | null
+          created_at?: string
+          id?: string
+          import_id: string
+          match_confidence?: number
+          match_method?: string | null
+          match_status?: string
+          matched_claim_id?: string | null
+          narration?: string | null
+          org_id: string
+          payer_hint?: string | null
+          raw?: Json | null
+          txn_date?: string | null
+          txn_type?: string | null
+          updated_at?: string
+          utr_ref?: string | null
+          value_date?: string | null
+        }
+        Update: {
+          amount?: number
+          balance?: number | null
+          channel?: string | null
+          created_at?: string
+          id?: string
+          import_id?: string
+          match_confidence?: number
+          match_method?: string | null
+          match_status?: string
+          matched_claim_id?: string | null
+          narration?: string | null
+          org_id?: string
+          payer_hint?: string | null
+          raw?: Json | null
+          txn_date?: string | null
+          txn_type?: string | null
+          updated_at?: string
+          utr_ref?: string | null
+          value_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_entries_import_id_fkey"
+            columns: ["import_id"]
+            isOneToOne: false
+            referencedRelation: "bank_statement_imports"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_entries_matched_claim_id_fkey"
+            columns: ["matched_claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_entries_matched_claim_id_fkey"
+            columns: ["matched_claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_entries_matched_claim_id_fkey"
+            columns: ["matched_claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
+      bank_statement_imports: {
+        Row: {
+          account_last4: string | null
+          bank_name: string | null
+          branch_id: string | null
+          created_at: string
+          file_name: string
+          file_url: string | null
+          id: string
+          matched_rows: number
+          notes: string | null
+          org_id: string
+          period_from: string | null
+          period_to: string | null
+          total_rows: number
+          unmatched_rows: number
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          account_last4?: string | null
+          bank_name?: string | null
+          branch_id?: string | null
+          created_at?: string
+          file_name: string
+          file_url?: string | null
+          id?: string
+          matched_rows?: number
+          notes?: string | null
+          org_id: string
+          period_from?: string | null
+          period_to?: string | null
+          total_rows?: number
+          unmatched_rows?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          account_last4?: string | null
+          bank_name?: string | null
+          branch_id?: string | null
+          created_at?: string
+          file_name?: string
+          file_url?: string | null
+          id?: string
+          matched_rows?: number
+          notes?: string | null
+          org_id?: string
+          period_from?: string | null
+          period_to?: string | null
+          total_rows?: number
+          unmatched_rows?: number
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_statement_imports_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "hospital_branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_imports_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_statement_imports_uploaded_by_fkey"
+            columns: ["uploaded_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      claim_appeals: {
+        Row: {
+          approved_by: string | null
+          band: string | null
+          body: string
+          claim_id: string
+          created_at: string
+          created_by: string | null
+          gap_amount: number
+          gap_pct: number
+          generated_by: string
+          id: string
+          org_id: string
+          recipient_email: string | null
+          recipient_name: string | null
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          approved_by?: string | null
+          band?: string | null
+          body: string
+          claim_id: string
+          created_at?: string
+          created_by?: string | null
+          gap_amount?: number
+          gap_pct?: number
+          generated_by?: string
+          id?: string
+          org_id: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          approved_by?: string | null
+          band?: string | null
+          body?: string
+          claim_id?: string
+          created_at?: string
+          created_by?: string | null
+          gap_amount?: number
+          gap_pct?: number
+          generated_by?: string
+          id?: string
+          org_id?: string
+          recipient_email?: string | null
+          recipient_name?: string | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_appeals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_appeals_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users_public"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       claim_documents: {
         Row: {
           claim_id: string
