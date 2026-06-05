@@ -100,17 +100,12 @@ export default function AdminConsolePage() {
     [subroles],
   );
 
+  // Legacy redirect flag — consume & ignore (we always render the dashboard now).
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (subrolesLoading) return;
-    const skip = sessionStorage.getItem(REDIRECT_KEY);
-    if (skip) {
-      sessionStorage.removeItem(REDIRECT_KEY);
-      return;
-    }
-    const first = visibleSections[0];
-    if (first) navigate(first.path, { replace: true });
-  }, [navigate, subrolesLoading, visibleSections]);
+    if (typeof window !== "undefined") sessionStorage.removeItem(REDIRECT_KEY);
+  }, []);
+  void navigate;
+
 
   const [stats, setStats] = useState<Stats>({
     users: null, branches: null, providers: null, aiProviders: null,
