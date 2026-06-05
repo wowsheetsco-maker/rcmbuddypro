@@ -219,9 +219,9 @@ const ROUTES: Record<string, RouteEntry> = {
   "/gov-schemes/pre-auth": GovPreAuthPage,
   "/gov-schemes/claims": GovClaimsPage,
   "/gov-schemes/packages": GovPackagesPage,
-  "/gov-schemes/empanelment": () => <PlaceholderPage title="Empanelment Tracker" description="MOU dates, portal credentials and renewal alerts — Phase 4." />,
-  "/gov-schemes/deduction-analytics": () => <PlaceholderPage title="Deduction Analytics" description="Top deduction heads, scheme-wise rate-cut % and recoverable vs non-recoverable — Phase 4." />,
-  "/gov-schemes/import": () => <PlaceholderPage title="Import Government Claims" description="PMJAY / state portal Excel import — Phase 4." />,
+  "/gov-schemes/empanelment": () => <Navigate to="/gov-schemes" replace />,
+  "/gov-schemes/deduction-analytics": () => <Navigate to="/gov-schemes" replace />,
+  "/gov-schemes/import": () => <Navigate to="/gov-schemes" replace />,
 
   // Wellness / OPD (simplified)
   "/opd": OpdLanding,
@@ -229,7 +229,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/wellness": OpdLanding,
   "/wellness/providers": WellnessProvidersPage,
   "/wellness/packages": WellnessPackagesPage,
-  "/wellness/requests": WellnessRequestsPage,
+  "/wellness/requests": () => <Navigate to="/wellness/cases" replace />,
   "/wellness/cases": WellnessCasesPage,
   "/wellness/templates": WellnessTemplatesPage,
   "/wellness/invoices": WellnessInvoicesPage,
