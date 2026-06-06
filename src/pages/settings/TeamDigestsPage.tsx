@@ -156,6 +156,10 @@ export default function TeamDigestsPage() {
           </div>
         </div>
 
+        <AutomationStatusCard />
+
+
+
         {/* Cadence schedules + recipient rules */}
         <Card>
           <CardHeader className="pb-3 flex-row items-start justify-between space-y-0 gap-4 flex-wrap">
