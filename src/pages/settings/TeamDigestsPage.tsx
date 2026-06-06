@@ -156,6 +156,10 @@ export default function TeamDigestsPage() {
           </div>
         </div>
 
+        <AutomationStatusCard />
+
+
+
         {/* Cadence schedules + recipient rules */}
         <Card>
           <CardHeader className="pb-3 flex-row items-start justify-between space-y-0 gap-4 flex-wrap">
@@ -415,3 +419,99 @@ export default function TeamDigestsPage() {
     </AppLayout>
   );
 }
+
+// --- Automation status card ---------------------------------------------------
+// Shows the active pg_cron schedules (daily / weekly / monthly) and the most
+// recent automated send results so admins know the report is going out without
+// having to dig into the database.
+function AutomationStatusCard() {
+  const [runs, setRuns] = useState<Array<{ cadence: string; created_at: string; sent_count: number; failed_count: number; trigger_kind: string | null }>>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("team_digest_runs")
+        .select("cadence,created_at,sent_count,failed_count,trigger_kind")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      setRuns((data ?? []) as never);
+      setLoading(false);
+    })();
+  }, []);
+
+  const schedules: Array<{ cadence: DigestCadence; cron: string; human: string }> = [
+    { cadence: "daily",   cron: "0 3 * * 1-5", human: "Mon–Fri · 08:30 IST" },
+    { cadence: "weekly",  cron: "30 3 * * 1",  human: "Every Monday · 09:00 IST" },
+    { cadence: "monthly", cron: "30 3 1 * *",  human: "1st of every month · 09:00 IST" },
+  ];
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-sm flex items-center gap-2">
+          <CalendarClock className="h-4 w-4 text-primary" /> Automation status
+        </CardTitle>
+        <p className="text-xs text-muted-foreground mt-1">
+          Reports are dispatched automatically by the scheduler — no manual action required.
+          Times shown in IST.
+        </p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {schedules.map((s) => {
+            const last = runs.find((r) => r.cadence === s.cadence);
+            return (
+              <div key={s.cadence} className="rounded-lg border p-3 bg-card">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium capitalize">{s.cadence} report</div>
+                  <Badge variant="default" className="text-[10px]">Scheduled</Badge>
+                </div>
+                <div className="text-[11px] text-muted-foreground mt-1">{s.human}</div>
+                <div className="text-[10px] text-muted-foreground mt-2 font-mono">cron: {s.cron}</div>
+                {last ? (
+                  <div className="text-[11px] mt-2">
+                    Last run: {new Date(last.created_at).toLocaleString()} ·{" "}
+                    <span className="text-emerald-600">{last.sent_count} sent</span>
+                    {last.failed_count > 0 && <span className="text-red-600"> · {last.failed_count} failed</span>}
+                  </div>
+                ) : (
+                  <div className="text-[11px] mt-2 text-muted-foreground">No runs yet — first run will appear after the schedule fires.</div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        <div>
+          <div className="text-[11px] uppercase tracking-wide text-muted-foreground mb-1.5">Recent automated runs</div>
+          {loading ? (
+            <div className="text-xs text-muted-foreground">Loading…</div>
+          ) : runs.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No runs yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="text-[10px] uppercase text-muted-foreground">
+                  <tr className="border-b"><th className="text-left py-1.5">When</th><th className="text-left">Cadence</th><th className="text-left">Trigger</th><th className="text-right">Sent</th><th className="text-right">Failed</th></tr>
+                </thead>
+                <tbody>
+                  {runs.map((r, i) => (
+                    <tr key={i} className="border-b last:border-0">
+                      <td className="py-1.5">{new Date(r.created_at).toLocaleString()}</td>
+                      <td className="capitalize">{r.cadence}</td>
+                      <td className="text-muted-foreground">{r.trigger_kind ?? "—"}</td>
+                      <td className="text-right tabular-nums">{r.sent_count}</td>
+                      <td className="text-right tabular-nums">{r.failed_count}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
