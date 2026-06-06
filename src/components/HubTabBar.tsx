@@ -44,6 +44,7 @@ const HUBS: Hub[] = [
       { label: "AR Management", path: "/claims/ar" },
       { label: "Query",       path: "/claims/query" },
       { label: "Denials",     path: "/claims/denials" },
+      { label: "Denial Workflow", path: "/claims/denials-workflow" },
     ],
   },
   {
