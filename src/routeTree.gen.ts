@@ -33,6 +33,7 @@ import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authe
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
 import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
+import { Route as AuthenticatedClaimsDenialsWorkflowRouteImport } from './routes/_authenticated.claims.denials-workflow'
 import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
 import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
@@ -174,6 +175,12 @@ const AuthenticatedClaimsDiscrepancyRoute =
     path: '/discrepancy',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsDenialsWorkflowRoute =
+  AuthenticatedClaimsDenialsWorkflowRouteImport.update({
+    id: '/denials-workflow',
+    path: '/denials-workflow',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsDenialsRoute =
   AuthenticatedClaimsDenialsRouteImport.update({
     id: '/denials',
@@ -251,6 +258,7 @@ export interface FileRoutesByFullPath {
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
+  '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
@@ -284,6 +292,7 @@ export interface FileRoutesByTo {
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
+  '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
@@ -321,6 +330,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/_authenticated/claims/ar': typeof AuthenticatedClaimsArRoute
   '/_authenticated/claims/denials': typeof AuthenticatedClaimsDenialsRoute
+  '/_authenticated/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/_authenticated/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
@@ -358,6 +368,7 @@ export interface FileRouteTypes {
     | '/analytics/tpa-report'
     | '/claims/ar'
     | '/claims/denials'
+    | '/claims/denials-workflow'
     | '/claims/discrepancy'
     | '/claims/import'
     | '/claims/outstanding'
@@ -391,6 +402,7 @@ export interface FileRouteTypes {
     | '/analytics/tpa-report'
     | '/claims/ar'
     | '/claims/denials'
+    | '/claims/denials-workflow'
     | '/claims/discrepancy'
     | '/claims/import'
     | '/claims/outstanding'
@@ -427,6 +439,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics/tpa-report'
     | '/_authenticated/claims/ar'
     | '/_authenticated/claims/denials'
+    | '/_authenticated/claims/denials-workflow'
     | '/_authenticated/claims/discrepancy'
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
@@ -630,6 +643,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsDiscrepancyRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/denials-workflow': {
+      id: '/_authenticated/claims/denials-workflow'
+      path: '/denials-workflow'
+      fullPath: '/claims/denials-workflow'
+      preLoaderRoute: typeof AuthenticatedClaimsDenialsWorkflowRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/denials': {
       id: '/_authenticated/claims/denials'
       path: '/denials'
@@ -725,6 +745,7 @@ const AuthenticatedAnalyticsRouteWithChildren =
 interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsArRoute: typeof AuthenticatedClaimsArRoute
   AuthenticatedClaimsDenialsRoute: typeof AuthenticatedClaimsDenialsRoute
+  AuthenticatedClaimsDenialsWorkflowRoute: typeof AuthenticatedClaimsDenialsWorkflowRoute
   AuthenticatedClaimsDiscrepancyRoute: typeof AuthenticatedClaimsDiscrepancyRoute
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
@@ -738,6 +759,8 @@ interface AuthenticatedClaimsRouteChildren {
 const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsArRoute: AuthenticatedClaimsArRoute,
   AuthenticatedClaimsDenialsRoute: AuthenticatedClaimsDenialsRoute,
+  AuthenticatedClaimsDenialsWorkflowRoute:
+    AuthenticatedClaimsDenialsWorkflowRoute,
   AuthenticatedClaimsDiscrepancyRoute: AuthenticatedClaimsDiscrepancyRoute,
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
