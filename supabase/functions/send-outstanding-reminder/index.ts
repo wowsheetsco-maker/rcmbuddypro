@@ -110,14 +110,13 @@ function buildEmailHtml(body: RequestBody) {
     0,
   );
   const breaches = body.claims.filter((c) => c.is_irdai_breach).length;
-  const top3 = [...body.claims]
-    .sort((a, b) => b.days_since_claim - a.days_since_claim)
-    .slice(0, 3);
+  const showDetail = body.claims.length <= 3;
 
-  const hospital = body.hospitalName ?? "Our Hospital";
-  const tat = body.paymentTatDays ?? 30;
+  const detailClaims = showDetail
+    ? [...body.claims].sort((a, b) => b.days_since_claim - a.days_since_claim)
+    : [];
 
-  const top3Rows = top3
+  const detailRows = detailClaims
     .map(
       (c) => `
       <tr>
@@ -130,6 +129,33 @@ function buildEmailHtml(body: RequestBody) {
       </tr>`,
     )
     .join("");
+
+  const hospital = body.hospitalName ?? "Our Hospital";
+  const tat = body.paymentTatDays ?? 30;
+
+  const detailSection = showDetail
+    ? `<!-- Claim Details -->
+          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin:0 0 10px;">Claim Details</div>
+          <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;">
+            <thead>
+              <tr style="background:#f8fafc;">
+                <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Claim #</th>
+                <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Patient</th>
+                <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Amount</th>
+                <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Age</th>
+              </tr>
+            </thead>
+            <tbody>${detailRows}</tbody>
+          </table>`
+    : `<!-- Summary -->
+          <div style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:16px 18px;margin:0 0 24px;">
+            <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#075985;margin-bottom:10px;">Pending Claims Summary</div>
+            <p style="margin:0;font-size:14px;line-height:1.6;color:#0f172a;">
+              There are <strong>${body.claims.length} pending claims</strong> with a total outstanding amount of <strong>${inr(total)}</strong>.
+              The longest pending claim is <strong>${oldest} days</strong> old.
+              A complete claim-wise breakdown is attached as an Excel file for your reference.
+            </p>
+          </div>`;
 
   return `<!DOCTYPE html>
 <html>
@@ -188,19 +214,7 @@ function buildEmailHtml(body: RequestBody) {
               : ""
           }
 
-          <!-- Top 3 highlighted -->
-          <div style="font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:#475569;margin:0 0 10px;">Top 3 Aged Claims (Action Needed)</div>
-          <table width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:8px;overflow:hidden;margin-bottom:24px;">
-            <thead>
-              <tr style="background:#f8fafc;">
-                <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Claim #</th>
-                <th style="padding:10px 12px;text-align:left;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Patient</th>
-                <th style="padding:10px 12px;text-align:right;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Amount</th>
-                <th style="padding:10px 12px;text-align:center;font-size:11px;text-transform:uppercase;color:#64748b;letter-spacing:0.5px;">Age</th>
-              </tr>
-            </thead>
-            <tbody>${top3Rows}</tbody>
-          </table>
+          ${detailSection}
 
           <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#475569;">
             <strong style="color:#0f172a;">Action requested:</strong> Kindly process the pending claims at the earliest

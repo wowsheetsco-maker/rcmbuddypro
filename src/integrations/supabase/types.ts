@@ -3687,6 +3687,21 @@ export type Database = {
         }
         Relationships: []
       }
+      private_cron_config: {
+        Row: {
+          key: string
+          value: string
+        }
+        Insert: {
+          key: string
+          value: string
+        }
+        Update: {
+          key?: string
+          value?: string
+        }
+        Relationships: []
+      }
       reminder_runs: {
         Row: {
           cc_emails: string[] | null
@@ -4848,6 +4863,11 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      private_cron_get: { Args: { _key: string }; Returns: string }
+      private_cron_set: {
+        Args: { _key: string; _value: string }
+        Returns: undefined
+      }
       promote_to_super_admin: {
         Args: { _make_owner?: boolean; _org_id?: string; _target_email: string }
         Returns: Json
