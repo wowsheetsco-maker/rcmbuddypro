@@ -131,7 +131,6 @@ function buildEmailHtml(body: RequestBody) {
     .join("");
 
   const hospital = body.hospitalName ?? "Our Hospital";
-  const tat = body.paymentTatDays ?? 30;
 
   const detailSection = showDetail
     ? `<!-- Claim Details -->
@@ -173,12 +172,12 @@ function buildEmailHtml(body: RequestBody) {
 
         <!-- Body -->
         <tr><td style="padding:28px 32px;">
-          <p style="margin:0 0 16px;font-size:15px;line-height:1.55;">Dear <strong>${body.spocName ?? "Claims Team"}</strong>,</p>
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.55;">Dear <strong>${body.insurerName} Team</strong>,</p>
           <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#475569;">
-            We are writing to bring to your attention the outstanding claims pending payment from
-            <strong style="color:#0f172a;">${body.insurerName}</strong> as on date.
-            The agreed payment TAT per our MOU is <strong>${tat} days</strong>.
-            Please find the complete claim-wise breakdown attached as an Excel file.
+            Hope you're having a smooth week.
+          </p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#475569;">
+            We wanted to gently follow up on a few claim settlements from our end. We currently have <strong>${body.claims.length} claims outstanding</strong> with a total amount of <strong>${inr(total)}</strong>. We understand you manage a high volume of cases, but some of these have been pending for a while, with the oldest dating back <strong>${oldest} days</strong>${breaches > 0 ? `, and <strong>${breaches} claim${breaches === 1 ? "" : "s"}</strong> exceeding the IRDAI 15-day processing guideline` : ""}.
           </p>
 
           <!-- KPI Cards -->
@@ -217,9 +216,10 @@ function buildEmailHtml(body: RequestBody) {
           ${detailSection}
 
           <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#475569;">
-            <strong style="color:#0f172a;">Action requested:</strong> Kindly process the pending claims at the earliest
-            and share payment UTR / status update by <strong>${new Date(Date.now() + 7 * 86400000).toLocaleDateString("en-IN", { day: "numeric", month: "short" })}</strong>.
-            For any document deficiency or query, please reach out to the SPOC below.
+            We kindly request your support in processing these pending claims within the next <strong>5 working days</strong>. Once processed, it would be a great help if you could share the UTR details with us.
+          </p>
+          <p style="margin:0 0 12px;font-size:14px;line-height:1.6;color:#475569;">
+            An Excel sheet with a complete claim-wise breakdown and details is attached for your ease of reference. This includes all the necessary information to help expedite the process.
           </p>
 
           <div style="background:#f8fafc;border-radius:8px;padding:14px 16px;margin:18px 0 8px;font-size:13px;color:#475569;">
@@ -228,6 +228,7 @@ function buildEmailHtml(body: RequestBody) {
           </div>
 
           <p style="margin:24px 0 0;font-size:14px;color:#475569;">
+            Looking forward to your positive response and continued partnership.<br/><br/>
             Thanks &amp; Regards,<br/>
             <strong style="color:#0f172a;">Billing &amp; Claims Team</strong><br/>
             ${hospital}
