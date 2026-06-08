@@ -56,7 +56,9 @@ function pageShell(title: string, body: string) {
   html, body { margin: 0; padding: 0; font-family: 'Helvetica Neue', Arial, sans-serif; color: #111827; font-size: 11px; line-height: 1.45; background: #fff; }
   .wrap { max-width: 800px; margin: 0 auto; padding: 18px 22px; }
   .header { display: flex; align-items: center; gap: 12px; padding-bottom: 10px; border-bottom: 2px solid #111827; }
-  .logo { width: 36px; height: 36px; border-radius: 6px; background: linear-gradient(135deg,#dc2626,#7c3aed); display:grid; place-items:center; color:#fff; font-weight:800; font-size:14px; letter-spacing: -.5px;}
+  .logo { width: 36px; height: 36px; border-radius: 6px; background: linear-gradient(135deg,#dc2626,#7c3aed); display:grid; place-items:center; color:#fff; font-weight:800; font-size:14px; letter-spacing: -.5px; overflow:hidden; flex: 0 0 36px;}
+  .logo.logo-img { background: #fff; border: 1px solid #e5e7eb; padding: 2px; }
+  .logo.logo-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .h-title { font-size: 18px; font-weight: 800; letter-spacing: -.3px; }
   .h-sub { font-size: 10.5px; color: #6b7280; margin-top: 2px; }
   .section-title { font-size: 11px; font-weight: 800; letter-spacing: 1.5px; color: #111827; margin: 18px 0 8px; padding-left: 8px; border-left: 3px solid #dc2626; }
@@ -67,7 +69,7 @@ function pageShell(title: string, body: string) {
   .kpi .v { font-size: 18px; font-weight: 800; margin-top: 4px; letter-spacing: -.4px; }
   .kpi .c { font-size: 9.5px; color: #6b7280; margin-top: 2px; }
   table { width: 100%; border-collapse: collapse; margin-top: 6px; font-size: 10.5px; }
-  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #e5e7eb; }
+  th, td { text-align: left; padding: 7px 9px; border-bottom: 1px solid #e5e7eb; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   th { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: #6b7280; background: #f9fafb; }
   td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   .funnel { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
