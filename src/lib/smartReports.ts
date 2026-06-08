@@ -412,7 +412,7 @@ function ceoReport(ctx: ReportContext): string {
 
   const body = `
   <div class="header">
-    <div class="logo">RC</div>
+    ${logoBlock(ctx)}
     <div>
       <div class="h-title">CEO / CFO Revenue Intelligence Report</div>
       <div class="h-sub">${escape(ctx.hospitalName)} · Period: ${escape(ctx.periodLabel)} · Generated ${todayLong()} · ${m.total.toLocaleString("en-IN")} claims</div>
@@ -537,7 +537,7 @@ function arReport(ctx: ReportContext): string {
 
   const body = `
   <div class="header">
-    <div class="logo">RC</div>
+    ${logoBlock(ctx)}
     <div>
       <div class="h-title">AR Aging Report</div>
       <div class="h-sub">${escape(ctx.hospitalName)} · Period: ${escape(ctx.periodLabel)} · Generated ${todayLong()}</div>
@@ -620,7 +620,7 @@ function denialReport(ctx: ReportContext): string {
 
   const body = `
   <div class="header">
-    <div class="logo">RC</div>
+    ${logoBlock(ctx)}
     <div>
       <div class="h-title">Denial &amp; Appeal Report</div>
       <div class="h-sub">${escape(ctx.hospitalName)} · Period: ${escape(ctx.periodLabel)} · Generated ${todayLong()}</div>
@@ -670,7 +670,7 @@ function corporateReport(ctx: ReportContext): string {
 
   const body = `
   <div class="header">
-    <div class="logo">RC</div>
+    ${logoBlock(ctx)}
     <div>
       <div class="h-title">Corporate Performance Report</div>
       <div class="h-sub">${escape(ctx.hospitalName)} · Period: ${escape(ctx.periodLabel)} · Generated ${todayLong()}</div>
@@ -753,7 +753,7 @@ export function buildCombinedReport(kinds: ReportKind[], ctx: ReportContext): st
 
   const cover = `
   <div class="header">
-    <div class="logo">RC</div>
+    ${logoBlock(ctx)}
     <div>
       <div class="h-title">Smart Report Pack</div>
       <div class="h-sub">${escape(ctx.hospitalName)} · Period: ${escape(ctx.periodLabel)} · Generated ${todayLong()}</div>
