@@ -12,11 +12,30 @@ export type ReportKind = "ceo" | "ar" | "denial" | "corporate";
 export interface ReportContext {
   claims: Claim[];
   hospitalName: string;
+  /** Optional hospital logo URL. If absent, header shows initials from hospitalName. */
+  hospitalLogoUrl?: string | null;
   periodLabel: string;
   fromDate: Date | null;
   toDate: Date | null;
   /** AR Aging Report: include the SLA 30-day breach list. Default: false. */
   includeIrdaiBreachList?: boolean;
+}
+
+/** Initials from hospital name — first letter of up to 2 words, uppercased. */
+function hospitalInitials(name: string): string {
+  const parts = (name || "").trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "H";
+  const a = parts[0]?.[0] ?? "";
+  const b = parts[1]?.[0] ?? "";
+  return (a + b).toUpperCase() || "H";
+}
+
+/** Header brand block — uses uploaded logo if present, else initials fallback. */
+function logoBlock(ctx: ReportContext): string {
+  if (ctx.hospitalLogoUrl) {
+    return `<div class="logo logo-img"><img src="${escape(ctx.hospitalLogoUrl)}" alt="${escape(ctx.hospitalName)}" /></div>`;
+  }
+  return `<div class="logo">${escape(hospitalInitials(ctx.hospitalName))}</div>`;
 }
 
 const fmt = formatInrShort;
