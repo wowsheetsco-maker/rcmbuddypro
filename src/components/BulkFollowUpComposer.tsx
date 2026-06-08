@@ -111,15 +111,16 @@ function templateBody(
   );
   const breaches = ctx.claims.filter((c) => c.is_irdai_breach).length;
 
-  const summary = ctx.claims
-    .slice(0, 8)
-    .map(
-      (c, i) =>
-        `${i + 1}. Claim: ${c.claim_number} | Patient: ${c.patient_name} | Amount: ${formatInr(c.outstanding_amount)} | Status: ${c.claim_status} | Days: ${c.days_since_claim || "—"}`,
-    )
-    .join("\n");
-  const more =
-    ctx.claims.length > 8 ? `\n…and ${ctx.claims.length - 8} more (see Excel attachment)` : "";
+  const showDetail = ctx.claims.length <= 3;
+  const summary = showDetail
+    ? ctx.claims
+        .map(
+          (c, i) =>
+            `${i + 1}. Claim: ${c.claim_number} | Patient: ${c.patient_name} | Amount: ${formatInr(c.outstanding_amount)} | Status: ${c.claim_status} | Days: ${c.days_since_claim || "—"}`,
+        )
+        .join("\n")
+    : `${ctx.claims.length} pending claims | Total outstanding: ${formatInr(total)} | Longest pending: ${oldest} days${breaches > 0 ? ` | SLA breaches (>15d): ${breaches}` : ""}\n(Complete claim-wise breakdown attached as Excel.)`;
+  const more = "";
 
   switch (tone) {
     case "urgent":
@@ -314,9 +315,12 @@ export default function BulkFollowUpComposer({
     const total = ctx.claims.reduce((s, c) => s + c.outstanding_amount, 0);
     const oldest = ctx.claims.reduce((m, c) => Math.max(m, c.days_since_claim), 0);
     const breaches = ctx.claims.filter((c) => c.is_irdai_breach).length;
-    const summary = ctx.claims.slice(0, 8).map((c, i) =>
-      `${i + 1}. Claim: ${c.claim_number} | Patient: ${c.patient_name} | Amount: ${formatInr(c.outstanding_amount)} | Status: ${c.claim_status} | Days: ${c.days_since_claim || "—"}`,
-    ).join("\n") + (ctx.claims.length > 8 ? `\n…and ${ctx.claims.length - 8} more (see Excel attachment)` : "");
+    const showDetail = ctx.claims.length <= 3;
+    const summary = showDetail
+      ? ctx.claims.map((c, i) =>
+          `${i + 1}. Claim: ${c.claim_number} | Patient: ${c.patient_name} | Amount: ${formatInr(c.outstanding_amount)} | Status: ${c.claim_status} | Days: ${c.days_since_claim || "—"}`,
+        ).join("\n")
+      : `${ctx.claims.length} pending claims | Total outstanding: ${formatInr(total)} | Longest pending: ${oldest} days${breaches > 0 ? ` | SLA breaches (>15d): ${breaches}` : ""}\n(Complete claim-wise breakdown attached as Excel.)`;
     return renderFollowupTemplate(tpl.body, {
       insurer: ctx.insurerName,
       hospital: hospitalName,
