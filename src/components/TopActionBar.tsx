@@ -130,7 +130,7 @@ export default function TopActionBar() {
 
           {/* RIGHT — actions */}
           <div className="flex items-center gap-1.5 md:gap-2">
-            {/* AI Insights (was Smart Report) */}
+            {/* Reports (was AI Insights / Smart Report) */}
             <Button
               variant="ghost"
               size="sm"
@@ -138,7 +138,7 @@ export default function TopActionBar() {
               className="hidden md:inline-flex h-9 gap-1.5 rounded-xl text-foreground/80 hover:text-foreground hover:bg-muted/70 px-3"
             >
               <Sparkles className="h-4 w-4 text-primary" strokeWidth={1.75} />
-              <span className="text-[12.5px] font-medium">AI Insights</span>
+              <span className="text-[12.5px] font-medium">Reports</span>
             </Button>
 
             {/* Primary CTA */}
