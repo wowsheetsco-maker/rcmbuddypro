@@ -3,6 +3,7 @@
 // outstanding amount) and returns a polished version in the requested tone.
 
 import { requireUser } from "../_shared/auth.ts";
+import { redactPii } from "../_shared/redactPii.ts";
 
 
 const corsHeaders = {
@@ -136,10 +137,12 @@ Always include:
 
 Keep it under 250 words. Use Indian English conventions (₹, "kindly", "regards").`;
 
-  const userPrompt =
+  const userPromptRaw =
     body.mode === "enhance" && body.currentBody
       ? `Refine the following draft email to match the requested tone. Keep all factual data accurate.\n\n--- CURRENT DRAFT ---\n${body.currentBody}\n--- END DRAFT ---\n\n--- CONTEXT ---\n${context}`
       : `Compose a fresh follow-up email body using the context below.\n\n--- CONTEXT ---\n${context}`;
+  // Redact PII (emails, phones, Aadhaar, PAN, UTR, member IDs) before sending to the model.
+  const userPrompt = redactPii(userPromptRaw);
 
   try {
     const resp = await fetch(GATEWAY_URL, {

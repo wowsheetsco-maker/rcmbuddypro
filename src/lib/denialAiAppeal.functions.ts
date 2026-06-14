@@ -9,6 +9,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { redactPii } from "@/lib/redactPii";
 
 const InputSchema = z.object({
   claimId: z.string().uuid(),
@@ -51,7 +52,7 @@ export const generateAiAppealLetter = createServerFn({ method: "POST" })
       "(4) preserves every factual detail (claim number, patient, amounts, dates). " +
       "Do NOT invent facts. Return JSON: {\"subject\":\"...\",\"body\":\"...\"}.";
 
-    const userPrompt = [
+    const userPromptRaw = [
       `Payer: ${data.payer}`,
       data.denialCode ? `Denial code: ${data.denialCode}` : "",
       data.appealAngle ? `Lead argument: ${data.appealAngle}` : "",
@@ -63,6 +64,8 @@ export const generateAiAppealLetter = createServerFn({ method: "POST" })
       "Original body:",
       data.baseBody,
     ].filter(Boolean).join("\n");
+    // Strip PII (emails, phones, Aadhaar, PAN, UTR, member IDs) before sending to the AI gateway.
+    const userPrompt = redactPii(userPromptRaw);
 
     try {
       const resp = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {

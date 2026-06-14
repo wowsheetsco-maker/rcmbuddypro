@@ -7,6 +7,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 import { requireUser } from "../_shared/auth.ts";
+import { redactPii } from "../_shared/redactPii.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -316,8 +317,8 @@ Deno.serve(async (req) => {
     // 1) Extract attachment text (if any)
     const attachmentText = await extractAttachmentText(supabase, attachmentPaths);
 
-    // 2) Build user prompt
-    const userPrompt = buildUserPrompt(tool, formData, attachmentText);
+    // 2) Build user prompt, then redact PII before it leaves our infra
+    const userPrompt = redactPii(buildUserPrompt(tool, formData, attachmentText));
 
     // 3) Route to provider
     let result: { text: string; promptTokens: number | null; completionTokens: number | null };
