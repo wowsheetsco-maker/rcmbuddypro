@@ -1105,6 +1105,33 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_status_meta: {
+        Row: {
+          bucket: Database["public"]["Enums"]["claim_status_bucket"]
+          code: Database["public"]["Enums"]["claim_status_code"]
+          description: string | null
+          is_terminal: boolean
+          label: string
+          sort_order: number
+        }
+        Insert: {
+          bucket: Database["public"]["Enums"]["claim_status_bucket"]
+          code: Database["public"]["Enums"]["claim_status_code"]
+          description?: string | null
+          is_terminal?: boolean
+          label: string
+          sort_order?: number
+        }
+        Update: {
+          bucket?: Database["public"]["Enums"]["claim_status_bucket"]
+          code?: Database["public"]["Enums"]["claim_status_code"]
+          description?: string | null
+          is_terminal?: boolean
+          label?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       claim_submission_documents: {
         Row: {
           claim_id: string
@@ -1416,6 +1443,12 @@ export type Database = {
           claim_creation_date: string
           claim_number: string
           claim_status: string
+          claim_status_bucket:
+            | Database["public"]["Enums"]["claim_status_bucket"]
+            | null
+          claim_status_code:
+            | Database["public"]["Enums"]["claim_status_code"]
+            | null
           claimed_amount: number
           copay: number
           created_at: string
@@ -1468,6 +1501,12 @@ export type Database = {
           claim_creation_date: string
           claim_number: string
           claim_status: string
+          claim_status_bucket?:
+            | Database["public"]["Enums"]["claim_status_bucket"]
+            | null
+          claim_status_code?:
+            | Database["public"]["Enums"]["claim_status_code"]
+            | null
           claimed_amount?: number
           copay?: number
           created_at?: string
@@ -1520,6 +1559,12 @@ export type Database = {
           claim_creation_date?: string
           claim_number?: string
           claim_status?: string
+          claim_status_bucket?:
+            | Database["public"]["Enums"]["claim_status_bucket"]
+            | null
+          claim_status_code?:
+            | Database["public"]["Enums"]["claim_status_code"]
+            | null
           claimed_amount?: number
           copay?: number
           created_at?: string
@@ -4832,6 +4877,10 @@ export type Database = {
         Args: { _branch_id: string; _org_id: string }
         Returns: boolean
       }
+      claim_status_bucket_for: {
+        Args: { _code: Database["public"]["Enums"]["claim_status_code"] }
+        Returns: Database["public"]["Enums"]["claim_status_bucket"]
+      }
       get_own_smtp_settings: {
         Args: never
         Returns: {
@@ -4863,6 +4912,10 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      normalize_claim_status: {
+        Args: { _raw: string }
+        Returns: Database["public"]["Enums"]["claim_status_code"]
+      }
       private_cron_get: { Args: { _key: string }; Returns: string }
       private_cron_set: {
         Args: { _key: string; _value: string }
@@ -4887,6 +4940,41 @@ export type Database = {
         | "billing_admin"
         | "compliance_admin"
         | "tech_admin"
+      claim_status_bucket:
+        | "pre_auth"
+        | "in_progress"
+        | "query"
+        | "approved"
+        | "denied"
+        | "settled"
+        | "closed"
+      claim_status_code:
+        | "pre_auth_submitted"
+        | "pre_auth_query"
+        | "pre_auth_query_replied"
+        | "pre_auth_approved"
+        | "pre_auth_denied"
+        | "discharge_initiated"
+        | "discharge_query"
+        | "discharge_query_replied"
+        | "discharge_approved"
+        | "discharge_denied"
+        | "enhancement_submitted"
+        | "enhancement_query"
+        | "enhancement_query_replied"
+        | "enhancement_approved"
+        | "enhancement_denied"
+        | "claim_submitted"
+        | "claim_query"
+        | "claim_query_replied"
+        | "claim_approved"
+        | "claim_denied"
+        | "reconsideration_submitted"
+        | "settlement_initiated"
+        | "settlement_reminder"
+        | "settled"
+        | "rejected"
+        | "closed"
       org_role: "owner" | "admin" | "manager" | "member" | "viewer"
     }
     CompositeTypes: {
@@ -5022,6 +5110,43 @@ export const Constants = {
         "billing_admin",
         "compliance_admin",
         "tech_admin",
+      ],
+      claim_status_bucket: [
+        "pre_auth",
+        "in_progress",
+        "query",
+        "approved",
+        "denied",
+        "settled",
+        "closed",
+      ],
+      claim_status_code: [
+        "pre_auth_submitted",
+        "pre_auth_query",
+        "pre_auth_query_replied",
+        "pre_auth_approved",
+        "pre_auth_denied",
+        "discharge_initiated",
+        "discharge_query",
+        "discharge_query_replied",
+        "discharge_approved",
+        "discharge_denied",
+        "enhancement_submitted",
+        "enhancement_query",
+        "enhancement_query_replied",
+        "enhancement_approved",
+        "enhancement_denied",
+        "claim_submitted",
+        "claim_query",
+        "claim_query_replied",
+        "claim_approved",
+        "claim_denied",
+        "reconsideration_submitted",
+        "settlement_initiated",
+        "settlement_reminder",
+        "settled",
+        "rejected",
+        "closed",
       ],
       org_role: ["owner", "admin", "manager", "member", "viewer"],
     },
