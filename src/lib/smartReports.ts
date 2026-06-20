@@ -258,6 +258,14 @@ function inferDept(c: Claim): string {
   return "General Surgery";
 }
 
+/**
+ * Aging-bucket → recovery probability (industry benchmark used by RCM
+ * Buddy. Exposed on the report as a footnote so the CFO can challenge it).
+ */
+const RECOVERY_PROB: Record<string, number> = {
+  "0-30": 0.95, "31-60": 0.85, "61-90": 0.70, "91-180": 0.50, "180+": 0.25,
+};
+
 function computeMetrics(claims: Claim[]) {
   const total = claims.length;
   const claimed = claims.reduce((s, c) => s + (c.claimed_amount || 0), 0);
@@ -268,18 +276,38 @@ function computeMetrics(claims: Claim[]) {
   const unsubmitted = claims.filter((c) => classify(c) === "unsubmitted");
   const submitted = total - unsubmitted.length;
   const submittedAmt = claimed - unsubmitted.reduce((s, c) => s + (c.claimed_amount || 0), 0);
+  const approvedClaimsCount = claims.filter((c) => (c.approved_amount || 0) > 0).length;
   const denialAmt = denials.reduce((s, c) => s + (c.claimed_amount || 0), 0);
   const underpayments = claims.reduce(
     (s, c) => s + Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0)),
     0,
   );
   const underpayCount = claims.filter((c) => (c.approved_amount || 0) - (c.settled_amount || 0) > 1).length;
+  const approvedForUnder = claims
+    .filter((c) => (c.approved_amount || 0) - (c.settled_amount || 0) > 1)
+    .reduce((s, c) => s + (c.approved_amount || 0), 0);
+  const underpayShortfallPct = approvedForUnder > 0 ? (underpayments / approvedForUnder) * 100 : 0;
   const unsubmittedAmt = unsubmitted.reduce((s, c) => s + (c.claimed_amount || 0), 0);
+  /** True when the system has no doc-submission tracking data at all
+   *  (vs. truly zero leakage — these are very different stories). */
+  const docTrackingMissing = claims.every((c) => !c.doc_submission_date);
   const liveAR = claims
     .filter((c) => classify(c) !== "settled")
     .reduce((s, c) => s + (c.outstanding_amount || 0), 0);
   const livePending = claims.filter((c) => classify(c) !== "settled" && c.date_of_discharge).length;
-  const ncr = approved > 0 ? (settled / approved) * 100 : 0;
+
+  /**
+   * NCR — standard healthcare RCM definition:
+   *   NCR = Collections ÷ (Claimed − Denied claim amount)
+   * This excludes contractual / denied write-offs from the denominator,
+   * so it measures collection performance on the *collectible* portion
+   * of charges, not gross billing. Target ≥ 80%.
+   */
+  const ncrDenom = Math.max(0, claimed - denialAmt);
+  const ncr = ncrDenom > 0 ? (settled / ncrDenom) * 100 : 0;
+  /** Gross collection rate — Collections ÷ Total Claimed. Use for the funnel. */
+  const collectionRate = claimed > 0 ? (settled / claimed) * 100 : 0;
+
   const denialRate = total > 0 ? (denials.length / total) * 100 : 0;
   const fpy = submitted > 0 ? ((submitted - denials.length) / submitted) * 100 : 0;
 
@@ -302,6 +330,13 @@ function computeMetrics(claims: Claim[]) {
   });
   const irdaiBreach = claims.filter((c) => c.is_irdai_breach).length;
   const irdaiAmt = buckets["91-180"] + buckets["180+"];
+  /** What % of live AR is critically aged (91+ days). */
+  const breachShareOfAR = liveAR > 0 ? (irdaiAmt / liveAR) * 100 : 0;
+  /** Weighted recoverable — bucket × industry recovery probability. */
+  const weightedRecoverable = (Object.keys(buckets) as Array<keyof typeof buckets>).reduce(
+    (s, k) => s + buckets[k] * (RECOVERY_PROB[k] ?? 0),
+    0,
+  );
 
   // Top TPA outstanding
   const tpaAgg: Record<string, { amt: number; count: number }> = {};
@@ -314,7 +349,7 @@ function computeMetrics(claims: Claim[]) {
   });
   const topTpa = Object.entries(tpaAgg).sort((a, b) => b[1].amt - a[1].amt).slice(0, 5);
 
-  // Denial reasons
+  // Denial reasons (hospital-wide)
   const denialAgg: Record<string, { count: number; amt: number }> = {};
   denials.forEach((c) => {
     const reason = (c.insurer_comments || "Unspecified").split(/[.,;\n]/)[0].trim().slice(0, 60) || "Unspecified";
@@ -324,9 +359,56 @@ function computeMetrics(claims: Claim[]) {
   });
   const topDenials = Object.entries(denialAgg).sort((a, b) => b[1].count - a[1].count).slice(0, 8);
 
+  // Payer × denial reason matrix (operationally actionable)
+  type PayerReasonRow = { payer: string; reason: string; count: number; amt: number };
+  const payerReasonRows: PayerReasonRow[] = [];
+  const prAgg: Record<string, Record<string, { count: number; amt: number }>> = {};
+  denials.forEach((c) => {
+    const p = c.tpa_name || c.insurance_company_name || "Unknown";
+    const r = (c.insurer_comments || "Unspecified").split(/[.,;\n]/)[0].trim().slice(0, 40) || "Unspecified";
+    if (!prAgg[p]) prAgg[p] = {};
+    if (!prAgg[p][r]) prAgg[p][r] = { count: 0, amt: 0 };
+    prAgg[p][r].count++;
+    prAgg[p][r].amt += c.claimed_amount || 0;
+  });
+  Object.entries(prAgg).forEach(([payer, reasons]) => {
+    Object.entries(reasons).forEach(([reason, v]) => {
+      payerReasonRows.push({ payer, reason, count: v.count, amt: v.amt });
+    });
+  });
+  payerReasonRows.sort((a, b) => b.amt - a.amt);
+  const topPayerReason = payerReasonRows.slice(0, 15);
+
+  // Department-level cut
+  const deptAgg: Record<string, { claimed: number; settled: number; denied: number; outstanding: number; underpaid: number; count: number }> = {};
+  claims.forEach((c) => {
+    const d = inferDept(c);
+    if (!deptAgg[d]) deptAgg[d] = { claimed: 0, settled: 0, denied: 0, outstanding: 0, underpaid: 0, count: 0 };
+    deptAgg[d].count++;
+    deptAgg[d].claimed += c.claimed_amount || 0;
+    deptAgg[d].settled += c.settled_amount || 0;
+    deptAgg[d].outstanding += c.outstanding_amount || 0;
+    deptAgg[d].underpaid += Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0));
+    if (classify(c) === "denied") deptAgg[d].denied++;
+  });
+  const topDepts = Object.entries(deptAgg)
+    .sort((a, b) => (b[1].claimed - b[1].settled) - (a[1].claimed - a[1].settled))
+    .slice(0, 8);
+
+  // Underpayment by TPA (root-cause page)
+  const underByTpa: Record<string, { amt: number; count: number; approved: number }> = {};
+  claims.forEach((c) => {
+    const shortfall = Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0));
+    if (shortfall <= 1) return;
+    const k = c.tpa_name || "Unknown";
+    if (!underByTpa[k]) underByTpa[k] = { amt: 0, count: 0, approved: 0 };
+    underByTpa[k].amt += shortfall;
+    underByTpa[k].count++;
+    underByTpa[k].approved += c.approved_amount || 0;
+  });
+  const topUnderTpa = Object.entries(underByTpa).sort((a, b) => b[1].amt - a[1].amt).slice(0, 6);
+
   // Corporate / Group policies only — group by employer (policy_holder_name).
-  // Excludes retail/individual policies and rows where the holder is the
-  // insurer itself (i.e. retail policy issued in the insurer's name).
   const corpAgg: Record<string, { count: number; claimed: number; settled: number; denied: number; outstanding: number }> = {};
   claims.forEach((c) => {
     if (!isGroupCorporateClaim(c)) return;
@@ -354,15 +436,49 @@ function computeMetrics(claims: Claim[]) {
   });
   const avgDts = dts > 0 ? dtsSum / dts : 0;
 
+  // Period delta — split the dataset into first-half vs second-half by
+  // claim_creation_date. Lets the CFO see "are we improving inside the
+  // selected window?" without needing a persisted prior snapshot.
+  const dated = claims
+    .map((c) => ({ c, t: c.claim_creation_date ? new Date(c.claim_creation_date).getTime() : 0 }))
+    .filter((x) => x.t > 0)
+    .sort((a, b) => a.t - b.t);
+  const mid = dated.length > 0 ? dated[Math.floor(dated.length / 2)].t : 0;
+  const halfMetrics = (arr: Claim[]) => {
+    const cl = arr.reduce((s, x) => s + (x.claimed_amount || 0), 0);
+    const st = arr.reduce((s, x) => s + (x.settled_amount || 0), 0);
+    const dn = arr.filter((x) => classify(x) === "denied");
+    const dnAmt = dn.reduce((s, x) => s + (x.claimed_amount || 0), 0);
+    const ncrD = Math.max(0, cl - dnAmt);
+    return {
+      count: arr.length,
+      claimed: cl,
+      settled: st,
+      denialRate: arr.length ? (dn.length / arr.length) * 100 : 0,
+      collectionRate: cl > 0 ? (st / cl) * 100 : 0,
+      ncr: ncrD > 0 ? (st / ncrD) * 100 : 0,
+    };
+  };
+  const firstHalf = halfMetrics(dated.filter((x) => x.t < mid).map((x) => x.c));
+  const secondHalf = halfMetrics(dated.filter((x) => x.t >= mid).map((x) => x.c));
+  const periodDelta = { firstHalf, secondHalf, hasData: dated.length >= 10 };
+
   return {
     total, claimed, approved, settled, denials, settledClaims,
-    submitted, submittedAmt, denialAmt, underpayments, underpayCount, unsubmittedAmt, unsubmitted,
-    liveAR, livePending, ncr, denialRate, fpy, diar,
-    buckets, bucketCounts, irdaiBreach, irdaiAmt,
-    topTpa, topDenials, topCorps, breached48h, avgDts,
+    submitted, submittedAmt, approvedClaimsCount, denialAmt, underpayments, underpayCount,
+    approvedForUnder, underpayShortfallPct, unsubmittedAmt, unsubmitted, docTrackingMissing,
+    liveAR, livePending, ncr, ncrDenom, collectionRate, denialRate, fpy, diar,
+    buckets, bucketCounts, irdaiBreach, irdaiAmt, breachShareOfAR, weightedRecoverable,
+    topTpa, topDenials, topPayerReason, topDepts, topUnderTpa,
+    topCorps, breached48h, avgDts,
     corpClaimsCount, corpClaimedTotal, corpSettledTotal, corpOutstandingTotal,
+    periodDelta,
   };
 }
+
+/** Recovery probability table — exported so the methodology footnote can render it. */
+export const RECOVERY_PROBABILITIES = RECOVERY_PROB;
+
 
 /**
  * Returns true when the claim belongs to a GROUP / CORPORATE policy
