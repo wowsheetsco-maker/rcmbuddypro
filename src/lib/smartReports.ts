@@ -862,11 +862,36 @@ function denialReport(ctx: ReportContext): string {
     <div class="kpi"><div class="l">Total Recovery</div><div class="v emerald">${fmt(recoverableAmt + m.underpayments)}</div><div class="c">denials + underpayments</div></div>
   </div>
 
-  <div class="section-title">DENIAL CATEGORIES (ROOT CAUSE)</div>
+  <div class="section-title">DENIAL CATEGORIES (HOSPITAL-WIDE)</div>
   <table>
     <thead><tr><th>#</th><th>Reason / Category</th><th class="num">Count</th><th class="num">Amount</th><th>Status</th></tr></thead>
     <tbody>
       ${m.topDenials.map(([reason, v], i) => `<tr><td>${i + 1}</td><td>${escape(reason)}</td><td class="num">${v.count}</td><td class="num"><b>${fmt(v.amt)}</b></td><td><span class="pill pill-amber">Appeal pending</span></td></tr>`).join("")}
+    </tbody>
+  </table>
+
+  <div class="section-title">PAYER × DENIAL REASON — OPERATIONAL FIX MATRIX</div>
+  <p style="font-size:10.5px;color:#374151;margin:-2px 0 6px">
+    The front-desk / coding fix is different per payer. "Pre-auth not obtained" at Star Health
+    means front-office training; "Documents incomplete" at Niva Bupa means a discharge-checklist
+    gap. Rows ranked by denied amount.
+  </p>
+  <table>
+    <thead><tr><th>#</th><th>Payer</th><th>Denial reason</th><th class="num">Claims</th><th class="num">Amount</th><th>Suggested owner</th></tr></thead>
+    <tbody>
+      ${m.topPayerReason.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:14px">No denials in the selected period.</td></tr>`
+        : m.topPayerReason.map((r, i) => {
+            const reasonLower = r.reason.toLowerCase();
+            const owner =
+              /pre.?auth|authori[sz]ation/.test(reasonLower) ? "Front Office Lead"
+              : /document|discharge summary|bill|investigation/.test(reasonLower) ? "Medical Records Lead"
+              : /coding|icd|cpt|diagnosis/.test(reasonLower) ? "Coding Lead"
+              : /eligib|policy|cover|exclus/.test(reasonLower) ? "Insurance Desk Lead"
+              : /tariff|package|rate|tariff/.test(reasonLower) ? "Tariff/Finance Lead"
+              : "Appeals Lead";
+            return `<tr><td>${i+1}</td><td><b>${escape(r.payer)}</b></td><td>${escape(r.reason)}</td><td class="num">${r.count}</td><td class="num red"><b>${fmt(r.amt)}</b></td><td><span class="pill pill-amber">${escape(owner)}</span></td></tr>`;
+          }).join("")}
     </tbody>
   </table>
 
@@ -882,10 +907,12 @@ function denialReport(ctx: ReportContext): string {
   <div class="action">
     <div>
       <h4>File appeals before 30-day SLA window expires</h4>
-      <p>${m.denials.length} denied claims. Use Denial Tracker → AI Appeal Generator for fastest turnaround. Top reason: ${escape(m.topDenials[0]?.[0] || "—")} (${m.topDenials[0]?.[1].count || 0} claims).</p>
+      <p>${m.denials.length} denied claims. Use Denial Tracker → AI Appeal Generator for fastest turnaround. Top reason: ${escape(m.topDenials[0]?.[0] || "—")} (${m.topDenials[0]?.[1].count || 0} claims).<br/><b>Owner:</b> Appeals Lead (assign individual in app)</p>
     </div>
     <div class="amt">${fmt(recoverableAmt)}</div>
   </div>
+
+
 
   <div class="footer">RCM Buddy v3 — Denial &amp; Appeal Report — ${escape(ctx.hospitalName)}</div>
   `;
