@@ -55,6 +55,14 @@ export const ACTIONS: { key: Action; label: string; col: keyof RolePermission }[
 const ACTING_KEY = "rcm-acting-role";
 export const DEFAULT_ACTING_ROLE: UserRole = "Super Admin";
 
+/**
+ * Active role for the UI capability gate.
+ *
+ * Authoritative source: public.user_roles (LAYER 2 — capability).
+ * localStorage just remembers the user's last pick across reloads;
+ * the role switcher should only offer roles the user actually holds
+ * in user_roles. See docs/permissions.md.
+ */
 export function getActingRole(): UserRole {
   if (typeof window === "undefined") return DEFAULT_ACTING_ROLE;
   return (localStorage.getItem(ACTING_KEY) as UserRole) || DEFAULT_ACTING_ROLE;
