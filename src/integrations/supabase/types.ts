@@ -429,47 +429,6 @@ export type Database = {
           },
         ]
       }
-      app_user_access: {
-        Row: {
-          app_id: string
-          app_user_id: string
-          can_login: boolean
-          created_at: string
-          id: string
-          org_id: string
-          role: string
-          updated_at: string
-        }
-        Insert: {
-          app_id: string
-          app_user_id: string
-          can_login?: boolean
-          created_at?: string
-          id?: string
-          org_id: string
-          role?: string
-          updated_at?: string
-        }
-        Update: {
-          app_id?: string
-          app_user_id?: string
-          can_login?: boolean
-          created_at?: string
-          id?: string
-          org_id?: string
-          role?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "app_user_access_app_id_fkey"
-            columns: ["app_id"]
-            isOneToOne: false
-            referencedRelation: "platform_apps"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       app_users: {
         Row: {
           auth_user_id: string | null
@@ -4117,6 +4076,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          org_id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          org_id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_tpa_allocations: {
         Row: {
           created_at: string
@@ -4903,6 +4889,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      has_app_role: {
+        Args: {
+          _org_id: string
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_org_role: {
         Args: {
           _org_id: string
@@ -4912,6 +4906,10 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      my_app_roles: {
+        Args: { _org_id: string }
+        Returns: Database["public"]["Enums"]["app_role"][]
+      }
       normalize_claim_status: {
         Args: { _raw: string }
         Returns: Database["public"]["Enums"]["claim_status_code"]
@@ -4925,6 +4923,7 @@ export type Database = {
         Args: { _make_owner?: boolean; _org_id?: string; _target_email: string }
         Returns: Json
       }
+      refresh_hospital_kpis: { Args: never; Returns: number }
       seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
       seed_submission_checklist: {
         Args: { _submission_id: string }
@@ -4940,6 +4939,16 @@ export type Database = {
         | "billing_admin"
         | "compliance_admin"
         | "tech_admin"
+      app_role:
+        | "Super Admin"
+        | "Hospital Admin"
+        | "RCM Manager"
+        | "Billing Executive"
+        | "TPA Coordinator"
+        | "Front Office"
+        | "Finance"
+        | "Auditor"
+        | "Viewer"
       claim_status_bucket:
         | "pre_auth"
         | "in_progress"
@@ -5110,6 +5119,17 @@ export const Constants = {
         "billing_admin",
         "compliance_admin",
         "tech_admin",
+      ],
+      app_role: [
+        "Super Admin",
+        "Hospital Admin",
+        "RCM Manager",
+        "Billing Executive",
+        "TPA Coordinator",
+        "Front Office",
+        "Finance",
+        "Auditor",
+        "Viewer",
       ],
       claim_status_bucket: [
         "pre_auth",
