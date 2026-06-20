@@ -258,6 +258,14 @@ function inferDept(c: Claim): string {
   return "General Surgery";
 }
 
+/**
+ * Aging-bucket → recovery probability (industry benchmark used by RCM
+ * Buddy. Exposed on the report as a footnote so the CFO can challenge it).
+ */
+const RECOVERY_PROB: Record<string, number> = {
+  "0-30": 0.95, "31-60": 0.85, "61-90": 0.70, "91-180": 0.50, "180+": 0.25,
+};
+
 function computeMetrics(claims: Claim[]) {
   const total = claims.length;
   const claimed = claims.reduce((s, c) => s + (c.claimed_amount || 0), 0);
@@ -268,18 +276,38 @@ function computeMetrics(claims: Claim[]) {
   const unsubmitted = claims.filter((c) => classify(c) === "unsubmitted");
   const submitted = total - unsubmitted.length;
   const submittedAmt = claimed - unsubmitted.reduce((s, c) => s + (c.claimed_amount || 0), 0);
+  const approvedClaimsCount = claims.filter((c) => (c.approved_amount || 0) > 0).length;
   const denialAmt = denials.reduce((s, c) => s + (c.claimed_amount || 0), 0);
   const underpayments = claims.reduce(
     (s, c) => s + Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0)),
     0,
   );
   const underpayCount = claims.filter((c) => (c.approved_amount || 0) - (c.settled_amount || 0) > 1).length;
+  const approvedForUnder = claims
+    .filter((c) => (c.approved_amount || 0) - (c.settled_amount || 0) > 1)
+    .reduce((s, c) => s + (c.approved_amount || 0), 0);
+  const underpayShortfallPct = approvedForUnder > 0 ? (underpayments / approvedForUnder) * 100 : 0;
   const unsubmittedAmt = unsubmitted.reduce((s, c) => s + (c.claimed_amount || 0), 0);
+  /** True when the system has no doc-submission tracking data at all
+   *  (vs. truly zero leakage — these are very different stories). */
+  const docTrackingMissing = claims.every((c) => !c.doc_submission_date);
   const liveAR = claims
     .filter((c) => classify(c) !== "settled")
     .reduce((s, c) => s + (c.outstanding_amount || 0), 0);
   const livePending = claims.filter((c) => classify(c) !== "settled" && c.date_of_discharge).length;
-  const ncr = approved > 0 ? (settled / approved) * 100 : 0;
+
+  /**
+   * NCR — standard healthcare RCM definition:
+   *   NCR = Collections ÷ (Claimed − Denied claim amount)
+   * This excludes contractual / denied write-offs from the denominator,
+   * so it measures collection performance on the *collectible* portion
+   * of charges, not gross billing. Target ≥ 80%.
+   */
+  const ncrDenom = Math.max(0, claimed - denialAmt);
+  const ncr = ncrDenom > 0 ? (settled / ncrDenom) * 100 : 0;
+  /** Gross collection rate — Collections ÷ Total Claimed. Use for the funnel. */
+  const collectionRate = claimed > 0 ? (settled / claimed) * 100 : 0;
+
   const denialRate = total > 0 ? (denials.length / total) * 100 : 0;
   const fpy = submitted > 0 ? ((submitted - denials.length) / submitted) * 100 : 0;
 
@@ -302,6 +330,13 @@ function computeMetrics(claims: Claim[]) {
   });
   const irdaiBreach = claims.filter((c) => c.is_irdai_breach).length;
   const irdaiAmt = buckets["91-180"] + buckets["180+"];
+  /** What % of live AR is critically aged (91+ days). */
+  const breachShareOfAR = liveAR > 0 ? (irdaiAmt / liveAR) * 100 : 0;
+  /** Weighted recoverable — bucket × industry recovery probability. */
+  const weightedRecoverable = (Object.keys(buckets) as Array<keyof typeof buckets>).reduce(
+    (s, k) => s + buckets[k] * (RECOVERY_PROB[k] ?? 0),
+    0,
+  );
 
   // Top TPA outstanding
   const tpaAgg: Record<string, { amt: number; count: number }> = {};
@@ -314,7 +349,7 @@ function computeMetrics(claims: Claim[]) {
   });
   const topTpa = Object.entries(tpaAgg).sort((a, b) => b[1].amt - a[1].amt).slice(0, 5);
 
-  // Denial reasons
+  // Denial reasons (hospital-wide)
   const denialAgg: Record<string, { count: number; amt: number }> = {};
   denials.forEach((c) => {
     const reason = (c.insurer_comments || "Unspecified").split(/[.,;\n]/)[0].trim().slice(0, 60) || "Unspecified";
@@ -324,9 +359,56 @@ function computeMetrics(claims: Claim[]) {
   });
   const topDenials = Object.entries(denialAgg).sort((a, b) => b[1].count - a[1].count).slice(0, 8);
 
+  // Payer × denial reason matrix (operationally actionable)
+  type PayerReasonRow = { payer: string; reason: string; count: number; amt: number };
+  const payerReasonRows: PayerReasonRow[] = [];
+  const prAgg: Record<string, Record<string, { count: number; amt: number }>> = {};
+  denials.forEach((c) => {
+    const p = c.tpa_name || c.insurance_company_name || "Unknown";
+    const r = (c.insurer_comments || "Unspecified").split(/[.,;\n]/)[0].trim().slice(0, 40) || "Unspecified";
+    if (!prAgg[p]) prAgg[p] = {};
+    if (!prAgg[p][r]) prAgg[p][r] = { count: 0, amt: 0 };
+    prAgg[p][r].count++;
+    prAgg[p][r].amt += c.claimed_amount || 0;
+  });
+  Object.entries(prAgg).forEach(([payer, reasons]) => {
+    Object.entries(reasons).forEach(([reason, v]) => {
+      payerReasonRows.push({ payer, reason, count: v.count, amt: v.amt });
+    });
+  });
+  payerReasonRows.sort((a, b) => b.amt - a.amt);
+  const topPayerReason = payerReasonRows.slice(0, 15);
+
+  // Department-level cut
+  const deptAgg: Record<string, { claimed: number; settled: number; denied: number; outstanding: number; underpaid: number; count: number }> = {};
+  claims.forEach((c) => {
+    const d = inferDept(c);
+    if (!deptAgg[d]) deptAgg[d] = { claimed: 0, settled: 0, denied: 0, outstanding: 0, underpaid: 0, count: 0 };
+    deptAgg[d].count++;
+    deptAgg[d].claimed += c.claimed_amount || 0;
+    deptAgg[d].settled += c.settled_amount || 0;
+    deptAgg[d].outstanding += c.outstanding_amount || 0;
+    deptAgg[d].underpaid += Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0));
+    if (classify(c) === "denied") deptAgg[d].denied++;
+  });
+  const topDepts = Object.entries(deptAgg)
+    .sort((a, b) => (b[1].claimed - b[1].settled) - (a[1].claimed - a[1].settled))
+    .slice(0, 8);
+
+  // Underpayment by TPA (root-cause page)
+  const underByTpa: Record<string, { amt: number; count: number; approved: number }> = {};
+  claims.forEach((c) => {
+    const shortfall = Math.max(0, (c.approved_amount || 0) - (c.settled_amount || 0));
+    if (shortfall <= 1) return;
+    const k = c.tpa_name || "Unknown";
+    if (!underByTpa[k]) underByTpa[k] = { amt: 0, count: 0, approved: 0 };
+    underByTpa[k].amt += shortfall;
+    underByTpa[k].count++;
+    underByTpa[k].approved += c.approved_amount || 0;
+  });
+  const topUnderTpa = Object.entries(underByTpa).sort((a, b) => b[1].amt - a[1].amt).slice(0, 6);
+
   // Corporate / Group policies only — group by employer (policy_holder_name).
-  // Excludes retail/individual policies and rows where the holder is the
-  // insurer itself (i.e. retail policy issued in the insurer's name).
   const corpAgg: Record<string, { count: number; claimed: number; settled: number; denied: number; outstanding: number }> = {};
   claims.forEach((c) => {
     if (!isGroupCorporateClaim(c)) return;
@@ -354,15 +436,49 @@ function computeMetrics(claims: Claim[]) {
   });
   const avgDts = dts > 0 ? dtsSum / dts : 0;
 
+  // Period delta — split the dataset into first-half vs second-half by
+  // claim_creation_date. Lets the CFO see "are we improving inside the
+  // selected window?" without needing a persisted prior snapshot.
+  const dated = claims
+    .map((c) => ({ c, t: c.claim_creation_date ? new Date(c.claim_creation_date).getTime() : 0 }))
+    .filter((x) => x.t > 0)
+    .sort((a, b) => a.t - b.t);
+  const mid = dated.length > 0 ? dated[Math.floor(dated.length / 2)].t : 0;
+  const halfMetrics = (arr: Claim[]) => {
+    const cl = arr.reduce((s, x) => s + (x.claimed_amount || 0), 0);
+    const st = arr.reduce((s, x) => s + (x.settled_amount || 0), 0);
+    const dn = arr.filter((x) => classify(x) === "denied");
+    const dnAmt = dn.reduce((s, x) => s + (x.claimed_amount || 0), 0);
+    const ncrD = Math.max(0, cl - dnAmt);
+    return {
+      count: arr.length,
+      claimed: cl,
+      settled: st,
+      denialRate: arr.length ? (dn.length / arr.length) * 100 : 0,
+      collectionRate: cl > 0 ? (st / cl) * 100 : 0,
+      ncr: ncrD > 0 ? (st / ncrD) * 100 : 0,
+    };
+  };
+  const firstHalf = halfMetrics(dated.filter((x) => x.t < mid).map((x) => x.c));
+  const secondHalf = halfMetrics(dated.filter((x) => x.t >= mid).map((x) => x.c));
+  const periodDelta = { firstHalf, secondHalf, hasData: dated.length >= 10 };
+
   return {
     total, claimed, approved, settled, denials, settledClaims,
-    submitted, submittedAmt, denialAmt, underpayments, underpayCount, unsubmittedAmt, unsubmitted,
-    liveAR, livePending, ncr, denialRate, fpy, diar,
-    buckets, bucketCounts, irdaiBreach, irdaiAmt,
-    topTpa, topDenials, topCorps, breached48h, avgDts,
+    submitted, submittedAmt, approvedClaimsCount, denialAmt, underpayments, underpayCount,
+    approvedForUnder, underpayShortfallPct, unsubmittedAmt, unsubmitted, docTrackingMissing,
+    liveAR, livePending, ncr, ncrDenom, collectionRate, denialRate, fpy, diar,
+    buckets, bucketCounts, irdaiBreach, irdaiAmt, breachShareOfAR, weightedRecoverable,
+    topTpa, topDenials, topPayerReason, topDepts, topUnderTpa,
+    topCorps, breached48h, avgDts,
     corpClaimsCount, corpClaimedTotal, corpSettledTotal, corpOutstandingTotal,
+    periodDelta,
   };
 }
+
+/** Recovery probability table — exported so the methodology footnote can render it. */
+export const RECOVERY_PROBABILITIES = RECOVERY_PROB;
+
 
 /**
  * Returns true when the claim belongs to a GROUP / CORPORATE policy
@@ -407,8 +523,28 @@ function ceoReport(ctx: ReportContext): string {
   const m = computeMetrics(ctx.claims);
   const pctApproved = m.claimed > 0 ? (m.approved / m.claimed) * 100 : 0;
   const totalLeakage = m.denialAmt + m.underpayments + m.unsubmittedAmt;
-  const ncrGapAmt = Math.max(0, m.approved * 0.8 - m.settled);
+  // NCR gap value uses the standard NCR denominator (claimed − denied),
+  // so the "₹ recoverable" number reconciles to the disclosed formula.
+  const ncrGapAmt = Math.max(0, m.ncrDenom * 0.80 - m.settled);
   const topDenialReason = m.topDenials[0]?.[0] || "—";
+  const totalAR = Object.values(m.buckets).reduce((s, v) => s + v, 0) || 1;
+
+  // Action owner / due-date helpers (named field per CFO ask — actual
+  // assignment lives in the in-app task module; the report shows the role
+  // slot + a concrete date so accountability is unambiguous).
+  const due = (days: number) =>
+    new Date(Date.now() + days * 86_400_000).toLocaleDateString("en-IN", {
+      day: "2-digit", month: "short", year: "numeric",
+    });
+
+  // Period-over-period delta
+  const delta = m.periodDelta;
+  const arrow = (curr: number, prev: number) => {
+    const diff = curr - prev;
+    if (Math.abs(diff) < 0.05) return `<span style="color:#6b7280">→ flat</span>`;
+    const cls = diff > 0 ? "emerald" : "red";
+    return `<span class="${cls}">${diff > 0 ? "▲" : "▼"} ${Math.abs(diff).toFixed(1)} pts</span>`;
+  };
 
   const body = `
   <div class="header">
@@ -419,34 +555,59 @@ function ceoReport(ctx: ReportContext): string {
     </div>
   </div>
 
+  ${m.breachShareOfAR >= 50 ? `
+  <div class="alert" style="margin-top:10px;border-color:#dc2626;background:#fef2f2">
+    <h4>🚨 CRITICAL — ${m.breachShareOfAR.toFixed(0)}% of live AR is breaching 90+ days</h4>
+    <p>${fmt(m.irdaiAmt)} across ${m.bucketCounts["91-180"] + m.bucketCounts["180+"]} claims is critically aged out of a ${fmt(m.liveAR)} live portfolio. This is a five-alarm fire — escalate to RCM Head before any other action below.</p>
+  </div>` : ""}
+
   <div class="section-title">FINANCIAL SNAPSHOT</div>
   <div class="grid-4">
-    <div class="kpi"><div class="l">Total Claimed</div><div class="v">${fmt(m.claimed)}</div><div class="c">${m.total} claims</div></div>
-    <div class="kpi"><div class="l">Insurer Approved</div><div class="v">${fmt(m.approved)}</div><div class="c">${pctApproved.toFixed(0)}% of claimed</div></div>
-    <div class="kpi"><div class="l">Cash Collected</div><div class="v">${fmt(m.settled)}</div><div class="c">${m.settledClaims.length} settled</div></div>
-    <div class="kpi"><div class="l">Live AR Portfolio</div><div class="v">${fmt(m.liveAR)}</div><div class="c">${m.livePending} pending</div></div>
-    <div class="kpi"><div class="l">Net Collection Rate</div><div class="v ${m.ncr >= 80 ? "emerald" : "amber"}">${m.ncr.toFixed(1)}%</div><div class="c">Target ≥ 80%</div></div>
-    <div class="kpi"><div class="l">Denial Rate</div><div class="v ${m.denialRate < 15 ? "emerald" : "red"}">${m.denialRate.toFixed(1)}%</div><div class="c">${m.denials.length} denied · Target &lt;15%</div></div>
-    <div class="kpi"><div class="l">Days in AR (DIAR)</div><div class="v ${m.diar <= 30 ? "emerald" : "red"}">${Math.round(m.diar)}d</div><div class="c">Avg outstanding · Target ≤30d</div></div>
-    <div class="kpi"><div class="l">SLA 90+ Breach</div><div class="v ${m.irdaiBreach === 0 ? "emerald" : "red"}">${m.irdaiBreach}</div><div class="c">${fmt(m.irdaiAmt)} at risk</div></div>
+    <div class="kpi"><div class="l">Total Claimed</div><div class="v">${fmt(m.claimed)}</div><div class="c">${m.total.toLocaleString("en-IN")} claims</div></div>
+    <div class="kpi"><div class="l">Insurer Approved</div><div class="v">${fmt(m.approved)}</div><div class="c">${pctApproved.toFixed(1)}% of claimed · ${m.approvedClaimsCount.toLocaleString("en-IN")} claims</div></div>
+    <div class="kpi"><div class="l">Cash Collected</div><div class="v">${fmt(m.settled)}</div><div class="c">${m.collectionRate.toFixed(1)}% of claimed · ${m.settledClaims.length.toLocaleString("en-IN")} settled</div></div>
+    <div class="kpi"><div class="l">Live AR Portfolio</div><div class="v">${fmt(m.liveAR)}</div><div class="c">${m.livePending.toLocaleString("en-IN")} pending</div></div>
+    <div class="kpi"><div class="l">Net Collection Rate<sup>¹</sup></div><div class="v ${m.ncr >= 80 ? "emerald" : "amber"}">${m.ncr.toFixed(1)}%</div><div class="c">Target ≥ 80% · denom ${fmt(m.ncrDenom)}</div></div>
+    <div class="kpi"><div class="l">Denial Rate</div><div class="v ${m.denialRate < 15 ? "emerald" : "red"}">${m.denialRate.toFixed(1)}%</div><div class="c">${m.denials.length.toLocaleString("en-IN")} denied · Target &lt;15%</div></div>
+    <div class="kpi"><div class="l">Days in AR (DIAR)</div><div class="v ${m.diar <= 30 ? "emerald" : "red"}">${Math.round(m.diar)}d</div><div class="c">Target ≤30d · see buckets below</div></div>
+    <div class="kpi" style="${m.breachShareOfAR >= 50 ? "border-color:#fecaca;background:#fef2f2" : ""}"><div class="l">SLA 90+ Breach</div><div class="v ${m.breachShareOfAR < 25 ? "emerald" : m.breachShareOfAR < 50 ? "amber" : "red"}">${(m.bucketCounts["91-180"] + m.bucketCounts["180+"]).toLocaleString("en-IN")}</div><div class="c">${fmt(m.irdaiAmt)} · ${m.breachShareOfAR.toFixed(0)}% of live AR</div></div>
   </div>
 
   <div class="section-title">REVENUE FUNNEL — CLAIMED → SUBMITTED → APPROVED → COLLECTED</div>
   <div class="funnel">
-    <div class="step" style="background:#3b82f6"><div class="l">Total Claimed</div><div class="v">${fmt(m.claimed)}</div><div class="p">100%</div><div class="c">${m.total} claims</div></div>
-    <div class="step" style="background:#6366f1"><div class="l">Submitted</div><div class="v">${fmt(m.submittedAmt)}</div><div class="p">${m.claimed > 0 ? ((m.submittedAmt / m.claimed) * 100).toFixed(1) : 0}%</div><div class="c">${m.submitted} claims</div></div>
-    <div class="step" style="background:#f59e0b"><div class="l">Approved</div><div class="v">${fmt(m.approved)}</div><div class="p">${m.claimed > 0 ? ((m.approved / m.claimed) * 100).toFixed(1) : 0}%</div><div class="c">${ctx.claims.filter(c => c.approved_amount > 0).length} claims</div></div>
-    <div class="step" style="background:#10b981"><div class="l">Collected</div><div class="v">${fmt(m.settled)}</div><div class="p">${m.claimed > 0 ? ((m.settled / m.claimed) * 100).toFixed(1) : 0}%</div><div class="c">${m.settledClaims.length} settled</div></div>
+    <div class="step" style="background:#3b82f6"><div class="l">Total Claimed</div><div class="v">${fmt(m.claimed)}</div><div class="p">100.0%</div><div class="c">${m.total.toLocaleString("en-IN")} claims</div></div>
+    <div class="step" style="background:#6366f1"><div class="l">Submitted</div><div class="v">${fmt(m.submittedAmt)}</div><div class="p">${m.claimed > 0 ? ((m.submittedAmt / m.claimed) * 100).toFixed(1) : "0.0"}%</div><div class="c">${m.submitted.toLocaleString("en-IN")} claims</div></div>
+    <div class="step" style="background:#f59e0b"><div class="l">Approved</div><div class="v">${fmt(m.approved)}</div><div class="p">${pctApproved.toFixed(1)}%</div><div class="c">${m.approvedClaimsCount.toLocaleString("en-IN")} claims</div></div>
+    <div class="step" style="background:#10b981"><div class="l">Collected (gross)<sup>²</sup></div><div class="v">${fmt(m.settled)}</div><div class="p">${m.collectionRate.toFixed(1)}%</div><div class="c">${m.settledClaims.length.toLocaleString("en-IN")} settled</div></div>
   </div>
+  <p style="font-size:9.5px;color:#6b7280;margin-top:4px">
+    Funnel percentages are share of <b>Total Claimed</b> (gross). The headline NCR card above uses the <b>net</b> denominator (Claimed − Denied) — see methodology footnote.
+  </p>
+
+  <div class="section-title">AR AGING BUCKETS · WHERE THE ${fmt(m.liveAR)} LIVES</div>
+  <table>
+    <thead><tr><th>Bucket</th><th class="num">Claims</th><th class="num">Outstanding</th><th class="num">% of AR</th><th class="num">Recovery prob.<sup>³</sup></th><th class="num">Weighted recoverable</th></tr></thead>
+    <tbody>
+      ${(["0-30","31-60","61-90","91-180","180+"] as const).map((k) => {
+        const v = m.buckets[k]; const n = m.bucketCounts[k];
+        const pct = (v / totalAR) * 100;
+        const prob = RECOVERY_PROB[k] ?? 0;
+        const wr = v * prob;
+        const cls = k === "180+" ? "red" : k === "91-180" ? "amber" : "";
+        return `<tr><td><b class="${cls}">${k} days</b></td><td class="num">${n}</td><td class="num ${cls}">${fmt(v)}</td><td class="num">${pct.toFixed(1)}%</td><td class="num">${(prob*100).toFixed(0)}%</td><td class="num"><b>${fmt(wr)}</b></td></tr>`;
+      }).join("")}
+      <tr class="total-row"><td><b>TOTAL</b></td><td class="num"><b>${(m.bucketCounts["0-30"]+m.bucketCounts["31-60"]+m.bucketCounts["61-90"]+m.bucketCounts["91-180"]+m.bucketCounts["180+"]).toLocaleString("en-IN")}</b></td><td class="num"><b>${fmt(totalAR)}</b></td><td class="num">100%</td><td class="num">—</td><td class="num"><b class="emerald">${fmt(m.weightedRecoverable)}</b></td></tr>
+    </tbody>
+  </table>
 
   <div class="section-title">REVENUE LEAKAGE</div>
   <table>
-    <thead><tr><th>Category</th><th class="num">Amount</th><th class="num">Count</th></tr></thead>
+    <thead><tr><th>Category</th><th class="num">Amount</th><th class="num">Count</th><th>Notes</th></tr></thead>
     <tbody>
-      <tr><td>❌ Denials</td><td class="num">${fmt(m.denialAmt)}</td><td class="num">${m.denials.length}</td></tr>
-      <tr><td>⚠ Underpayments</td><td class="num">${fmt(m.underpayments)}</td><td class="num">${m.underpayCount}</td></tr>
-      <tr><td>Docs Not Submitted</td><td class="num">${fmt(m.unsubmittedAmt)}</td><td class="num">${m.unsubmitted.length}</td></tr>
-      <tr class="total-row"><td><b>Total Leakage</b></td><td class="num"><b>${fmt(totalLeakage)}</b></td><td class="num">—</td></tr>
+      <tr><td>❌ Denials</td><td class="num">${fmt(m.denialAmt)}</td><td class="num">${m.denials.length}</td><td>Top reason: ${escape(topDenialReason)}</td></tr>
+      <tr><td>⚠ Underpayments</td><td class="num">${fmt(m.underpayments)}</td><td class="num">${m.underpayCount}</td><td>Avg shortfall ${m.underpayShortfallPct.toFixed(1)}% on approved value</td></tr>
+      <tr><td>Docs Not Submitted</td><td class="num">${m.docTrackingMissing ? "—" : fmt(m.unsubmittedAmt)}</td><td class="num">${m.docTrackingMissing ? "—" : m.unsubmitted.length}</td><td>${m.docTrackingMissing ? `<span class="pill pill-amber">NOT TRACKED</span> doc-submission dates are empty for all claims` : (m.unsubmitted.length === 0 ? `<span class="pill pill-amber">Verify capture</span> zero is unusual at this volume` : "")}</td></tr>
+      <tr class="total-row"><td><b>Total Leakage</b></td><td class="num"><b>${fmt(totalLeakage)}</b></td><td class="num">—</td><td><b>${m.claimed > 0 ? ((totalLeakage / m.claimed) * 100).toFixed(1) : "0.0"}% of billed</b></td></tr>
     </tbody>
   </table>
 
@@ -460,35 +621,90 @@ function ceoReport(ctx: ReportContext): string {
 
   <div style="page-break-before: always;"></div>
 
+  <div class="section-title">DEPARTMENT / SPECIALTY CUT — WHERE THE LEAKAGE LIVES</div>
+  <table>
+    <thead><tr><th>#</th><th>Department</th><th class="num">Claims</th><th class="num">Billed</th><th class="num">Settled</th><th class="num">Gap</th><th class="num">Underpaid</th><th class="num">Denials</th></tr></thead>
+    <tbody>
+      ${m.topDepts.map(([name, v], i) => {
+        const gap = v.claimed - v.settled;
+        return `<tr><td>${i + 1}</td><td><b>${escape(name)}</b></td><td class="num">${v.count}</td><td class="num">${fmt(v.claimed)}</td><td class="num emerald">${fmt(v.settled)}</td><td class="num red"><b>${fmt(gap)}</b></td><td class="num amber">${fmt(v.underpaid)}</td><td class="num">${v.denied}</td></tr>`;
+      }).join("")}
+    </tbody>
+  </table>
+
+  <div class="section-title">UNDERPAYMENT ROOT CAUSE — ${fmt(m.underpayments)} LEAKING ACROSS ${m.underpayCount} CLAIMS</div>
+  <p style="font-size:10.5px;color:#374151;margin:-2px 0 6px">
+    Underpayment = (Approved by insurer) − (Actually credited to bank). Average shortfall
+    across affected claims: <b>${m.underpayShortfallPct.toFixed(1)}%</b> of approved value.
+    Common root causes — tariff misapplication, package-rate disputes, co-pay miscalculation,
+    TDS deducted but not adjusted — need to be tagged at the claim level. The breakdown
+    below is by payer; for a per-claim root-cause tag, use the Underpayment Tracker in app.
+  </p>
+  <table>
+    <thead><tr><th>#</th><th>TPA / Insurer</th><th class="num">Claims</th><th class="num">Approved</th><th class="num">Shortfall</th><th class="num">Shortfall %</th></tr></thead>
+    <tbody>
+      ${m.topUnderTpa.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:14px">No underpayments detected.</td></tr>`
+        : m.topUnderTpa.map(([name, v], i) => {
+            const pct = v.approved > 0 ? (v.amt / v.approved) * 100 : 0;
+            return `<tr><td>${i+1}</td><td><b>${escape(name)}</b></td><td class="num">${v.count}</td><td class="num">${fmt(v.approved)}</td><td class="num red"><b>${fmt(v.amt)}</b></td><td class="num ${pct > 10 ? "red" : "amber"}"><b>${pct.toFixed(1)}%</b></td></tr>`;
+          }).join("")}
+    </tbody>
+  </table>
+
+  ${delta.hasData ? `
+  <div class="section-title">WHAT CHANGED — FIRST HALF vs SECOND HALF OF PERIOD</div>
+  <table>
+    <thead><tr><th>Metric</th><th class="num">First half</th><th class="num">Second half</th><th class="num">Δ</th></tr></thead>
+    <tbody>
+      <tr><td>Claims filed</td><td class="num">${delta.firstHalf.count.toLocaleString("en-IN")}</td><td class="num">${delta.secondHalf.count.toLocaleString("en-IN")}</td><td class="num">${delta.secondHalf.count - delta.firstHalf.count >= 0 ? "+" : ""}${(delta.secondHalf.count - delta.firstHalf.count).toLocaleString("en-IN")}</td></tr>
+      <tr><td>Collection rate (gross)</td><td class="num">${delta.firstHalf.collectionRate.toFixed(1)}%</td><td class="num">${delta.secondHalf.collectionRate.toFixed(1)}%</td><td class="num">${arrow(delta.secondHalf.collectionRate, delta.firstHalf.collectionRate)}</td></tr>
+      <tr><td>Net Collection Rate</td><td class="num">${delta.firstHalf.ncr.toFixed(1)}%</td><td class="num">${delta.secondHalf.ncr.toFixed(1)}%</td><td class="num">${arrow(delta.secondHalf.ncr, delta.firstHalf.ncr)}</td></tr>
+      <tr><td>Denial rate</td><td class="num">${delta.firstHalf.denialRate.toFixed(1)}%</td><td class="num">${delta.secondHalf.denialRate.toFixed(1)}%</td><td class="num">${arrow(delta.firstHalf.denialRate, delta.secondHalf.denialRate)}</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:9.5px;color:#6b7280;margin-top:4px">
+    No prior published report to compare against — this delta splits the selected period in half by claim creation date so you can see directional movement inside the window. A true MoM trend will activate once a second monthly snapshot is published.
+  </p>
+  ` : ""}
+
   <div class="section-title">EXPERT RCM INSIGHTS</div>
   <div class="insight">
     <h4>COLLECTION EFFICIENCY</h4>
-    <p>NCR of ${m.ncr.toFixed(1)}% ${m.ncr >= 80 ? "meets" : "is below"} the 80% target. ${m.ncr < 80 ? `The ${(80 - m.ncr).toFixed(1)}% gap represents ${fmt(ncrGapAmt)} in recoverable value.` : "Maintain TPA reconciliation discipline."} Prioritise aged AR follow-up and underpayment disputes.</p>
+    <p>Net Collection Rate of ${m.ncr.toFixed(1)}% ${m.ncr >= 80 ? "meets" : "is below"} the 80% target. ${m.ncr < 80 ? `The ${(80 - m.ncr).toFixed(1)}-point gap represents ${fmt(ncrGapAmt)} in recoverable value on the net-collectible base of ${fmt(m.ncrDenom)}.` : "Maintain TPA reconciliation discipline."} Gross collection rate (settled ÷ claimed) is ${m.collectionRate.toFixed(1)}% — the difference between the two is your denial write-off load.</p>
   </div>
   <div class="insight">
     <h4>DENIAL PATTERN</h4>
-    <p>Denial rate of ${m.denialRate.toFixed(1)}% ${m.denialRate < 15 ? "is within tolerance." : "needs attention."} Top denial reasons: ${m.topDenials.slice(0, 2).map(([r, v]) => `${escape(r)} (${v.count})`).join(", ") || "—"}. Conduct root-cause training for documentation staff on the top categories.</p>
+    <p>Denial rate of ${m.denialRate.toFixed(1)}% ${m.denialRate < 15 ? "is within tolerance." : "needs attention."} Top denial reasons: ${m.topDenials.slice(0, 2).map(([r, v]) => `${escape(r)} (${v.count})`).join(", ") || "—"}. See Denial Report for the per-payer breakdown — operational fix is different per payer.</p>
   </div>
   <div class="insight">
     <h4>AR AGING VELOCITY</h4>
-    <p>DIAR of ${Math.round(m.diar)} days is ${m.diar <= 30 ? "within the ideal" : "outside the"} 30-day window. AR is ${m.diar <= 30 ? "moving efficiently" : "ageing — review collection cadence"}. First Pass Yield (FPY) is ${m.fpy.toFixed(0)}% — ${m.fpy >= 85 ? "excellent" : m.fpy >= 70 ? "acceptable, target improvement" : "rework high, review docs checklist"}.</p>
+    <p>DIAR of ${Math.round(m.diar)} days vs 30-day target. ${m.breachShareOfAR >= 50 ? `<b class="red">${m.breachShareOfAR.toFixed(0)}% of live AR is 91+ days old</b> — the average hides a portfolio that is mostly critically aged.` : `${m.breachShareOfAR.toFixed(0)}% of live AR sits in 91+ days buckets.`} First Pass Yield (FPY) is ${m.fpy.toFixed(0)}% — ${m.fpy >= 85 ? "excellent" : m.fpy >= 70 ? "acceptable, target improvement" : "rework high, review docs checklist"}.</p>
   </div>
 
   <div class="section-title">BOARD-LEVEL ACTION PLAN</div>
   <div class="action">
     <div>
-      <h4>File Appeals — ${m.denials.length} denied claims before 30-day window expires</h4>
-      <p>Top denial reason: ${escape(topDenialReason)} (${m.topDenials[0]?.[1].count || 0} claims). Prioritise by amount — use the Denial Tracker in RCM Buddy for one-click appeal filing. Responsible: Appeals Team.</p>
+      <h4>File appeals — ${m.denials.length} denied claims before 30-day window expires</h4>
+      <p>Top denial reason: ${escape(topDenialReason)} (${m.topDenials[0]?.[1].count || 0} claims). Prioritise by amount — use the Denial Tracker for one-click appeal filing.<br/><b>Owner:</b> Appeals Lead (assign individual in app) · <b>Due:</b> ${due(7)}</p>
     </div>
     <div class="amt">${fmt(m.denialAmt)}</div>
   </div>
   <div class="action">
     <div>
-      <h4>NCR Recovery — Schedule TPA performance review for top AR accounts</h4>
-      <p>NCR of ${m.ncr.toFixed(1)}% is below the 75% threshold. Request settlement statements from top 3 TPAs. Identify underpayment patterns and raise formal discrepancy notices. Responsible: RCM Head + Finance.</p>
+      <h4>NCR recovery — TPA performance review for top AR accounts</h4>
+      <p>Net Collection Rate of ${m.ncr.toFixed(1)}% is below the 80% target. Request settlement statements from top 3 TPAs (${m.topTpa.slice(0,3).map(([n]) => escape(n)).join(", ") || "—"}). Raise formal discrepancy notices on underpayments above 10% shortfall.<br/><b>Owner:</b> RCM Head + Finance Controller · <b>Due:</b> ${due(14)}</p>
     </div>
     <div class="amt">${fmt(m.underpayments)}</div>
   </div>
+  ${m.breachShareOfAR >= 50 ? `
+  <div class="action" style="border-left-color:#dc2626;background:#fef2f2">
+    <div>
+      <h4>Critical AR escalation — ${m.breachShareOfAR.toFixed(0)}% of live AR is 91+ days</h4>
+      <p>Escalate ${m.bucketCounts["91-180"] + m.bucketCounts["180+"]} claims totalling ${fmt(m.irdaiAmt)} to insurer grievance cells and IRDAI ombudsman where applicable.<br/><b>Owner:</b> CEO + RCM Head · <b>Due:</b> ${due(3)}</p>
+    </div>
+    <div class="amt">${fmt(m.irdaiAmt)}</div>
+  </div>` : ""}
 
   ${m.breached48h > 0 ? `
   <div class="section-title">AUTO-FLAG RISK ALERTS</div>
@@ -497,10 +713,21 @@ function ceoReport(ctx: ReportContext): string {
     <p>Discharge-to-submission avg: ${m.avgDts.toFixed(1)} days. Insurer may reject on timing grounds.</p>
   </div>` : ""}
 
+  <div class="section-title">METHODOLOGY &amp; DEFINITIONS</div>
+  <div style="font-size:10px;color:#374151;line-height:1.55;border:1px solid #e5e7eb;border-radius:6px;padding:10px 12px">
+    <p style="margin:0 0 4px"><b><sup>¹</sup> Net Collection Rate (NCR)</b> = Collections ÷ (Total Claimed − Denied claim amount). Industry-standard definition; excludes contractual / denied write-offs from the denominator. Target ≥ 80%.</p>
+    <p style="margin:0 0 4px"><b><sup>²</sup> Collected (gross)</b> in the funnel = Collections ÷ Total Claimed. Always lower than NCR because the denominator includes denied/written-off charges.</p>
+    <p style="margin:0 0 4px"><b><sup>³</sup> Recovery probability</b> per aging bucket (RCM Buddy benchmark): 0-30 = 95%, 31-60 = 85%, 61-90 = 70%, 91-180 = 50%, 180+ = 25%. Adjust per-payer recovery curves in Settings → Payer Scorecard.</p>
+    <p style="margin:0 0 4px"><b>DIAR</b> = Live AR ÷ (Total Claimed ÷ 365). Single number — always read it alongside the bucket table above.</p>
+    <p style="margin:0"><b>Denial rate</b> = Denied claims ÷ Total claims. <b>FPY</b> (First Pass Yield) = (Submitted − Denied) ÷ Submitted.</p>
+  </div>
+
   <div class="footer">RCM Buddy v3 — Confidential Management Report — ${escape(ctx.hospitalName)}<br/>Generated ${todayLong()} · Period: ${escape(ctx.periodLabel)} · ${m.total.toLocaleString("en-IN")} claims</div>
   `;
   return pageShell(`CEO Report — ${ctx.hospitalName}`, body);
 }
+
+
 
 function arReport(ctx: ReportContext): string {
   const m = computeMetrics(ctx.claims);
@@ -635,11 +862,36 @@ function denialReport(ctx: ReportContext): string {
     <div class="kpi"><div class="l">Total Recovery</div><div class="v emerald">${fmt(recoverableAmt + m.underpayments)}</div><div class="c">denials + underpayments</div></div>
   </div>
 
-  <div class="section-title">DENIAL CATEGORIES (ROOT CAUSE)</div>
+  <div class="section-title">DENIAL CATEGORIES (HOSPITAL-WIDE)</div>
   <table>
     <thead><tr><th>#</th><th>Reason / Category</th><th class="num">Count</th><th class="num">Amount</th><th>Status</th></tr></thead>
     <tbody>
       ${m.topDenials.map(([reason, v], i) => `<tr><td>${i + 1}</td><td>${escape(reason)}</td><td class="num">${v.count}</td><td class="num"><b>${fmt(v.amt)}</b></td><td><span class="pill pill-amber">Appeal pending</span></td></tr>`).join("")}
+    </tbody>
+  </table>
+
+  <div class="section-title">PAYER × DENIAL REASON — OPERATIONAL FIX MATRIX</div>
+  <p style="font-size:10.5px;color:#374151;margin:-2px 0 6px">
+    The front-desk / coding fix is different per payer. "Pre-auth not obtained" at Star Health
+    means front-office training; "Documents incomplete" at Niva Bupa means a discharge-checklist
+    gap. Rows ranked by denied amount.
+  </p>
+  <table>
+    <thead><tr><th>#</th><th>Payer</th><th>Denial reason</th><th class="num">Claims</th><th class="num">Amount</th><th>Suggested owner</th></tr></thead>
+    <tbody>
+      ${m.topPayerReason.length === 0
+        ? `<tr><td colspan="6" style="text-align:center;color:#888;padding:14px">No denials in the selected period.</td></tr>`
+        : m.topPayerReason.map((r, i) => {
+            const reasonLower = r.reason.toLowerCase();
+            const owner =
+              /pre.?auth|authori[sz]ation/.test(reasonLower) ? "Front Office Lead"
+              : /document|discharge summary|bill|investigation/.test(reasonLower) ? "Medical Records Lead"
+              : /coding|icd|cpt|diagnosis/.test(reasonLower) ? "Coding Lead"
+              : /eligib|policy|cover|exclus/.test(reasonLower) ? "Insurance Desk Lead"
+              : /tariff|package|rate|tariff/.test(reasonLower) ? "Tariff/Finance Lead"
+              : "Appeals Lead";
+            return `<tr><td>${i+1}</td><td><b>${escape(r.payer)}</b></td><td>${escape(r.reason)}</td><td class="num">${r.count}</td><td class="num red"><b>${fmt(r.amt)}</b></td><td><span class="pill pill-amber">${escape(owner)}</span></td></tr>`;
+          }).join("")}
     </tbody>
   </table>
 
@@ -655,10 +907,12 @@ function denialReport(ctx: ReportContext): string {
   <div class="action">
     <div>
       <h4>File appeals before 30-day SLA window expires</h4>
-      <p>${m.denials.length} denied claims. Use Denial Tracker → AI Appeal Generator for fastest turnaround. Top reason: ${escape(m.topDenials[0]?.[0] || "—")} (${m.topDenials[0]?.[1].count || 0} claims).</p>
+      <p>${m.denials.length} denied claims. Use Denial Tracker → AI Appeal Generator for fastest turnaround. Top reason: ${escape(m.topDenials[0]?.[0] || "—")} (${m.topDenials[0]?.[1].count || 0} claims).<br/><b>Owner:</b> Appeals Lead (assign individual in app)</p>
     </div>
     <div class="amt">${fmt(recoverableAmt)}</div>
   </div>
+
+
 
   <div class="footer">RCM Buddy v3 — Denial &amp; Appeal Report — ${escape(ctx.hospitalName)}</div>
   `;
