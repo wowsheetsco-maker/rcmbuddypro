@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Download, Loader2, FileText } from "lucide-react";
+import { Download, Loader2, FileText, Settings2, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "sonner";
+
+type Orientation = "p" | "l";
+type PaperSize = "a4" | "letter";
 
 export interface PdfFilterMeta {
   dateFrom?: Date | null;
