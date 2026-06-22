@@ -1173,7 +1173,9 @@ export default function ExecutiveDashboard() {
           <FileWarning className="h-3 w-3 inline mr-1" /> Executive Dashboard · Live data refreshes on reload · Click any tile, bar or row to verify the underlying claims
         </div>
         </>)}
+        </div>
       </div>
+
 
       <ExecutiveDrillDownDrawer
         open={!!drill}
