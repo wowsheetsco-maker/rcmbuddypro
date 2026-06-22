@@ -232,13 +232,18 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
   }
 
 
+  const isOptions = phase === "options";
+  const isRendering = phase === "rendering";
+  const isReady = phase === "ready";
+  const isSaving = phase === "saving";
+
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (phase === "saving") return; onOpenChange(o); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (isSaving) return; onOpenChange(o); }}>
       <DialogContent className="max-w-5xl w-[95vw] max-h-[92vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-5 py-3 border-b">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4 text-primary" />
-            PDF Preview — {title}
+            {isOptions ? <Settings2 className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
+            {isOptions ? "Export options" : "PDF Preview"} — {title}
           </DialogTitle>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {filterChips.map((c) => (
@@ -255,20 +260,79 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         </DialogHeader>
 
         <div className="flex-1 overflow-auto bg-muted/40 p-4">
-          {phase !== "ready" ? (
+          {isOptions && (
+            <div className="max-w-2xl mx-auto bg-card border rounded-lg p-5 space-y-5">
+              <div>
+                <div className="text-sm font-semibold mb-1">Confirm filters</div>
+                <p className="text-[11.5px] text-muted-foreground mb-2">
+                  These filters are applied to your dashboard right now. Close this dialog and adjust them in the page filter bar if anything is wrong before generating the preview.
+                </p>
+                <ul className="text-[12px] space-y-1">
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Date range</span><span className="font-medium">{fmtDate(meta.dateFrom)} → {fmtDate(meta.dateTo)}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Branch scope</span><span className="font-medium">{meta.branches?.length ? `${meta.branches.length} branches` : meta.groups?.length ? `${meta.groups.length} groups` : "All"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Departments</span><span className="font-medium">{meta.departments?.length ? meta.departments.join(", ") : "All"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Modules</span><span className="font-medium">{meta.modules?.length ? meta.modules.join(", ") : "—"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Snapshot dates</span><span className="font-medium">{fmtDate(meta.snapshotFrom)} → {fmtDate(meta.snapshotTo)}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Total claims</span><span className="font-medium">{meta.totalClaims?.toLocaleString("en-IN") ?? "—"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Prepared for</span><span className="font-medium">{[meta.userName, meta.role].filter(Boolean).join(" · ") || "—"}</span></li>
+                </ul>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Paper size</div>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {(["a4", "letter"] as PaperSize[]).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPaper(p)}
+                        className={`px-3 py-1.5 text-[12px] ${paper === p ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                      >
+                        {p.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Orientation</div>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {([["p", "Portrait"], ["l", "Landscape"]] as [Orientation, string][]).map(([v, l]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setOrientation(v)}
+                        className={`px-3 py-1.5 text-[12px] ${orientation === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[10.5px] text-muted-foreground border-t pt-3">
+                Click <strong>Generate preview</strong> to render the dashboard. Pagination respects card/section boundaries to avoid cutting rows or charts.
+              </p>
+            </div>
+          )}
+
+          {isRendering && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <div className="text-sm font-medium">Rendering preview…</div>
               <div className="w-72"><Progress value={progress} /></div>
               <div className="text-[11px] text-muted-foreground">{progress}%</div>
             </div>
-          ) : (
+          )}
+
+          {(isReady || isSaving) && (
             <div ref={previewRef} className="space-y-4">
               {pages.map((pageItems, idx) => (
                 <div
                   key={idx}
                   className="mx-auto bg-white shadow-md ring-1 ring-border overflow-hidden"
-                  style={{ width: Math.min(720, A4_W * 1.15), aspectRatio: `${A4_W} / ${A4_H}` }}
+                  style={{ width: Math.min(720, pageW * 1.15), aspectRatio: `${pageW} / ${pageH}` }}
                 >
                   <div className="bg-slate-900 text-white px-4 py-2">
                     <div className="text-[11px] font-semibold">RCMBuddy — {title}</div>
@@ -297,26 +361,38 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
 
         <DialogFooter className="px-5 py-3 border-t flex-row items-center justify-between gap-2 sm:justify-between">
           <div className="text-[11px] text-muted-foreground">
-            {phase === "ready" ? `${pages.length} page${pages.length === 1 ? "" : "s"} ready` : "Preparing…"}
+            {isOptions && "Step 1 of 2 · Confirm filters & layout"}
+            {isRendering && `Rendering… ${progress}%`}
+            {isReady && `Step 2 of 2 · ${pages.length} page${pages.length === 1 ? "" : "s"} ready`}
+            {isSaving && "Saving PDF…"}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={phase === "saving"}>
+            {isReady && (
+              <Button variant="outline" size="sm" onClick={() => { setPhase("options"); setPages([]); }}>
+                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to options
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirmDownload}
-              disabled={phase !== "ready"}
-            >
-              {phase === "saving" ? (
-                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
-              ) : (
-                <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
-              )}
-            </Button>
+            {isOptions && (
+              <Button size="sm" onClick={startRender}>
+                <Eye className="h-3.5 w-3.5 mr-1.5" /> Generate preview
+              </Button>
+            )}
+            {(isReady || isSaving) && (
+              <Button size="sm" onClick={handleConfirmDownload} disabled={!isReady}>
+                {isSaving ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
+                ) : (
+                  <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
+                )}
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
