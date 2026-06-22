@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "@/lib/router-compat";
 import {
   AlertTriangle, Flame, FileWarning, ChevronRight, ChevronLeft, MousePointerClick, History, X,
   Home, LayoutDashboard, ListChecks, Search as SearchIcon, MessageSquare,
-  Users, BarChart3, ShieldAlert, CheckCircle2,
+  Users, BarChart3, ShieldAlert, CheckCircle2, Download, Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -224,6 +226,67 @@ export default function ExecutiveDashboard() {
   const { pathname } = useLocation();
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [lastDrillMeta, setLastDrillMeta] = useState<{ title: string; subtitle?: string; count: number; ts: number } | null>(null);
+  const exportRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+
+  async function handleDownloadPdf() {
+    if (!exportRef.current || exporting) return;
+    setExporting(true);
+    const tId = toast.loading("Generating PDF…");
+    try {
+      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const node = exportRef.current;
+      const canvas = await html2canvas(node, {
+        scale: 2,
+        backgroundColor: "#ffffff",
+        useCORS: true,
+        windowWidth: node.scrollWidth,
+      });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const pageW = pdf.internal.pageSize.getWidth();
+      const pageH = pdf.internal.pageSize.getHeight();
+      const margin = 24;
+      const headerH = 56;
+      const usableW = pageW - margin * 2;
+      const imgH = (canvas.height * usableW) / canvas.width;
+
+      pdf.setFontSize(14);
+      pdf.setFont("helvetica", "bold");
+      pdf.text("RCMBuddy — Executive Dashboard", margin, 28);
+      pdf.setFontSize(9);
+      pdf.setFont("helvetica", "normal");
+      pdf.text(
+        `Generated: ${new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
+        margin, 42
+      );
+
+      // Render image, paginating by shifting Y offset
+      let yOffset = headerH;
+      let consumed = 0;
+      pdf.addImage(imgData, "PNG", margin, yOffset, usableW, imgH, undefined, "FAST");
+      consumed = pageH - yOffset - margin;
+      let remaining = imgH - consumed;
+      while (remaining > 0) {
+        pdf.addPage();
+        const y = margin - (imgH - remaining);
+        pdf.addImage(imgData, "PNG", margin, y, usableW, imgH, undefined, "FAST");
+        remaining -= (pageH - margin * 2);
+      }
+
+      const stamp = new Date().toISOString().slice(0, 10);
+      pdf.save(`RCMBuddy-Executive-Dashboard-${stamp}.pdf`);
+      toast.success("PDF downloaded", { id: tId });
+    } catch (e) {
+      console.error("PDF export failed", e);
+      toast.error("Could not generate PDF", { id: tId });
+    } finally {
+      setExporting(false);
+    }
+  }
   // Persisted across refreshes / back-forward navigation so users return to the
   // exact same view (collapsed hero vs full breakdown).
   const [showFull, setShowFull] = useState<boolean>(() => {
@@ -517,28 +580,47 @@ export default function ExecutiveDashboard() {
               {" "}· Generated: {new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
             </p>
           </div>
-          {lastDrillMeta && (
-            <div className="flex items-center gap-2 rounded-md border bg-muted/40 pl-2.5 pr-1 py-1">
-              <History className="h-3.5 w-3.5 text-muted-foreground" />
-              <div className="text-[11px] leading-tight">
-                <span className="text-muted-foreground">Last drilled:</span>{" "}
-                <span className="font-medium">{lastDrillMeta.title}</span>
-                <span className="text-muted-foreground ml-1">· {lastDrillMeta.count} claims</span>
-                {lastDrillMeta.subtitle && (
-                  <span className="text-muted-foreground ml-1 hidden md:inline">· {lastDrillMeta.subtitle}</span>
-                )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {lastDrillMeta && (
+              <div className="flex items-center gap-2 rounded-md border bg-muted/40 pl-2.5 pr-1 py-1">
+                <History className="h-3.5 w-3.5 text-muted-foreground" />
+                <div className="text-[11px] leading-tight">
+                  <span className="text-muted-foreground">Last drilled:</span>{" "}
+                  <span className="font-medium">{lastDrillMeta.title}</span>
+                  <span className="text-muted-foreground ml-1">· {lastDrillMeta.count} claims</span>
+                  {lastDrillMeta.subtitle && (
+                    <span className="text-muted-foreground ml-1 hidden md:inline">· {lastDrillMeta.subtitle}</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={clearLastDrill}
+                  aria-label="Clear last drilled filter"
+                  className="ml-1 rounded p-1 hover:bg-muted"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={clearLastDrill}
-                aria-label="Clear last drilled filter"
-                className="ml-1 rounded p-1 hover:bg-muted"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            </div>
-          )}
+            )}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              onClick={handleDownloadPdf}
+              disabled={exporting || loading}
+              className="h-8"
+            >
+              {exporting ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Generating…</>
+              ) : (
+                <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
+              )}
+            </Button>
+          </div>
         </div>
+
+        <div ref={exportRef} className="space-y-4 bg-background">
+
 
         {/* Quick actions — one-click jumps to the highest-value workflows */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2.5">
@@ -1091,7 +1173,9 @@ export default function ExecutiveDashboard() {
           <FileWarning className="h-3 w-3 inline mr-1" /> Executive Dashboard · Live data refreshes on reload · Click any tile, bar or row to verify the underlying claims
         </div>
         </>)}
+        </div>
       </div>
+
 
       <ExecutiveDrillDownDrawer
         open={!!drill}
