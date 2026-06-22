@@ -2,8 +2,11 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Download, Loader2, FileText } from "lucide-react";
+import { Download, Loader2, FileText, Settings2, ArrowLeft, Eye } from "lucide-react";
 import { toast } from "sonner";
+
+type Orientation = "p" | "l";
+type PaperSize = "a4" | "letter";
 
 export interface PdfFilterMeta {
   dateFrom?: Date | null;
@@ -33,13 +36,13 @@ interface PageCanvas {
   canvas: HTMLCanvasElement;
 }
 
-const A4_W = 595.28; // pt
-const A4_H = 841.89;
+const PAGE_DIMS: Record<PaperSize, { w: number; h: number }> = {
+  a4: { w: 595.28, h: 841.89 },
+  letter: { w: 612, h: 792 },
+};
 const MARGIN = 28;
 const HEADER_H = 78;
 const FOOTER_H = 32;
-const USABLE_W = A4_W - MARGIN * 2;
-const USABLE_H = A4_H - HEADER_H - FOOTER_H - MARGIN;
 
 function fmtDate(d?: Date | null | string) {
   if (!d) return "All time";
@@ -87,12 +90,21 @@ function packIntoPages(items: PageCanvas[], pxPerPage: number, scale: number): P
 }
 
 export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, fileName, meta }: Props) {
-  const [phase, setPhase] = useState<"idle" | "rendering" | "ready" | "saving">("idle");
+  // Two-step flow: 1) options (confirm filters + paper) 2) preview 3) saving
+  const [phase, setPhase] = useState<"options" | "rendering" | "ready" | "saving">("options");
   const [progress, setProgress] = useState(0);
   const [pages, setPages] = useState<PageCanvas[][]>([]);
+  const [paper, setPaper] = useState<PaperSize>("a4");
+  const [orientation, setOrientation] = useState<Orientation>("p");
   const previewRef = useRef<HTMLDivElement>(null);
 
   const generatedAt = useMemo(() => new Date(), [open]);
+
+  // Page dims (in pt) — swap W/H for landscape.
+  const pageW = orientation === "p" ? PAGE_DIMS[paper].w : PAGE_DIMS[paper].h;
+  const pageH = orientation === "p" ? PAGE_DIMS[paper].h : PAGE_DIMS[paper].w;
+  const usableW = pageW - MARGIN * 2;
+  const usableH = pageH - HEADER_H - FOOTER_H - MARGIN;
 
   const filterChips: string[] = useMemo(() => {
     const chips: string[] = [];
@@ -105,62 +117,56 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     return chips;
   }, [meta]);
 
-  // Render canvases when opened.
+  // Reset to the options step every time the dialog closes.
   useEffect(() => {
     if (!open) {
-      setPhase("idle");
+      setPhase("options");
       setProgress(0);
       setPages([]);
-      return;
     }
-    let cancelled = false;
-    (async () => {
-      try {
-        setPhase("rendering");
-        setProgress(5);
-        const node = sourceRef.current;
-        if (!node) throw new Error("Nothing to export");
-        const { default: html2canvas } = await import("html2canvas-pro");
-        setProgress(15);
-
-        // Capture each direct child as its own canvas so pagination respects
-        // element boundaries (no mid-row cuts, no overlapping charts).
-        const children = Array.from(node.children).filter(
-          (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
-        );
-        const sources: HTMLElement[] = children.length ? children : [node];
-        const captured: PageCanvas[] = [];
-        const scale = 2;
-        for (let i = 0; i < sources.length; i++) {
-          if (cancelled) return;
-          const c = await html2canvas(sources[i], {
-            scale,
-            backgroundColor: "#ffffff",
-            useCORS: true,
-            windowWidth: node.scrollWidth,
-          });
-          captured.push({ canvas: c });
-          setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
-        }
-
-        // Convert into pages: usable height in design pixels = USABLE_H * (canvasWidth / USABLE_W)
-        const refW = captured[0]?.canvas.width ?? USABLE_W * scale;
-        const pxPerPage = (USABLE_H * refW) / (USABLE_W * scale);
-        const packed = packIntoPages(captured, pxPerPage, scale);
-        if (cancelled) return;
-        setPages(packed);
-        setProgress(100);
-        setPhase("ready");
-      } catch (err) {
-        console.error("PDF preview render failed", err);
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        toast.error(`Could not build PDF preview: ${msg}`);
-        onOpenChange(false);
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  async function startRender() {
+    setPhase("rendering");
+    setProgress(5);
+    try {
+      const node = sourceRef.current;
+      if (!node) throw new Error("Nothing to export");
+      const { default: html2canvas } = await import("html2canvas-pro");
+      setProgress(15);
+
+      // Capture each direct child as its own canvas so pagination respects
+      // element boundaries (no mid-row cuts, no overlapping charts).
+      const children = Array.from(node.children).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
+      );
+      const sources: HTMLElement[] = children.length ? children : [node];
+      const captured: PageCanvas[] = [];
+      const scale = 2;
+      for (let i = 0; i < sources.length; i++) {
+        const c = await html2canvas(sources[i], {
+          scale,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          windowWidth: node.scrollWidth,
+        });
+        captured.push({ canvas: c });
+        setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
+      }
+
+      const refW = captured[0]?.canvas.width ?? usableW * scale;
+      const pxPerPage = (usableH * refW) / (usableW * scale);
+      const packed = packIntoPages(captured, pxPerPage, scale);
+      setPages(packed);
+      setProgress(100);
+      setPhase("ready");
+    } catch (err) {
+      console.error("PDF preview render failed", err);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Could not build PDF preview: ${msg}`);
+      setPhase("options");
+    }
+  }
 
   async function handleConfirmDownload() {
     if (phase !== "ready") return;
@@ -168,7 +174,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     const tId = toast.loading("Saving PDF…");
     try {
       const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const pdf = new jsPDF({ orientation, unit: "pt", format: paper });
       const totalPages = pages.length;
       const generatedStr = generatedAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
       const snapStr = `${fmtDate(meta.snapshotFrom)} → ${fmtDate(meta.snapshotTo)}`;
@@ -178,7 +184,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         if (p > 0) pdf.addPage();
         // Header
         pdf.setFillColor(15, 23, 42);
-        pdf.rect(0, 0, A4_W, HEADER_H - 18, "F");
+        pdf.rect(0, 0, pageW, HEADER_H - 18, "F");
         pdf.setTextColor(255, 255, 255);
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(13);
@@ -192,27 +198,27 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         );
         pdf.setTextColor(15, 23, 42);
 
-        // Body — composite each child canvas stacked
+        // Body
         const pageItems = pages[p];
         let y = HEADER_H;
         for (const it of pageItems) {
-          const w = USABLE_W;
+          const w = usableW;
           const h = (it.canvas.height * w) / it.canvas.width;
           pdf.addImage(it.canvas.toDataURL("image/png"), "PNG", MARGIN, y, w, h, undefined, "FAST");
           y += h;
         }
 
         // Footer
-        const footerY = A4_H - FOOTER_H + 8;
+        const footerY = pageH - FOOTER_H + 8;
         pdf.setDrawColor(220);
-        pdf.line(MARGIN, footerY - 6, A4_W - MARGIN, footerY - 6);
+        pdf.line(MARGIN, footerY - 6, pageW - MARGIN, footerY - 6);
         pdf.setFontSize(7.5);
         pdf.setTextColor(90);
         pdf.text(`Snapshot: ${snapStr}`, MARGIN, footerY);
         pdf.text(`Prepared for: ${userStr}`, MARGIN, footerY + 10);
-        pdf.text(`Generated ${generatedStr}`, A4_W / 2, footerY, { align: "center" });
-        pdf.text(`Page ${p + 1} of ${totalPages}`, A4_W - MARGIN, footerY, { align: "right" });
-        pdf.text("Confidential — RCMBuddy", A4_W - MARGIN, footerY + 10, { align: "right" });
+        pdf.text(`Generated ${generatedStr}`, pageW / 2, footerY, { align: "center" });
+        pdf.text(`Page ${p + 1} of ${totalPages}`, pageW - MARGIN, footerY, { align: "right" });
+        pdf.text("Confidential — RCMBuddy", pageW - MARGIN, footerY + 10, { align: "right" });
       }
 
       pdf.save(fileName);
@@ -225,13 +231,19 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     }
   }
 
+
+  const isOptions = phase === "options";
+  const isRendering = phase === "rendering";
+  const isReady = phase === "ready";
+  const isSaving = phase === "saving";
+
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (phase === "saving") return; onOpenChange(o); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (isSaving) return; onOpenChange(o); }}>
       <DialogContent className="max-w-5xl w-[95vw] max-h-[92vh] flex flex-col p-0 gap-0">
         <DialogHeader className="px-5 py-3 border-b">
           <DialogTitle className="flex items-center gap-2 text-base">
-            <FileText className="h-4 w-4 text-primary" />
-            PDF Preview — {title}
+            {isOptions ? <Settings2 className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-primary" />}
+            {isOptions ? "Export options" : "PDF Preview"} — {title}
           </DialogTitle>
           <div className="mt-2 flex flex-wrap gap-1.5">
             {filterChips.map((c) => (
@@ -248,20 +260,79 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         </DialogHeader>
 
         <div className="flex-1 overflow-auto bg-muted/40 p-4">
-          {phase !== "ready" ? (
+          {isOptions && (
+            <div className="max-w-2xl mx-auto bg-card border rounded-lg p-5 space-y-5">
+              <div>
+                <div className="text-sm font-semibold mb-1">Confirm filters</div>
+                <p className="text-[11.5px] text-muted-foreground mb-2">
+                  These filters are applied to your dashboard right now. Close this dialog and adjust them in the page filter bar if anything is wrong before generating the preview.
+                </p>
+                <ul className="text-[12px] space-y-1">
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Date range</span><span className="font-medium">{fmtDate(meta.dateFrom)} → {fmtDate(meta.dateTo)}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Branch scope</span><span className="font-medium">{meta.branches?.length ? `${meta.branches.length} branches` : meta.groups?.length ? `${meta.groups.length} groups` : "All"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Departments</span><span className="font-medium">{meta.departments?.length ? meta.departments.join(", ") : "All"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Modules</span><span className="font-medium">{meta.modules?.length ? meta.modules.join(", ") : "—"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Snapshot dates</span><span className="font-medium">{fmtDate(meta.snapshotFrom)} → {fmtDate(meta.snapshotTo)}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Total claims</span><span className="font-medium">{meta.totalClaims?.toLocaleString("en-IN") ?? "—"}</span></li>
+                  <li className="flex justify-between gap-3"><span className="text-muted-foreground">Prepared for</span><span className="font-medium">{[meta.userName, meta.role].filter(Boolean).join(" · ") || "—"}</span></li>
+                </ul>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Paper size</div>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {(["a4", "letter"] as PaperSize[]).map((p) => (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setPaper(p)}
+                        className={`px-3 py-1.5 text-[12px] ${paper === p ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                      >
+                        {p.toUpperCase()}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Orientation</div>
+                  <div className="inline-flex rounded-md border overflow-hidden">
+                    {([["p", "Portrait"], ["l", "Landscape"]] as [Orientation, string][]).map(([v, l]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setOrientation(v)}
+                        className={`px-3 py-1.5 text-[12px] ${orientation === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-[10.5px] text-muted-foreground border-t pt-3">
+                Click <strong>Generate preview</strong> to render the dashboard. Pagination respects card/section boundaries to avoid cutting rows or charts.
+              </p>
+            </div>
+          )}
+
+          {isRendering && (
             <div className="flex flex-col items-center justify-center py-16 gap-3">
               <Loader2 className="h-6 w-6 animate-spin text-primary" />
               <div className="text-sm font-medium">Rendering preview…</div>
               <div className="w-72"><Progress value={progress} /></div>
               <div className="text-[11px] text-muted-foreground">{progress}%</div>
             </div>
-          ) : (
+          )}
+
+          {(isReady || isSaving) && (
             <div ref={previewRef} className="space-y-4">
               {pages.map((pageItems, idx) => (
                 <div
                   key={idx}
                   className="mx-auto bg-white shadow-md ring-1 ring-border overflow-hidden"
-                  style={{ width: Math.min(720, A4_W * 1.15), aspectRatio: `${A4_W} / ${A4_H}` }}
+                  style={{ width: Math.min(720, pageW * 1.15), aspectRatio: `${pageW} / ${pageH}` }}
                 >
                   <div className="bg-slate-900 text-white px-4 py-2">
                     <div className="text-[11px] font-semibold">RCMBuddy — {title}</div>
@@ -290,26 +361,38 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
 
         <DialogFooter className="px-5 py-3 border-t flex-row items-center justify-between gap-2 sm:justify-between">
           <div className="text-[11px] text-muted-foreground">
-            {phase === "ready" ? `${pages.length} page${pages.length === 1 ? "" : "s"} ready` : "Preparing…"}
+            {isOptions && "Step 1 of 2 · Confirm filters & layout"}
+            {isRendering && `Rendering… ${progress}%`}
+            {isReady && `Step 2 of 2 · ${pages.length} page${pages.length === 1 ? "" : "s"} ready`}
+            {isSaving && "Saving PDF…"}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={phase === "saving"}>
+            {isReady && (
+              <Button variant="outline" size="sm" onClick={() => { setPhase("options"); setPages([]); }}>
+                <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to options
+              </Button>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => onOpenChange(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button
-              size="sm"
-              onClick={handleConfirmDownload}
-              disabled={phase !== "ready"}
-            >
-              {phase === "saving" ? (
-                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
-              ) : (
-                <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
-              )}
-            </Button>
+            {isOptions && (
+              <Button size="sm" onClick={startRender}>
+                <Eye className="h-3.5 w-3.5 mr-1.5" /> Generate preview
+              </Button>
+            )}
+            {(isReady || isSaving) && (
+              <Button size="sm" onClick={handleConfirmDownload} disabled={!isReady}>
+                {isSaving ? (
+                  <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Saving…</>
+                ) : (
+                  <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
+                )}
+              </Button>
+            )}
           </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
