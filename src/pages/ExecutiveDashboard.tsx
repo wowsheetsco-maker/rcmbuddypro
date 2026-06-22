@@ -561,12 +561,12 @@ export default function ExecutiveDashboard() {
               type="button"
               size="sm"
               variant="outline"
-              onClick={handleDownloadPdf}
-              disabled={exporting || loading}
+              onClick={() => setPreviewOpen(true)}
+              disabled={previewOpen || loading}
               className="h-8"
             >
-              {exporting ? (
-                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Generating…</>
+              {previewOpen ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Preview open…</>
               ) : (
                 <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
               )}
