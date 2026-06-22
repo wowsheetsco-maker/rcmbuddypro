@@ -90,12 +90,21 @@ function packIntoPages(items: PageCanvas[], pxPerPage: number, scale: number): P
 }
 
 export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, fileName, meta }: Props) {
-  const [phase, setPhase] = useState<"idle" | "rendering" | "ready" | "saving">("idle");
+  // Two-step flow: 1) options (confirm filters + paper) 2) preview 3) saving
+  const [phase, setPhase] = useState<"options" | "rendering" | "ready" | "saving">("options");
   const [progress, setProgress] = useState(0);
   const [pages, setPages] = useState<PageCanvas[][]>([]);
+  const [paper, setPaper] = useState<PaperSize>("a4");
+  const [orientation, setOrientation] = useState<Orientation>("p");
   const previewRef = useRef<HTMLDivElement>(null);
 
   const generatedAt = useMemo(() => new Date(), [open]);
+
+  // Page dims (in pt) — swap W/H for landscape.
+  const pageW = orientation === "p" ? PAGE_DIMS[paper].w : PAGE_DIMS[paper].h;
+  const pageH = orientation === "p" ? PAGE_DIMS[paper].h : PAGE_DIMS[paper].w;
+  const usableW = pageW - MARGIN * 2;
+  const usableH = pageH - HEADER_H - FOOTER_H - MARGIN;
 
   const filterChips: string[] = useMemo(() => {
     const chips: string[] = [];
@@ -108,62 +117,56 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     return chips;
   }, [meta]);
 
-  // Render canvases when opened.
+  // Reset to the options step every time the dialog closes.
   useEffect(() => {
     if (!open) {
-      setPhase("idle");
+      setPhase("options");
       setProgress(0);
       setPages([]);
-      return;
     }
-    let cancelled = false;
-    (async () => {
-      try {
-        setPhase("rendering");
-        setProgress(5);
-        const node = sourceRef.current;
-        if (!node) throw new Error("Nothing to export");
-        const { default: html2canvas } = await import("html2canvas-pro");
-        setProgress(15);
-
-        // Capture each direct child as its own canvas so pagination respects
-        // element boundaries (no mid-row cuts, no overlapping charts).
-        const children = Array.from(node.children).filter(
-          (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
-        );
-        const sources: HTMLElement[] = children.length ? children : [node];
-        const captured: PageCanvas[] = [];
-        const scale = 2;
-        for (let i = 0; i < sources.length; i++) {
-          if (cancelled) return;
-          const c = await html2canvas(sources[i], {
-            scale,
-            backgroundColor: "#ffffff",
-            useCORS: true,
-            windowWidth: node.scrollWidth,
-          });
-          captured.push({ canvas: c });
-          setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
-        }
-
-        // Convert into pages: usable height in design pixels = USABLE_H * (canvasWidth / USABLE_W)
-        const refW = captured[0]?.canvas.width ?? USABLE_W * scale;
-        const pxPerPage = (USABLE_H * refW) / (USABLE_W * scale);
-        const packed = packIntoPages(captured, pxPerPage, scale);
-        if (cancelled) return;
-        setPages(packed);
-        setProgress(100);
-        setPhase("ready");
-      } catch (err) {
-        console.error("PDF preview render failed", err);
-        const msg = err instanceof Error ? err.message : "Unknown error";
-        toast.error(`Could not build PDF preview: ${msg}`);
-        onOpenChange(false);
-      }
-    })();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
+
+  async function startRender() {
+    setPhase("rendering");
+    setProgress(5);
+    try {
+      const node = sourceRef.current;
+      if (!node) throw new Error("Nothing to export");
+      const { default: html2canvas } = await import("html2canvas-pro");
+      setProgress(15);
+
+      // Capture each direct child as its own canvas so pagination respects
+      // element boundaries (no mid-row cuts, no overlapping charts).
+      const children = Array.from(node.children).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
+      );
+      const sources: HTMLElement[] = children.length ? children : [node];
+      const captured: PageCanvas[] = [];
+      const scale = 2;
+      for (let i = 0; i < sources.length; i++) {
+        const c = await html2canvas(sources[i], {
+          scale,
+          backgroundColor: "#ffffff",
+          useCORS: true,
+          windowWidth: node.scrollWidth,
+        });
+        captured.push({ canvas: c });
+        setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
+      }
+
+      const refW = captured[0]?.canvas.width ?? usableW * scale;
+      const pxPerPage = (usableH * refW) / (usableW * scale);
+      const packed = packIntoPages(captured, pxPerPage, scale);
+      setPages(packed);
+      setProgress(100);
+      setPhase("ready");
+    } catch (err) {
+      console.error("PDF preview render failed", err);
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Could not build PDF preview: ${msg}`);
+      setPhase("options");
+    }
+  }
 
   async function handleConfirmDownload() {
     if (phase !== "ready") return;
@@ -171,7 +174,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     const tId = toast.loading("Saving PDF…");
     try {
       const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
+      const pdf = new jsPDF({ orientation, unit: "pt", format: paper });
       const totalPages = pages.length;
       const generatedStr = generatedAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
       const snapStr = `${fmtDate(meta.snapshotFrom)} → ${fmtDate(meta.snapshotTo)}`;
@@ -181,7 +184,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         if (p > 0) pdf.addPage();
         // Header
         pdf.setFillColor(15, 23, 42);
-        pdf.rect(0, 0, A4_W, HEADER_H - 18, "F");
+        pdf.rect(0, 0, pageW, HEADER_H - 18, "F");
         pdf.setTextColor(255, 255, 255);
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(13);
@@ -195,27 +198,27 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         );
         pdf.setTextColor(15, 23, 42);
 
-        // Body — composite each child canvas stacked
+        // Body
         const pageItems = pages[p];
         let y = HEADER_H;
         for (const it of pageItems) {
-          const w = USABLE_W;
+          const w = usableW;
           const h = (it.canvas.height * w) / it.canvas.width;
           pdf.addImage(it.canvas.toDataURL("image/png"), "PNG", MARGIN, y, w, h, undefined, "FAST");
           y += h;
         }
 
         // Footer
-        const footerY = A4_H - FOOTER_H + 8;
+        const footerY = pageH - FOOTER_H + 8;
         pdf.setDrawColor(220);
-        pdf.line(MARGIN, footerY - 6, A4_W - MARGIN, footerY - 6);
+        pdf.line(MARGIN, footerY - 6, pageW - MARGIN, footerY - 6);
         pdf.setFontSize(7.5);
         pdf.setTextColor(90);
         pdf.text(`Snapshot: ${snapStr}`, MARGIN, footerY);
         pdf.text(`Prepared for: ${userStr}`, MARGIN, footerY + 10);
-        pdf.text(`Generated ${generatedStr}`, A4_W / 2, footerY, { align: "center" });
-        pdf.text(`Page ${p + 1} of ${totalPages}`, A4_W - MARGIN, footerY, { align: "right" });
-        pdf.text("Confidential — RCMBuddy", A4_W - MARGIN, footerY + 10, { align: "right" });
+        pdf.text(`Generated ${generatedStr}`, pageW / 2, footerY, { align: "center" });
+        pdf.text(`Page ${p + 1} of ${totalPages}`, pageW - MARGIN, footerY, { align: "right" });
+        pdf.text("Confidential — RCMBuddy", pageW - MARGIN, footerY + 10, { align: "right" });
       }
 
       pdf.save(fileName);
@@ -227,6 +230,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
       setPhase("ready");
     }
   }
+
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (phase === "saving") return; onOpenChange(o); }}>
