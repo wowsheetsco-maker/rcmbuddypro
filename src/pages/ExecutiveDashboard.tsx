@@ -1142,6 +1142,25 @@ export default function ExecutiveDashboard() {
         amountLabel={drill?.amountLabel}
         insight={drill?.insight}
       />
+
+      <PdfExportDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        sourceRef={exportRef}
+        title="Executive Dashboard"
+        fileName={`RCMBuddy-Executive-Dashboard-${new Date().toISOString().slice(0, 10)}.pdf`}
+        meta={{
+          dateFrom: filterFrom,
+          dateTo: filterTo,
+          groups: groupIds,
+          branches: branchIds,
+          modules: ["Claims"],
+          role: role ?? undefined,
+          snapshotFrom: snapshotRange.min,
+          snapshotTo: snapshotRange.max,
+          totalClaims: m.total,
+        }}
+      />
     </AppLayout>
   );
 }
