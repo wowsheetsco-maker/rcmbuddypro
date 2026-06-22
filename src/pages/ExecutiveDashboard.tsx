@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, Navigate, useLocation, useNavigate } from "@/lib/router-compat";
 import {
   AlertTriangle, Flame, FileWarning, ChevronRight, ChevronLeft, MousePointerClick, History, X,
   Home, LayoutDashboard, ListChecks, Search as SearchIcon, MessageSquare,
-  Users, BarChart3, ShieldAlert, CheckCircle2,
+  Users, BarChart3, ShieldAlert, CheckCircle2, Download, Loader2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
