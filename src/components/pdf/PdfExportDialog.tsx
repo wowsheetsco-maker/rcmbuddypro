@@ -36,13 +36,13 @@ interface PageCanvas {
   canvas: HTMLCanvasElement;
 }
 
-const A4_W = 595.28; // pt
-const A4_H = 841.89;
+const PAGE_DIMS: Record<PaperSize, { w: number; h: number }> = {
+  a4: { w: 595.28, h: 841.89 },
+  letter: { w: 612, h: 792 },
+};
 const MARGIN = 28;
 const HEADER_H = 78;
 const FOOTER_H = 32;
-const USABLE_W = A4_W - MARGIN * 2;
-const USABLE_H = A4_H - HEADER_H - FOOTER_H - MARGIN;
 
 function fmtDate(d?: Date | null | string) {
   if (!d) return "All time";
