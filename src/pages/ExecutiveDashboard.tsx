@@ -20,6 +20,7 @@ import { useGlobalFilter } from "@/components/global-filter-context";
 import { computeDiscrepancy } from "@/lib/discrepancy";
 import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
+import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import { cn } from "@/lib/utils";
 
 type AmountField =
@@ -220,73 +221,27 @@ function FunnelRow({
 export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
-  const { matchesBranch } = useGlobalFilter();
+  const { matchesBranch, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [lastDrillMeta, setLastDrillMeta] = useState<{ title: string; subtitle?: string; count: number; ts: number } | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
-  const [exporting, setExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
-  async function handleDownloadPdf() {
-    if (!exportRef.current || exporting) return;
-    setExporting(true);
-    const tId = toast.loading("Generating PDF…");
-    try {
-      const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-        import("html2canvas"),
-        import("jspdf"),
-      ]);
-      const node = exportRef.current;
-      const canvas = await html2canvas(node, {
-        scale: 2,
-        backgroundColor: "#ffffff",
-        useCORS: true,
-        windowWidth: node.scrollWidth,
-      });
-      const imgData = canvas.toDataURL("image/png");
-      const pdf = new jsPDF({ orientation: "p", unit: "pt", format: "a4" });
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 24;
-      const headerH = 56;
-      const usableW = pageW - margin * 2;
-      const imgH = (canvas.height * usableW) / canvas.width;
-
-      pdf.setFontSize(14);
-      pdf.setFont("helvetica", "bold");
-      pdf.text("RCMBuddy — Executive Dashboard", margin, 28);
-      pdf.setFontSize(9);
-      pdf.setFont("helvetica", "normal");
-      pdf.text(
-        `Generated: ${new Date().toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`,
-        margin, 42
-      );
-
-      // Render image, paginating by shifting Y offset
-      let yOffset = headerH;
-      let consumed = 0;
-      pdf.addImage(imgData, "PNG", margin, yOffset, usableW, imgH, undefined, "FAST");
-      consumed = pageH - yOffset - margin;
-      let remaining = imgH - consumed;
-      while (remaining > 0) {
-        pdf.addPage();
-        const y = margin - (imgH - remaining);
-        pdf.addImage(imgData, "PNG", margin, y, usableW, imgH, undefined, "FAST");
-        remaining -= (pageH - margin * 2);
-      }
-
-      const stamp = new Date().toISOString().slice(0, 10);
-      pdf.save(`RCMBuddy-Executive-Dashboard-${stamp}.pdf`);
-      toast.success("PDF downloaded", { id: tId });
-    } catch (e) {
-      console.error("PDF export failed", e);
-      toast.error("Could not generate PDF", { id: tId });
-    } finally {
-      setExporting(false);
+  // Derive snapshot date span (claim_creation_date min/max) for footer.
+  const snapshotRange = useMemo(() => {
+    let min: string | null = null;
+    let max: string | null = null;
+    for (const c of rawClaims) {
+      const d = c.claim_creation_date;
+      if (!d) continue;
+      if (!min || d < min) min = d;
+      if (!max || d > max) max = d;
     }
-  }
+    return { min, max };
+  }, [rawClaims]);
   // Persisted across refreshes / back-forward navigation so users return to the
   // exact same view (collapsed hero vs full breakdown).
   const [showFull, setShowFull] = useState<boolean>(() => {
@@ -606,12 +561,12 @@ export default function ExecutiveDashboard() {
               type="button"
               size="sm"
               variant="outline"
-              onClick={handleDownloadPdf}
-              disabled={exporting || loading}
+              onClick={() => setPreviewOpen(true)}
+              disabled={previewOpen || loading}
               className="h-8"
             >
-              {exporting ? (
-                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Generating…</>
+              {previewOpen ? (
+                <><Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" /> Preview open…</>
               ) : (
                 <><Download className="h-3.5 w-3.5 mr-1.5" /> Download PDF</>
               )}
@@ -1186,6 +1141,25 @@ export default function ExecutiveDashboard() {
         amountField={drill?.amountField}
         amountLabel={drill?.amountLabel}
         insight={drill?.insight}
+      />
+
+      <PdfExportDialog
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        sourceRef={exportRef}
+        title="Executive Dashboard"
+        fileName={`RCMBuddy-Executive-Dashboard-${new Date().toISOString().slice(0, 10)}.pdf`}
+        meta={{
+          dateFrom: filterFrom,
+          dateTo: filterTo,
+          groups: groupIds,
+          branches: branchIds,
+          modules: ["Claims"],
+          role: role ?? undefined,
+          snapshotFrom: snapshotRange.min,
+          snapshotTo: snapshotRange.max,
+          totalClaims: m.total,
+        }}
       />
     </AppLayout>
   );
