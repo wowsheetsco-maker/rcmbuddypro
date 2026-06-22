@@ -221,14 +221,14 @@ function FunnelRow({
 export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
-  const { matchesBranch } = useGlobalFilter();
+  const { matchesBranch, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [drill, setDrill] = useState<DrillState | null>(null);
   const [lastDrillMeta, setLastDrillMeta] = useState<{ title: string; subtitle?: string; count: number; ts: number } | null>(null);
   const exportRef = useRef<HTMLDivElement>(null);
-  const [exporting, setExporting] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function handleDownloadPdf() {
     if (!exportRef.current || exporting) return;
