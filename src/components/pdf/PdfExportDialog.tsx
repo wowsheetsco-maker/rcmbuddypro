@@ -153,7 +153,8 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         setPhase("ready");
       } catch (err) {
         console.error("PDF preview render failed", err);
-        toast.error("Could not build PDF preview");
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        toast.error(`Could not build PDF preview: ${msg}`);
         onOpenChange(false);
       }
     })();
