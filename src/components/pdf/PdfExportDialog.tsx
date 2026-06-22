@@ -120,7 +120,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         setProgress(5);
         const node = sourceRef.current;
         if (!node) throw new Error("Nothing to export");
-        const { default: html2canvas } = await import("html2canvas");
+        const { default: html2canvas } = await import("html2canvas-pro");
         setProgress(15);
 
         // Capture each direct child as its own canvas so pagination respects
@@ -153,7 +153,8 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         setPhase("ready");
       } catch (err) {
         console.error("PDF preview render failed", err);
-        toast.error("Could not build PDF preview");
+        const msg = err instanceof Error ? err.message : "Unknown error";
+        toast.error(`Could not build PDF preview: ${msg}`);
         onOpenChange(false);
       }
     })();
