@@ -120,7 +120,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         setProgress(5);
         const node = sourceRef.current;
         if (!node) throw new Error("Nothing to export");
-        const { default: html2canvas } = await import("html2canvas");
+        const { default: html2canvas } = await import("html2canvas-pro");
         setProgress(15);
 
         // Capture each direct child as its own canvas so pagination respects
