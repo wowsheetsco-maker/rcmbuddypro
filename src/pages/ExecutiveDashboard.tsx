@@ -21,6 +21,7 @@ import { computeDiscrepancy } from "@/lib/discrepancy";
 import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
+import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
 import { cn } from "@/lib/utils";
 
 type AmountField =
