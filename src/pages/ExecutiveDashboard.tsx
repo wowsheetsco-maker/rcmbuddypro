@@ -20,6 +20,7 @@ import { useGlobalFilter } from "@/components/global-filter-context";
 import { computeDiscrepancy } from "@/lib/discrepancy";
 import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
+import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import { cn } from "@/lib/utils";
 
 type AmountField =
