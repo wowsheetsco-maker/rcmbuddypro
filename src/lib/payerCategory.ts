@@ -72,12 +72,56 @@ const RULES: { cat: PayerCategory; patterns: RegExp[] }[] = [
   },
 ];
 
-export function classifyPayer(name: string | null | undefined): PayerCategory {
+const OVERRIDE_KEY = "rcm-buddy-payer-category-overrides";
+
+function readOverrides(): Record<string, PayerCategory> {
+  if (typeof localStorage === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(OVERRIDE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? (parsed as Record<string, PayerCategory>) : {};
+  } catch {
+    return {};
+  }
+}
+
+function normalize(name: string | null | undefined): string {
+  return (name ?? "").trim().toLowerCase();
+}
+
+export function getPayerOverrides(): Record<string, PayerCategory> {
+  return readOverrides();
+}
+
+export function setPayerOverride(name: string, category: PayerCategory | null): void {
+  if (typeof localStorage === "undefined") return;
+  const key = normalize(name);
+  if (!key) return;
+  const all = readOverrides();
+  if (category == null) delete all[key];
+  else all[key] = category;
+  try {
+    localStorage.setItem(OVERRIDE_KEY, JSON.stringify(all));
+    window.dispatchEvent(new CustomEvent("rcm-payer-overrides-changed"));
+  } catch {
+    /* ignore */
+  }
+}
+
+export function autoClassifyPayer(name: string | null | undefined): PayerCategory {
   const n = (name ?? "").trim();
   if (!n) return "insurer";
   for (const rule of RULES) {
     if (rule.patterns.some((p) => p.test(n))) return rule.cat;
   }
-  // Default: most non-TPA, non-govt payers are insurers
   return "insurer";
+}
+
+export function classifyPayer(name: string | null | undefined): PayerCategory {
+  const key = normalize(name);
+  if (!key) return "insurer";
+  const overrides = readOverrides();
+  if (overrides[key]) return overrides[key];
+  return autoClassifyPayer(name);
 }
