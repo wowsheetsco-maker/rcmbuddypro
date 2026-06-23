@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@/lib/router-compat";
-import { Building2, IndianRupee, FileText, AlertTriangle, Inbox, ChevronRight, Loader2 } from "lucide-react";
+import { Building2, IndianRupee, FileText, AlertTriangle, Inbox, ChevronRight, Loader2, Pencil, RotateCcw } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -9,15 +9,20 @@ import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { formatInr } from "@/data/mockClaims";
-import { classifyPayer, PAYER_CATEGORY_LABELS, type PayerCategory } from "@/lib/payerCategory";
+import { autoClassifyPayer, classifyPayer, getPayerOverrides, PAYER_CATEGORY_LABELS, setPayerOverride, type PayerCategory } from "@/lib/payerCategory";
+import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
+import { useGlobalFilter } from "@/components/global-filter-context";
 
 type CategoryFilter = PayerCategory | "all";
 
 interface PayerRow {
   name: string;
   category: PayerCategory;
+  autoCategory: PayerCategory;
+  isOverridden: boolean;
   claims: number;
   claimed: number;
   approved: number;
@@ -34,21 +39,45 @@ const CATEGORY_TONE: Record<PayerCategory, string> = {
   aggregator: "bg-muted text-muted-foreground border-border",
 };
 
+const ALL_CATEGORIES: PayerCategory[] = ["government", "psu", "tpa", "insurer", "aggregator"];
+
 export default function PayersPage() {
   const { claims, loading, isMock } = useLiveClaims();
+  const { from, to, isWithin } = useGlobalFilter();
   const navigate = useNavigate();
   const [category, setCategory] = useState<CategoryFilter>("all");
   const [search, setSearch] = useState("");
+  const [editing, setEditing] = useState<{ name: string; category: PayerCategory } | null>(null);
+  // Re-render trigger when overrides change
+  const [overridesVersion, setOverridesVersion] = useState(0);
+
+  useEffect(() => {
+    const handler = () => setOverridesVersion((v) => v + 1);
+    window.addEventListener("rcm-payer-overrides-changed", handler);
+    return () => window.removeEventListener("rcm-payer-overrides-changed", handler);
+  }, []);
+
+  const durationDays = useMemo(() => {
+    if (!from || !to) return null;
+    return Math.max(1, Math.round((to.getTime() - from.getTime()) / 86_400_000) + 1);
+  }, [from, to]);
 
   const rows = useMemo<PayerRow[]>(() => {
+    // intentionally include overridesVersion in deps
+    void overridesVersion;
     const map = new Map<string, PayerRow>();
     for (const c of claims) {
+      if (!isWithin(c.claim_creation_date)) continue;
       const name = (c.tpa_name || c.insurance_company_name || "Unknown").trim() || "Unknown";
       let r = map.get(name);
       if (!r) {
+        const auto = autoClassifyPayer(name);
+        const cat = classifyPayer(name);
         r = {
           name,
-          category: classifyPayer(name),
+          category: cat,
+          autoCategory: auto,
+          isOverridden: cat !== auto,
           claims: 0,
           claimed: 0,
           approved: 0,
@@ -66,7 +95,7 @@ export default function PayersPage() {
       if (c.is_irdai_breach) r.breaches += 1;
     }
     return Array.from(map.values()).sort((a, b) => b.outstanding - a.outstanding);
-  }, [claims]);
+  }, [claims, isWithin, overridesVersion]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -77,14 +106,12 @@ export default function PayersPage() {
     });
   }, [rows, category, search]);
 
-  const kpis = useMemo(() => {
-    return {
-      payers: filtered.length,
-      claims: filtered.reduce((s, r) => s + r.claims, 0),
-      outstanding: filtered.reduce((s, r) => s + r.outstanding, 0),
-      breaches: filtered.reduce((s, r) => s + r.breaches, 0),
-    };
-  }, [filtered]);
+  const kpis = useMemo(() => ({
+    payers: filtered.length,
+    claims: filtered.reduce((s, r) => s + r.claims, 0),
+    outstanding: filtered.reduce((s, r) => s + r.outstanding, 0),
+    breaches: filtered.reduce((s, r) => s + r.breaches, 0),
+  }), [filtered]);
 
   const categoryCounts = useMemo(() => {
     const c: Record<CategoryFilter, number> = {
@@ -94,22 +121,42 @@ export default function PayersPage() {
     return c;
   }, [rows]);
 
+  const overrideCount = useMemo(() => Object.keys(getPayerOverrides()).length, [overridesVersion]);
+
   const openPayer = (name: string) => {
     navigate(`/claims?insurer=${encodeURIComponent(name)}`);
+  };
+
+  const saveOverride = () => {
+    if (!editing) return;
+    const auto = autoClassifyPayer(editing.name);
+    setPayerOverride(editing.name, editing.category === auto ? null : editing.category);
+    setEditing(null);
+  };
+
+  const clearOverride = () => {
+    if (!editing) return;
+    setPayerOverride(editing.name, null);
+    setEditing(null);
   };
 
   return (
     <AppLayout>
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-2xl font-display text-foreground">Payers</h1>
             <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
               {kpis.payers} payer{kpis.payers === 1 ? "" : "s"} • {kpis.claims} claim{kpis.claims === 1 ? "" : "s"}
+              {durationDays != null && <span className="text-muted-foreground">• {durationDays}d window</span>}
               {loading && <Loader2 className="h-3 w-3 animate-spin" />}
               {isMock && !loading && <Badge variant="outline" className="text-[9px] py-0">Sample data</Badge>}
+              {overrideCount > 0 && (
+                <Badge variant="outline" className="text-[9px] py-0">{overrideCount} custom type{overrideCount === 1 ? "" : "s"}</Badge>
+              )}
             </p>
           </div>
+          <DateRangeQuickPicker />
         </div>
 
         <KpiGrid cols={4}>
@@ -132,7 +179,7 @@ export default function PayersPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(["all", "government", "psu", "tpa", "insurer", "aggregator"] as CategoryFilter[]).map((c) => (
+                {(["all", ...ALL_CATEGORIES] as CategoryFilter[]).map((c) => (
                   <SelectItem key={c} value={c}>
                     {PAYER_CATEGORY_LABELS[c]} ({categoryCounts[c]})
                   </SelectItem>
@@ -140,7 +187,7 @@ export default function PayersPage() {
               </SelectContent>
             </Select>
             <div className="ml-auto flex flex-wrap gap-1">
-              {(["government", "psu", "tpa", "insurer", "aggregator"] as PayerCategory[]).map((c) => (
+              {ALL_CATEGORIES.map((c) => (
                 <button
                   key={c}
                   type="button"
@@ -180,7 +227,7 @@ export default function PayersPage() {
                     <div className="flex flex-col items-center justify-center gap-2 text-center text-muted-foreground">
                       <Inbox className="h-7 w-7 opacity-60" />
                       <p className="text-sm font-medium text-foreground">No payers match this view</p>
-                      <p className="text-xs">Try clearing the category filter or search.</p>
+                      <p className="text-xs">Try clearing the category filter, search, or date range.</p>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -193,9 +240,28 @@ export default function PayersPage() {
                   >
                     <TableCell className="font-medium">{r.name}</TableCell>
                     <TableCell>
-                      <Badge variant="outline" className={CATEGORY_TONE[r.category]}>
-                        {PAYER_CATEGORY_LABELS[r.category]}
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge variant="outline" className={CATEGORY_TONE[r.category]}>
+                          {PAYER_CATEGORY_LABELS[r.category]}
+                        </Badge>
+                        {r.isOverridden && (
+                          <span className="text-[9px] text-muted-foreground" title={`Auto: ${PAYER_CATEGORY_LABELS[r.autoCategory]}`}>
+                            edited
+                          </span>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 w-6 p-0"
+                          title="Edit payer type"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditing({ name: r.name, category: r.category });
+                          }}
+                        >
+                          <Pencil className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right tabular-nums">{r.claims}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatInr(r.claimed)}</TableCell>
@@ -217,6 +283,43 @@ export default function PayersPage() {
           </Table>
         </Card>
       </div>
+
+      <Dialog open={!!editing} onOpenChange={(o) => { if (!o) setEditing(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit payer type</DialogTitle>
+            <DialogDescription>
+              {editing && (
+                <>Set the correct category for <span className="font-medium text-foreground">{editing.name}</span>. This applies across the dashboard and is saved on this device.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <div className="space-y-3 py-2">
+              <div className="text-xs text-muted-foreground">
+                Auto-detected: <span className="font-medium text-foreground">{PAYER_CATEGORY_LABELS[autoClassifyPayer(editing.name)]}</span>
+              </div>
+              <Select value={editing.category} onValueChange={(v) => setEditing({ ...editing, category: v as PayerCategory })}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALL_CATEGORIES.map((c) => (
+                    <SelectItem key={c} value={c}>{PAYER_CATEGORY_LABELS[c]}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="ghost" size="sm" onClick={clearOverride} className="gap-1.5 mr-auto">
+              <RotateCcw className="h-3.5 w-3.5" /> Reset to auto
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button size="sm" onClick={saveOverride}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
