@@ -48,7 +48,23 @@ const DENIED = new Set([
   "pre auth denied", "claim denied", "discharge denied",
   "enhancement denied", "denied", "rejected",
 ]);
-const SUBMITTED_NEGATIVE = new Set(["draft", "not submitted"]);
+// Claims that are "submitted to payer" = settled + post-submission processing states
+const SUBMITTED_STATUSES = new Set([
+  "settled", "paid", "closed",
+  "settlement initiated", "settlement reminder",
+  "claim denied", "denied", "rejected",
+  "reconsideration submitted",
+  "processing", "claim in progress", "in progress",
+  "claim query", "query",
+]);
+// Claims that are approved but documents have NOT yet been submitted to payer
+const DOCS_TO_SUBMIT_STATUSES = new Set([
+  "claim approved", "discharge approved", "pre auth approved", "pre-auth approved",
+]);
+const isDocsToSubmit = (c: { claim_status?: string | null; date_of_discharge?: string | null }) =>
+  !!c.date_of_discharge && DOCS_TO_SUBMIT_STATUSES.has((c.claim_status || "").toLowerCase());
+const isSubmitted = (c: { claim_status?: string | null }) =>
+  SUBMITTED_STATUSES.has((c.claim_status || "").toLowerCase());
 
 const STATUS_COLORS: Record<string, string> = {
   Pending: "hsl(217 91% 60%)",
@@ -332,14 +348,17 @@ export default function ExecutiveDashboard() {
         underpayments += d.amount;
       }
     }
-    const unsubmitted = claims
-      .filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase()))
-      .reduce((s, c) => s + (c.claimed_amount || 0), 0);
+    // Submitted = claims actually sent to payer (in post-submission statuses incl. settled).
+    // Amount uses approved_amount so Submitted never exceeds Approved.
+    const submittedClaims = claims.filter(isSubmitted);
+    const submitted = submittedClaims.length;
+    const submittedAmt = submittedClaims.reduce((s, c) => s + (c.approved_amount || 0), 0);
+    // Docs to be submitted = approved/pre-auth approved/discharge approved AND patient discharged
+    const docsToSubmitClaims = claims.filter(isDocsToSubmit);
+    const unsubmitted = docsToSubmitClaims.reduce((s, c) => s + (c.approved_amount || c.claimed_amount || 0), 0);
     const ncr = approved > 0 ? (settled / approved) * 100 : 0;
     const denialRate = total > 0 ? (denials.length / total) * 100 : 0;
     const underpayRate = approved > 0 ? (underpayments / approved) * 100 : 0;
-    const submitted = total - claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).length;
-    const submittedAmt = claimed - unsubmitted;
     const ccr = submitted > 0
       ? ((submitted - denials.length) / submitted) * 100
       : 0;
@@ -436,8 +455,8 @@ export default function ExecutiveDashboard() {
     const underProcess = claims.filter((c) => /process|enhancement approved|pre auth approved|claim approved/i.test(c.claim_status || "")).length;
     const activeInHospital = claims.filter((c) => !c.date_of_discharge).length;
     const activeAmt = claims.filter((c) => !c.date_of_discharge).reduce((s, c) => s + (c.outstanding_amount || 0), 0);
-    const docsNotSubmitted = claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).length;
-    const docsNotSubmittedAmt = claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).reduce((s, c) => s + (c.outstanding_amount || 0), 0);
+    const docsNotSubmitted = docsToSubmitClaims.length;
+    const docsNotSubmittedAmt = docsToSubmitClaims.reduce((s, c) => s + (c.approved_amount || c.claimed_amount || 0), 0);
     const liveAR = openOutstanding - activeAmt;
     const oldestDays = Math.max(0, ...claims.filter((c) => !SETTLED.has((c.claim_status || "").toLowerCase())).map((c) => ageDays(c.claim_creation_date)));
 
@@ -474,7 +493,7 @@ export default function ExecutiveDashboard() {
         : `${denials.length} denials. Drill to inspect rejection reasons.`,
       underpay: `Approved > Settled gap. Common causes: room-rent cap, non-medical exclusions, copay miscalc.`,
       active: `${activeInHospital} patients in-hospital. Verify pre-auth approval and enhancement triggers daily.`,
-      docsNotSubmitted: `${docsNotSubmitted} claims sitting in draft. Enforce 48-hr discharge-to-submission SLA.`,
+      docsNotSubmitted: `${docsNotSubmitted} approved/discharged claims awaiting submission. Enforce 48-hr discharge-to-submission SLA.`,
     };
 
     return {
@@ -796,8 +815,8 @@ export default function ExecutiveDashboard() {
             onClick={() => openDrill({ title: "Underpaid claims (Discrepancy Tracker formula)", subtitle: `${m.underpayClaims.length} settled claims · ${formatInr(m.underpayments)} short-paid (${m.underpayRate.toFixed(1)}% of approved)`, claims: m.underpayClaims, amountField: "approved_amount", amountLabel: "Approved", insight: m.insights.underpay })} />
           <KpiTile label="Active (Pre-Discharge)" value={formatInr(m.activeAmt)} caption={`${m.activeInHospital} claims · not in AR`} accent="info"
             onClick={() => openDrill({ title: "Active claims (in-hospital)", subtitle: `${m.activeInHospital} patients · ${formatInr(m.activeAmt)} expected`, claims: claims.filter(c => !c.date_of_discharge), amountField: "claimed_amount", amountLabel: "Claimed", insight: m.insights.active })} />
-          <KpiTile label="Docs Not Submitted" value={`${m.docsNotSubmitted}`} caption={`${formatInr(m.docsNotSubmittedAmt)} pending submission`} accent="warn"
-            onClick={() => openDrill({ title: "Docs not submitted", subtitle: `${m.docsNotSubmitted} claims · ${formatInr(m.docsNotSubmittedAmt)}`, claims: claims.filter(c => SUBMITTED_NEGATIVE.has((c.claim_status||"").toLowerCase())), amountField: "claimed_amount", amountLabel: "Claimed", insight: m.insights.docsNotSubmitted })} />
+          <KpiTile label="Docs To Be Submitted" value={`${m.docsNotSubmitted}`} caption={`${formatInr(m.docsNotSubmittedAmt)} pending submission`} accent="warn"
+            onClick={() => openDrill({ title: "Docs to be submitted", subtitle: `${m.docsNotSubmitted} claims · ${formatInr(m.docsNotSubmittedAmt)}`, claims: claims.filter(isDocsToSubmit), amountField: "approved_amount", amountLabel: "Approved", insight: m.insights.docsNotSubmitted })} />
         </div>
 
         {/* AR by Status + Top TPA */}
@@ -936,8 +955,8 @@ export default function ExecutiveDashboard() {
           <div>
             <FunnelRow label="Total Claimed" count={m.total} amount={m.claimed} pct={100} barColor="hsl(217 30% 60%)"
               onClick={() => openDrill({ title: "Funnel · Total Claimed", subtitle: `${m.total} claims · ${formatInr(m.claimed)}`, claims, amountField: "claimed_amount", amountLabel: "Claimed" })} />
-            <FunnelRow label="Submitted" count={m.submitted} amount={m.submittedAmt} pct={m.claimed > 0 ? (m.submittedAmt / m.claimed) * 100 : 0} barColor="hsl(217 70% 70%)"
-              onClick={() => openDrill({ title: "Funnel · Submitted claims", subtitle: `${m.submitted} submitted · ${formatInr(m.submittedAmt)}`, claims: claims.filter(c => !SUBMITTED_NEGATIVE.has((c.claim_status||"").toLowerCase())), amountField: "claimed_amount", amountLabel: "Claimed" })} />
+            <FunnelRow label="Submitted" count={m.submitted} amount={m.submittedAmt} pct={m.approved > 0 ? (m.submittedAmt / m.approved) * 100 : 0} barColor="hsl(217 70% 70%)"
+              onClick={() => openDrill({ title: "Funnel · Submitted claims", subtitle: `${m.submitted} submitted · ${formatInr(m.submittedAmt)}`, claims: claims.filter(isSubmitted), amountField: "approved_amount", amountLabel: "Approved" })} />
             <FunnelRow label="Approved" count={claims.filter(c => c.approved_amount > 0).length} amount={m.approved} pct={m.claimed > 0 ? (m.approved / m.claimed) * 100 : 0} barColor="hsl(38 92% 70%)" delta={m.claimed > 0 ? `↓${(((m.claimed - m.approved) / m.claimed) * 100).toFixed(1)}%` : ""}
               onClick={() => openDrill({ title: "Funnel · Approved claims", subtitle: `${claims.filter(c => c.approved_amount > 0).length} approved · ${formatInr(m.approved)}`, claims: claims.filter(c => c.approved_amount > 0), amountField: "approved_amount", amountLabel: "Approved" })} />
             <FunnelRow label="Collected" count={m.settledClaimsCount} amount={m.settled} pct={m.claimed > 0 ? (m.settled / m.claimed) * 100 : 0} barColor="hsl(160 70% 60%)" delta={m.approved > 0 ? `↓${(((m.approved - m.settled) / m.approved) * 100).toFixed(1)}%` : ""}
