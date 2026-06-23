@@ -42,6 +42,14 @@ const CATEGORY_TONE: Record<PayerCategory, string> = {
 const ALL_CATEGORIES: PayerCategory[] = ["government", "psu", "tpa", "insurer", "aggregator"];
 
 export default function PayersPage() {
+  return (
+    <AppLayout>
+      <PayersInner />
+    </AppLayout>
+  );
+}
+
+function PayersInner() {
   const { claims, loading, isMock } = useLiveClaims();
   const { from, to, isWithin } = useGlobalFilter();
   const navigate = useNavigate();
