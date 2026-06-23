@@ -21,6 +21,7 @@ import { computeDiscrepancy } from "@/lib/discrepancy";
 import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
+import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
 import { cn } from "@/lib/utils";
 
 type AmountField =
@@ -221,7 +222,7 @@ function FunnelRow({
 export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
-  const { matchesBranch, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
+  const { matchesBranch, isWithin, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -271,11 +272,13 @@ export default function ExecutiveDashboard() {
   // Quality gating happens at import; the global hospital-branch filter is
   // applied here so every KPI, chart and drill-down respects the user's scope.
   const claims = useMemo(
-    () => rawClaims.filter((c) => matchesBranch({
-      hospital_group_id: c.hospital_group_id,
-      hospital_branch_id: c.hospital_branch_id,
-    })),
-    [rawClaims, matchesBranch],
+    () => rawClaims.filter((c) =>
+      matchesBranch({
+        hospital_group_id: c.hospital_group_id,
+        hospital_branch_id: c.hospital_branch_id,
+      }) && isWithin(c.claim_creation_date),
+    ),
+    [rawClaims, matchesBranch, isWithin],
   );
 
   useEffect(() => {
@@ -531,8 +534,11 @@ export default function ExecutiveDashboard() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {m.total.toLocaleString("en-IN")} claims loaded
-              {" "}· Generated: {new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
+              {m.total.toLocaleString("en-IN")} claims
+              {filterFrom || filterTo
+                ? ` · ${filterFrom ? filterFrom.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} → ${filterTo ? filterTo.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}`
+                : " · All time"}
+              {" "}· Generated {new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
@@ -557,6 +563,7 @@ export default function ExecutiveDashboard() {
                 </button>
               </div>
             )}
+            <DateRangeQuickPicker />
             <Button
               type="button"
               size="sm"
