@@ -560,6 +560,7 @@ export default function ExecutiveDashboard() {
                 </button>
               </div>
             )}
+            <DateRangeQuickPicker />
             <Button
               type="button"
               size="sm"
