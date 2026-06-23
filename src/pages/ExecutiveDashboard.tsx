@@ -278,9 +278,14 @@ export default function ExecutiveDashboard() {
       matchesBranch({
         hospital_group_id: c.hospital_group_id,
         hospital_branch_id: c.hospital_branch_id,
-      }) && isWithin(c.claim_creation_date),
+      }) && isWithin(c.claim_creation_date) && matchesTpa(c.tpa_name),
     ),
-    [rawClaims, matchesBranch, isWithin],
+    [rawClaims, matchesBranch, isWithin, matchesTpa],
+  );
+
+  const tpaOptions = useMemo(
+    () => Array.from(new Set(rawClaims.map((c) => (c.tpa_name || "Unknown").trim()))),
+    [rawClaims],
   );
 
   useEffect(() => {
