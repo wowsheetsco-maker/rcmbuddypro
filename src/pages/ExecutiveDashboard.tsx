@@ -815,8 +815,8 @@ export default function ExecutiveDashboard() {
             onClick={() => openDrill({ title: "Underpaid claims (Discrepancy Tracker formula)", subtitle: `${m.underpayClaims.length} settled claims · ${formatInr(m.underpayments)} short-paid (${m.underpayRate.toFixed(1)}% of approved)`, claims: m.underpayClaims, amountField: "approved_amount", amountLabel: "Approved", insight: m.insights.underpay })} />
           <KpiTile label="Active (Pre-Discharge)" value={formatInr(m.activeAmt)} caption={`${m.activeInHospital} claims · not in AR`} accent="info"
             onClick={() => openDrill({ title: "Active claims (in-hospital)", subtitle: `${m.activeInHospital} patients · ${formatInr(m.activeAmt)} expected`, claims: claims.filter(c => !c.date_of_discharge), amountField: "claimed_amount", amountLabel: "Claimed", insight: m.insights.active })} />
-          <KpiTile label="Docs Not Submitted" value={`${m.docsNotSubmitted}`} caption={`${formatInr(m.docsNotSubmittedAmt)} pending submission`} accent="warn"
-            onClick={() => openDrill({ title: "Docs not submitted", subtitle: `${m.docsNotSubmitted} claims · ${formatInr(m.docsNotSubmittedAmt)}`, claims: claims.filter(c => SUBMITTED_NEGATIVE.has((c.claim_status||"").toLowerCase())), amountField: "claimed_amount", amountLabel: "Claimed", insight: m.insights.docsNotSubmitted })} />
+          <KpiTile label="Docs To Be Submitted" value={`${m.docsNotSubmitted}`} caption={`${formatInr(m.docsNotSubmittedAmt)} pending submission`} accent="warn"
+            onClick={() => openDrill({ title: "Docs to be submitted", subtitle: `${m.docsNotSubmitted} claims · ${formatInr(m.docsNotSubmittedAmt)}`, claims: claims.filter(isDocsToSubmit), amountField: "approved_amount", amountLabel: "Approved", insight: m.insights.docsNotSubmitted })} />
         </div>
 
         {/* AR by Status + Top TPA */}
