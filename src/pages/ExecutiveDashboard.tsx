@@ -955,8 +955,8 @@ export default function ExecutiveDashboard() {
           <div>
             <FunnelRow label="Total Claimed" count={m.total} amount={m.claimed} pct={100} barColor="hsl(217 30% 60%)"
               onClick={() => openDrill({ title: "Funnel · Total Claimed", subtitle: `${m.total} claims · ${formatInr(m.claimed)}`, claims, amountField: "claimed_amount", amountLabel: "Claimed" })} />
-            <FunnelRow label="Submitted" count={m.submitted} amount={m.submittedAmt} pct={m.claimed > 0 ? (m.submittedAmt / m.claimed) * 100 : 0} barColor="hsl(217 70% 70%)"
-              onClick={() => openDrill({ title: "Funnel · Submitted claims", subtitle: `${m.submitted} submitted · ${formatInr(m.submittedAmt)}`, claims: claims.filter(c => !SUBMITTED_NEGATIVE.has((c.claim_status||"").toLowerCase())), amountField: "claimed_amount", amountLabel: "Claimed" })} />
+            <FunnelRow label="Submitted" count={m.submitted} amount={m.submittedAmt} pct={m.approved > 0 ? (m.submittedAmt / m.approved) * 100 : 0} barColor="hsl(217 70% 70%)"
+              onClick={() => openDrill({ title: "Funnel · Submitted claims", subtitle: `${m.submitted} submitted · ${formatInr(m.submittedAmt)}`, claims: claims.filter(isSubmitted), amountField: "approved_amount", amountLabel: "Approved" })} />
             <FunnelRow label="Approved" count={claims.filter(c => c.approved_amount > 0).length} amount={m.approved} pct={m.claimed > 0 ? (m.approved / m.claimed) * 100 : 0} barColor="hsl(38 92% 70%)" delta={m.claimed > 0 ? `↓${(((m.claimed - m.approved) / m.claimed) * 100).toFixed(1)}%` : ""}
               onClick={() => openDrill({ title: "Funnel · Approved claims", subtitle: `${claims.filter(c => c.approved_amount > 0).length} approved · ${formatInr(m.approved)}`, claims: claims.filter(c => c.approved_amount > 0), amountField: "approved_amount", amountLabel: "Approved" })} />
             <FunnelRow label="Collected" count={m.settledClaimsCount} amount={m.settled} pct={m.claimed > 0 ? (m.settled / m.claimed) * 100 : 0} barColor="hsl(160 70% 60%)" delta={m.approved > 0 ? `↓${(((m.approved - m.settled) / m.approved) * 100).toFixed(1)}%` : ""}
