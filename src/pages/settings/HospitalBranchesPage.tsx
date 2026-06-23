@@ -180,13 +180,25 @@ export default function HospitalBranchesPage() {
                     >
                       <Plus className="h-3.5 w-3.5" /> Branch
                     </Button>
-                    <Button
-                      size="icon" variant="ghost" className="h-7 w-7"
-                      onClick={() => setGroupDialog({ mode: "edit", group: g })}
-                      aria-label="Rename group"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
+                    {isPlatformAdmin && (
+                      <>
+                        <Button
+                          size="icon" variant="ghost" className="h-7 w-7"
+                          onClick={() => setGroupDialog({ mode: "edit", group: g })}
+                          aria-label="Rename group"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDelete({ kind: "group", group: g, claimCount: groupClaims })}
+                          aria-label="Delete group"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
+                  </div>
                     <Button
                       size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
                       onClick={() => setConfirmDelete({ kind: "group", group: g, claimCount: groupClaims })}
