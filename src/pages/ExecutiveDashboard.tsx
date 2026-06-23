@@ -272,11 +272,13 @@ export default function ExecutiveDashboard() {
   // Quality gating happens at import; the global hospital-branch filter is
   // applied here so every KPI, chart and drill-down respects the user's scope.
   const claims = useMemo(
-    () => rawClaims.filter((c) => matchesBranch({
-      hospital_group_id: c.hospital_group_id,
-      hospital_branch_id: c.hospital_branch_id,
-    })),
-    [rawClaims, matchesBranch],
+    () => rawClaims.filter((c) =>
+      matchesBranch({
+        hospital_group_id: c.hospital_group_id,
+        hospital_branch_id: c.hospital_branch_id,
+      }) && isWithin(c.claim_creation_date),
+    ),
+    [rawClaims, matchesBranch, isWithin],
   );
 
   useEffect(() => {
