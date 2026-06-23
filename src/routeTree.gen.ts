@@ -30,6 +30,7 @@ import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
 import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
 import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
+import { Route as AuthenticatedClaimsPayersRouteImport } from './routes/_authenticated.claims.payers'
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
 import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
@@ -157,6 +158,12 @@ const AuthenticatedClaimsPriorityRoute =
     path: '/priority',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsPayersRoute =
+  AuthenticatedClaimsPayersRouteImport.update({
+    id: '/payers',
+    path: '/payers',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsOutstandingRoute =
   AuthenticatedClaimsOutstandingRouteImport.update({
     id: '/outstanding',
@@ -262,6 +269,7 @@ export interface FileRoutesByFullPath {
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
+  '/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
@@ -296,6 +304,7 @@ export interface FileRoutesByTo {
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
+  '/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
@@ -334,6 +343,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
+  '/_authenticated/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/_authenticated/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/_authenticated/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/_authenticated/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
@@ -372,6 +382,7 @@ export interface FileRouteTypes {
     | '/claims/discrepancy'
     | '/claims/import'
     | '/claims/outstanding'
+    | '/claims/payers'
     | '/claims/priority'
     | '/claims/reconciliation'
     | '/claims/submission'
@@ -406,6 +417,7 @@ export interface FileRouteTypes {
     | '/claims/discrepancy'
     | '/claims/import'
     | '/claims/outstanding'
+    | '/claims/payers'
     | '/claims/priority'
     | '/claims/reconciliation'
     | '/claims/submission'
@@ -443,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/discrepancy'
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
+    | '/_authenticated/claims/payers'
     | '/_authenticated/claims/priority'
     | '/_authenticated/claims/reconciliation'
     | '/_authenticated/claims/submission'
@@ -622,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsPriorityRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/payers': {
+      id: '/_authenticated/claims/payers'
+      path: '/payers'
+      fullPath: '/claims/payers'
+      preLoaderRoute: typeof AuthenticatedClaimsPayersRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/outstanding': {
       id: '/_authenticated/claims/outstanding'
       path: '/outstanding'
@@ -749,6 +769,7 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsDiscrepancyRoute: typeof AuthenticatedClaimsDiscrepancyRoute
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
+  AuthenticatedClaimsPayersRoute: typeof AuthenticatedClaimsPayersRoute
   AuthenticatedClaimsPriorityRoute: typeof AuthenticatedClaimsPriorityRoute
   AuthenticatedClaimsReconciliationRoute: typeof AuthenticatedClaimsReconciliationRoute
   AuthenticatedClaimsSubmissionRoute: typeof AuthenticatedClaimsSubmissionRoute
@@ -764,6 +785,7 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsDiscrepancyRoute: AuthenticatedClaimsDiscrepancyRoute,
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
+  AuthenticatedClaimsPayersRoute: AuthenticatedClaimsPayersRoute,
   AuthenticatedClaimsPriorityRoute: AuthenticatedClaimsPriorityRoute,
   AuthenticatedClaimsReconciliationRoute:
     AuthenticatedClaimsReconciliationRoute,

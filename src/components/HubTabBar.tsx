@@ -34,7 +34,8 @@ const HUBS: Hub[] = [
     label: "Claims",
     icon: Search,
     tabs: [
-      { label: "Claims",      path: "/claims" },
+      { label: "Payers",      path: "/claims/payers" },
+      { label: "All Claims",  path: "/claims" },
       { label: "Submission",  path: "/claims/submission" },
       { label: "Outstanding", path: "/claims/outstanding", badge: "outstanding" },
       { label: "Follow-Up",   path: "/claims/follow-up", badge: "overdue" },
