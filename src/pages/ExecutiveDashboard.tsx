@@ -348,14 +348,17 @@ export default function ExecutiveDashboard() {
         underpayments += d.amount;
       }
     }
-    const unsubmitted = claims
-      .filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase()))
-      .reduce((s, c) => s + (c.claimed_amount || 0), 0);
+    // Submitted = claims actually sent to payer (in post-submission statuses incl. settled).
+    // Amount uses approved_amount so Submitted never exceeds Approved.
+    const submittedClaims = claims.filter(isSubmitted);
+    const submitted = submittedClaims.length;
+    const submittedAmt = submittedClaims.reduce((s, c) => s + (c.approved_amount || 0), 0);
+    // Docs to be submitted = approved/pre-auth approved/discharge approved AND patient discharged
+    const docsToSubmitClaims = claims.filter(isDocsToSubmit);
+    const unsubmitted = docsToSubmitClaims.reduce((s, c) => s + (c.approved_amount || c.claimed_amount || 0), 0);
     const ncr = approved > 0 ? (settled / approved) * 100 : 0;
     const denialRate = total > 0 ? (denials.length / total) * 100 : 0;
     const underpayRate = approved > 0 ? (underpayments / approved) * 100 : 0;
-    const submitted = total - claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).length;
-    const submittedAmt = claimed - unsubmitted;
     const ccr = submitted > 0
       ? ((submitted - denials.length) / submitted) * 100
       : 0;
