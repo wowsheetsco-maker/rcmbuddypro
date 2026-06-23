@@ -199,14 +199,6 @@ export default function HospitalBranchesPage() {
                       </>
                     )}
                   </div>
-                    <Button
-                      size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDelete({ kind: "group", group: g, claimCount: groupClaims })}
-                      aria-label="Delete group"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
                   {isOpen && (
                     <div className="divide-y">
                       {branchList.length === 0 && (
