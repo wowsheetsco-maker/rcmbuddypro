@@ -101,7 +101,7 @@ const ROLE_META: Record<Role, { label: string; icon: LucideIcon; tagline: string
 const NAV_GROUPS: NavGroup[] = [
   { label: "My Tasks",   icon: ListChecks,      path: "/my-tasks" },
   { label: "Dashboard",  icon: LayoutDashboard, path: "/", roles: ["cfo", "admin", "billing"] },
-  { label: "Claims",     icon: Search,          path: "/claims" },
+  { label: "Claims",     icon: Search,          path: "/claims/payers" },
   { label: "Follow-Ups", icon: CalendarIcon,    path: "/communications/calendar", roles: ["billing", "ops", "admin"] },
   { label: "Gov Schemes", icon: Landmark,       path: "/gov-schemes" },
   { label: "OPD & Wellness", icon: Stethoscope, path: "/opd" },

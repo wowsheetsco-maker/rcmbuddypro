@@ -32,7 +32,7 @@ export default function ClaimsPage() {
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [searchField, setSearchField] = useState<SearchField>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [insurerFilter, setInsurerFilter] = useState<string>("all");
+  const [insurerFilter, setInsurerFilter] = useState<string>(() => searchParams.get("insurer") ?? "all");
   const [breachOnly, setBreachOnly] = useState(false);
   const [selectedClaim, setSelectedClaim] = useState<Claim | null>(null);
   const [dense, setDense] = useState(false);
