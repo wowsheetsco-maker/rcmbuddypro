@@ -22,6 +22,7 @@ import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
+import TpaInsurerFilter, { useTpaFilter } from "@/components/TpaInsurerFilter";
 import { cn } from "@/lib/utils";
 
 type AmountField =
@@ -223,6 +224,7 @@ export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
   const { matchesBranch, isWithin, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
+  const { matches: matchesTpa } = useTpaFilter();
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -276,9 +278,14 @@ export default function ExecutiveDashboard() {
       matchesBranch({
         hospital_group_id: c.hospital_group_id,
         hospital_branch_id: c.hospital_branch_id,
-      }) && isWithin(c.claim_creation_date),
+      }) && isWithin(c.claim_creation_date) && matchesTpa(c.tpa_name),
     ),
-    [rawClaims, matchesBranch, isWithin],
+    [rawClaims, matchesBranch, isWithin, matchesTpa],
+  );
+
+  const tpaOptions = useMemo(
+    () => Array.from(new Set(rawClaims.map((c) => (c.tpa_name || "Unknown").trim()))),
+    [rawClaims],
   );
 
   useEffect(() => {
@@ -564,6 +571,7 @@ export default function ExecutiveDashboard() {
               </div>
             )}
             <DateRangeQuickPicker />
+            <TpaInsurerFilter options={tpaOptions} />
             <Button
               type="button"
               size="sm"
