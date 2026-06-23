@@ -571,6 +571,7 @@ export default function ExecutiveDashboard() {
               </div>
             )}
             <DateRangeQuickPicker />
+            <TpaInsurerFilter options={tpaOptions} />
             <Button
               type="button"
               size="sm"
