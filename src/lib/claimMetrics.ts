@@ -45,6 +45,26 @@ export function isExcludedFromOutstanding(c: Claim): boolean {
   return isDenied(c);
 }
 
+/**
+ * Effective outstanding for a single claim.
+ * Rule: outstanding = max(0, approved_amount - settled_amount - tds_amount).
+ * Denied/rejected claims and claims with zero approved amount contribute 0
+ * and are not counted toward outstanding totals.
+ */
+export function effectiveOutstanding(c: Claim): number {
+  if (isExcludedFromOutstanding(c)) return 0;
+  const approved = Number((c as any).approved_amount) || 0;
+  if (approved <= 0) return 0;
+  const settled = Number(c.settled_amount) || 0;
+  const tds = Number((c as any).tds_amount) || 0;
+  return Math.max(0, approved - settled - tds);
+}
+
+/** True if this claim contributes to outstanding KPIs (count and amount). */
+export function hasOutstanding(c: Claim): boolean {
+  return effectiveOutstanding(c) > 0;
+}
+
 /** Canonical SLA breach flag — sourced from import-time derived field. */
 export function isSlaBreach(c: Claim): boolean {
   return Boolean(c.is_irdai_breach);
@@ -55,28 +75,19 @@ export function countOpen(claims: Claim[]): number {
 }
 
 export function countSlaBreaches(claims: Claim[]): number {
-  return claims.filter((c) => isOpen(c) && isSlaBreach(c)).length;
+  return claims.filter((c) => isOpen(c) && isSlaBreach(c) && hasOutstanding(c)).length;
 }
 
 export function countOpenDenials(claims: Claim[]): number {
-  return claims.filter((c) => isOpen(c) && isDenied(c) && c.outstanding_amount > 0).length;
+  return claims.filter((c) => isOpen(c) && isDenied(c) && effectiveOutstanding(c) > 0).length;
 }
 
 export function sumOutstanding(claims: Claim[]): number {
-  // Denied claims (claim/enhancement/pre-auth denied) are excluded by rule —
-  // they live only on Denials.
-  return claims.reduce(
-    (s, c) => s + (isExcludedFromOutstanding(c) ? 0 : c.outstanding_amount || 0),
-    0,
-  );
+  return claims.reduce((s, c) => s + effectiveOutstanding(c), 0);
 }
 
 export function sumOutstandingOpen(claims: Claim[]): number {
-  return claims.reduce(
-    (s, c) =>
-      s + (isOpen(c) && !isExcludedFromOutstanding(c) ? c.outstanding_amount || 0 : 0),
-    0,
-  );
+  return claims.reduce((s, c) => s + (isOpen(c) ? effectiveOutstanding(c) : 0), 0);
 }
 
 export function sumClaimed(claims: Claim[]): number {
