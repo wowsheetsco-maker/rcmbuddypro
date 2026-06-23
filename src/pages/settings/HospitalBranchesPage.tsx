@@ -106,9 +106,15 @@ export default function HospitalBranchesPage() {
               <span className="font-mono text-[11px]">Hyderabad</span>). Manage them here.
             </p>
           </div>
-          <Button size="sm" onClick={() => setGroupDialog({ mode: "add" })} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add hospital group
-          </Button>
+          {isPlatformAdmin ? (
+            <Button size="sm" onClick={() => setGroupDialog({ mode: "add" })} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Add hospital group
+            </Button>
+          ) : (
+            <Badge variant="outline" className="text-[10px] gap-1">
+              Hospital groups are managed by RCMBuddy
+            </Badge>
+          )}
         </div>
 
         <Card className="shadow-sm">
