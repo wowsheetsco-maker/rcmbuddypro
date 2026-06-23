@@ -42,6 +42,14 @@ const CATEGORY_TONE: Record<PayerCategory, string> = {
 const ALL_CATEGORIES: PayerCategory[] = ["government", "psu", "tpa", "insurer", "aggregator"];
 
 export default function PayersPage() {
+  return (
+    <AppLayout>
+      <PayersInner />
+    </AppLayout>
+  );
+}
+
+function PayersInner() {
   const { claims, loading, isMock } = useLiveClaims();
   const { from, to, isWithin } = useGlobalFilter();
   const navigate = useNavigate();
@@ -141,7 +149,7 @@ export default function PayersPage() {
   };
 
   return (
-    <AppLayout>
+    <>
       <div className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
@@ -320,6 +328,6 @@ export default function PayersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </AppLayout>
+    </>
   );
 }
