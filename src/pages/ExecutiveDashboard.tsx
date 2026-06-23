@@ -455,8 +455,8 @@ export default function ExecutiveDashboard() {
     const underProcess = claims.filter((c) => /process|enhancement approved|pre auth approved|claim approved/i.test(c.claim_status || "")).length;
     const activeInHospital = claims.filter((c) => !c.date_of_discharge).length;
     const activeAmt = claims.filter((c) => !c.date_of_discharge).reduce((s, c) => s + (c.outstanding_amount || 0), 0);
-    const docsNotSubmitted = claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).length;
-    const docsNotSubmittedAmt = claims.filter((c) => SUBMITTED_NEGATIVE.has((c.claim_status || "").toLowerCase())).reduce((s, c) => s + (c.outstanding_amount || 0), 0);
+    const docsNotSubmitted = docsToSubmitClaims.length;
+    const docsNotSubmittedAmt = docsToSubmitClaims.reduce((s, c) => s + (c.approved_amount || c.claimed_amount || 0), 0);
     const liveAR = openOutstanding - activeAmt;
     const oldestDays = Math.max(0, ...claims.filter((c) => !SETTLED.has((c.claim_status || "").toLowerCase())).map((c) => ageDays(c.claim_creation_date)));
 
