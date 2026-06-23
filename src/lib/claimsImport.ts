@@ -245,14 +245,17 @@ function buildRow(
   }
   if (errors.some((e) => e.row === rowIndex)) return null;
 
-  // Derived: outstanding_amount = claimed - settled - tds (clamped)
-  const claimed = row.claimed_amount ?? 0;
+  // Derived: outstanding_amount = approved - settled - tds (clamped).
+  // Denied/rejected claims and claims with no approved amount contribute 0.
+  const approved = row.approved_amount ?? 0;
   const settled = row.settled_amount ?? 0;
   const tds = row.tds_amount ?? 0;
   const status = (row.claim_status ?? "").toLowerCase();
-  const outstanding = SETTLED_STATUSES.has(status)
-    ? 0
-    : Math.max(0, claimed - settled - tds);
+  const isDenied = /denied|rejected|repudiat/i.test(status);
+  const outstanding =
+    SETTLED_STATUSES.has(status) || isDenied || approved <= 0
+      ? 0
+      : Math.max(0, approved - settled - tds);
   row.outstanding_amount = outstanding;
 
   // Derived: SLA breach = outstanding > 0 AND age > 15 days from claim creation
