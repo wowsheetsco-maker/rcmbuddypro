@@ -493,7 +493,7 @@ export default function ExecutiveDashboard() {
         : `${denials.length} denials. Drill to inspect rejection reasons.`,
       underpay: `Approved > Settled gap. Common causes: room-rent cap, non-medical exclusions, copay miscalc.`,
       active: `${activeInHospital} patients in-hospital. Verify pre-auth approval and enhancement triggers daily.`,
-      docsNotSubmitted: `${docsNotSubmitted} claims sitting in draft. Enforce 48-hr discharge-to-submission SLA.`,
+      docsNotSubmitted: `${docsNotSubmitted} approved/discharged claims awaiting submission. Enforce 48-hr discharge-to-submission SLA.`,
     };
 
     return {
