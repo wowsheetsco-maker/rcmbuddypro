@@ -52,7 +52,14 @@ export function rowToClaim(r: Record<string, unknown>): Claim {
     policy_holder_name: (r.policy_holder_name as string) ?? null,
     employee_code: (r.employee_code as string) ?? null,
     insurer_comments: (r.insurer_comments as string) ?? null,
-    outstanding_amount: Number(r.outstanding_amount ?? 0),
+    outstanding_amount: (() => {
+      const status = String(r.claim_status ?? "").toLowerCase();
+      const isDenied = /denied|rejected|repudiat/i.test(status);
+      const isSettled = ["settled", "paid", "closed", "claim settled"].includes(status.trim());
+      const approved = Number(r.approved_amount ?? 0);
+      if (isDenied || isSettled || approved <= 0) return 0;
+      return Math.max(0, approved - Number(r.settled_amount ?? 0) - Number(r.tds_amount ?? 0));
+    })(),
     days_since_claim: daysSince(claim_creation_date),
     is_irdai_breach: Boolean(r.is_irdai_breach),
     tpa_spoc: (r.tpa_spoc as string) ?? null,
