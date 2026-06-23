@@ -222,7 +222,7 @@ function FunnelRow({
 export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
-  const { matchesBranch, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
+  const { matchesBranch, isWithin, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
