@@ -22,6 +22,7 @@ import { formatInrShort as formatInr, type Claim } from "@/data/mockClaims";
 import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
+import TpaInsurerFilter, { useTpaFilter } from "@/components/TpaInsurerFilter";
 import { cn } from "@/lib/utils";
 
 type AmountField =
