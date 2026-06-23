@@ -534,8 +534,11 @@ export default function ExecutiveDashboard() {
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Executive Dashboard</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {m.total.toLocaleString("en-IN")} claims loaded
-              {" "}· Generated: {new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
+              {m.total.toLocaleString("en-IN")} claims
+              {filterFrom || filterTo
+                ? ` · ${filterFrom ? filterFrom.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"} → ${filterTo ? filterTo.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}`
+                : " · All time"}
+              {" "}· Generated {new Date().toLocaleString("en-IN", { dateStyle: "short", timeStyle: "short" })}
             </p>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
