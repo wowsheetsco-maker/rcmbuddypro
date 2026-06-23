@@ -24,10 +24,12 @@ import {
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { slugifyGroupName } from "@/lib/hospitalNameSplit";
 import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
+import { useIsPlatformAdmin } from "@/hooks/useIsPlatformAdmin";
 
 export default function HospitalBranchesPage() {
   const { groups, branches, loading } = useHospitals();
   const { claims } = useLiveClaims();
+  const { isAdmin: isPlatformAdmin } = useIsPlatformAdmin();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -104,9 +106,15 @@ export default function HospitalBranchesPage() {
               <span className="font-mono text-[11px]">Hyderabad</span>). Manage them here.
             </p>
           </div>
-          <Button size="sm" onClick={() => setGroupDialog({ mode: "add" })} className="gap-1.5">
-            <Plus className="h-4 w-4" /> Add hospital group
-          </Button>
+          {isPlatformAdmin ? (
+            <Button size="sm" onClick={() => setGroupDialog({ mode: "add" })} className="gap-1.5">
+              <Plus className="h-4 w-4" /> Add hospital group
+            </Button>
+          ) : (
+            <Badge variant="outline" className="text-[10px] gap-1">
+              Hospital groups are managed by RCMBuddy
+            </Badge>
+          )}
         </div>
 
         <Card className="shadow-sm">
@@ -172,20 +180,24 @@ export default function HospitalBranchesPage() {
                     >
                       <Plus className="h-3.5 w-3.5" /> Branch
                     </Button>
-                    <Button
-                      size="icon" variant="ghost" className="h-7 w-7"
-                      onClick={() => setGroupDialog({ mode: "edit", group: g })}
-                      aria-label="Rename group"
-                    >
-                      <Pencil className="h-3.5 w-3.5" />
-                    </Button>
-                    <Button
-                      size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
-                      onClick={() => setConfirmDelete({ kind: "group", group: g, claimCount: groupClaims })}
-                      aria-label="Delete group"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
+                    {isPlatformAdmin && (
+                      <>
+                        <Button
+                          size="icon" variant="ghost" className="h-7 w-7"
+                          onClick={() => setGroupDialog({ mode: "edit", group: g })}
+                          aria-label="Rename group"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="icon" variant="ghost" className="h-7 w-7 text-destructive hover:text-destructive"
+                          onClick={() => setConfirmDelete({ kind: "group", group: g, claimCount: groupClaims })}
+                          aria-label="Delete group"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                   {isOpen && (
                     <div className="divide-y">
