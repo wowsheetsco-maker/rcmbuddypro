@@ -20,6 +20,7 @@ import PriorityWorklistPage from "./pages/claims/PriorityWorklistPage";
 import SubmissionTrackerPage from "./pages/claims/SubmissionTrackerPage";
 import DenialsPage from "./pages/claims/DenialsPage";
 import DenialWorkflowPage from "./pages/claims/DenialWorkflowPage";
+import PayersPage from "./pages/claims/PayersPage";
 
 import TdsReportPage from "./pages/claims/TdsReportPage";
 import ImportClaimsPage from "./pages/claims/ImportClaimsPage";
@@ -163,6 +164,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/claims/follow-up": FollowUpCalendarPage,
   "/claims/denials": DenialsPage,
   "/claims/denials-workflow": DenialWorkflowPage,
+  "/claims/payers": PayersPage,
   
   "/claims/tds": TdsReportPage,
   "/claims/import": ImportClaimsPage,
