@@ -23,6 +23,7 @@ import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
 import TpaInsurerFilter, { useTpaFilter } from "@/components/TpaInsurerFilter";
+import FilterUrlSync from "@/components/FilterUrlSync";
 import { cn } from "@/lib/utils";
 
 type AmountField =
