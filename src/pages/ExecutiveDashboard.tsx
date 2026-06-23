@@ -575,6 +575,18 @@ export default function ExecutiveDashboard() {
             )}
             <DateRangeQuickPicker />
             <TpaInsurerFilter options={tpaOptions} />
+            {filtersActive && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={clearAllFilters}
+                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                title="Reset date range and TPA/insurer selections"
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Clear filters
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
