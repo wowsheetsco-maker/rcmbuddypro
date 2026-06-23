@@ -23,6 +23,7 @@ import ExecutiveDrillDownDrawer from "@/components/ExecutiveDrillDownDrawer";
 import PdfExportDialog from "@/components/pdf/PdfExportDialog";
 import DateRangeQuickPicker from "@/components/DateRangeQuickPicker";
 import TpaInsurerFilter, { useTpaFilter } from "@/components/TpaInsurerFilter";
+import FilterUrlSync from "@/components/FilterUrlSync";
 import { cn } from "@/lib/utils";
 
 type AmountField =
@@ -223,8 +224,10 @@ function FunnelRow({
 export default function ExecutiveDashboard() {
   const { claims: rawClaims, loading } = useLiveClaims();
   const { rules } = useDqRules();
-  const { matchesBranch, isWithin, from: filterFrom, to: filterTo, groupIds, branchIds } = useGlobalFilter();
-  const { matches: matchesTpa } = useTpaFilter();
+  const { matchesBranch, isWithin, from: filterFrom, to: filterTo, groupIds, branchIds, setFrom, setTo } = useGlobalFilter();
+  const { matches: matchesTpa, selected: tpaSelected, setSelected: setTpaSelected } = useTpaFilter();
+  const filtersActive = !!filterFrom || !!filterTo || tpaSelected.length > 0;
+  const clearAllFilters = () => { setFrom(null); setTo(null); setTpaSelected([]); };
   const role = typeof window !== "undefined" ? localStorage.getItem(ROLE_STORAGE_KEY) : "cfo";
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -510,6 +513,7 @@ export default function ExecutiveDashboard() {
 
   return (
     <AppLayout>
+      <FilterUrlSync />
       <div className="space-y-4">
         {/* Breadcrumbs — always present so users know where they are */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
@@ -572,6 +576,18 @@ export default function ExecutiveDashboard() {
             )}
             <DateRangeQuickPicker />
             <TpaInsurerFilter options={tpaOptions} />
+            {filtersActive && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={clearAllFilters}
+                className="h-8 px-2 text-xs text-muted-foreground hover:text-foreground"
+                title="Reset date range and TPA/insurer selections"
+              >
+                <X className="h-3.5 w-3.5 mr-1" /> Clear filters
+              </Button>
+            )}
             <Button
               type="button"
               size="sm"
