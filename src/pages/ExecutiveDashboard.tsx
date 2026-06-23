@@ -513,6 +513,7 @@ export default function ExecutiveDashboard() {
 
   return (
     <AppLayout>
+      <FilterUrlSync />
       <div className="space-y-4">
         {/* Breadcrumbs — always present so users know where they are */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-[11.5px] text-muted-foreground">
