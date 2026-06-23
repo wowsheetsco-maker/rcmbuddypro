@@ -24,10 +24,12 @@ import {
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { slugifyGroupName } from "@/lib/hospitalNameSplit";
 import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
+import { useIsPlatformAdmin } from "@/hooks/useIsPlatformAdmin";
 
 export default function HospitalBranchesPage() {
   const { groups, branches, loading } = useHospitals();
   const { claims } = useLiveClaims();
+  const { isAdmin: isPlatformAdmin } = useIsPlatformAdmin();
   const [query, setQuery] = useState("");
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
