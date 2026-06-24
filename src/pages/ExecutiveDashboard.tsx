@@ -43,28 +43,13 @@ interface DrillState {
 
 const ROLE_STORAGE_KEY = "rcm-buddy-role";
 
-const SETTLED = new Set(["settled", "paid", "closed"]);
-const DENIED = new Set([
-  "pre auth denied", "claim denied", "discharge denied",
-  "enhancement denied", "denied", "rejected",
-]);
-// Claims that are "submitted to payer" = settled + post-submission processing states
-const SUBMITTED_STATUSES = new Set([
-  "settled", "paid", "closed",
-  "settlement initiated", "settlement reminder",
-  "claim denied", "denied", "rejected",
-  "reconsideration submitted",
-  "processing", "claim in progress", "in progress",
-  "claim query", "query",
-]);
-// Claims that are approved but documents have NOT yet been submitted to payer
-const DOCS_TO_SUBMIT_STATUSES = new Set([
-  "claim approved", "discharge approved", "pre auth approved", "pre-auth approved",
-]);
-const isDocsToSubmit = (c: { claim_status?: string | null; date_of_discharge?: string | null }) =>
-  !!c.date_of_discharge && DOCS_TO_SUBMIT_STATUSES.has((c.claim_status || "").toLowerCase());
-const isSubmitted = (c: { claim_status?: string | null }) =>
-  SUBMITTED_STATUSES.has((c.claim_status || "").toLowerCase());
+import {
+  SETTLED_STATUSES as SETTLED,
+  DENIED_STATUSES as DENIED,
+  isSubmitted,
+  isDocsToSubmit,
+  computeReconciliation,
+} from "@/lib/claimStatusBuckets";
 
 const STATUS_COLORS: Record<string, string> = {
   Pending: "hsl(217 91% 60%)",
