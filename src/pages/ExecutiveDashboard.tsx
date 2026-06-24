@@ -781,6 +781,60 @@ export default function ExecutiveDashboard() {
           </button>
         </div>
 
+        {/* Reconciliation: Approved vs Submitted vs Docs-to-Submit */}
+        <SectionCard
+          title="Reconciliation · Approved vs Submitted vs Docs-to-Submit"
+          right={<span className="text-[10px] text-muted-foreground">
+            {filterFrom || filterTo
+              ? `${filterFrom ? filterFrom.toLocaleDateString("en-IN") : "—"} → ${filterTo ? filterTo.toLocaleDateString("en-IN") : "—"}`
+              : "All time"}
+          </span>}
+        >
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+            {[
+              { label: "Approved", b: recon.approved, accent: "border-l-accent",
+                onClick: () => openDrill({ title: "Reconciliation · Approved", subtitle: `${recon.approved.count} claims · ${formatInr(recon.approved.amount)}`, claims: claims.filter(c => (c.approved_amount || 0) > 0), amountField: "approved_amount", amountLabel: "Approved" }) },
+              { label: "Submitted", b: recon.submitted, accent: "border-l-primary",
+                onClick: () => openDrill({ title: "Reconciliation · Submitted", subtitle: `${recon.submitted.count} claims · ${formatInr(recon.submitted.amount)} (approved basis)`, claims: claims.filter(isSubmitted), amountField: "approved_amount", amountLabel: "Approved" }) },
+              { label: "Settled", b: recon.settled, accent: "border-l-success",
+                onClick: () => openDrill({ title: "Reconciliation · Settled", subtitle: `${recon.settled.count} claims · ${formatInr(recon.settled.amount)}`, claims: claims.filter(c => SETTLED.has((c.claim_status||"").toLowerCase())), amountField: "settled_amount", amountLabel: "Settled" }) },
+              { label: "Docs to be Submitted", b: recon.docsToSubmit, accent: "border-l-aging-60",
+                onClick: () => openDrill({ title: "Reconciliation · Docs to be Submitted", subtitle: `${recon.docsToSubmit.count} claims · ${formatInr(recon.docsToSubmit.amount)}`, claims: claims.filter(isDocsToSubmit), amountField: "approved_amount", amountLabel: "Approved" }) },
+            ].map((row) => (
+              <button
+                key={row.label}
+                type="button"
+                onClick={row.onClick}
+                className={`text-left rounded-md border border-l-2 ${row.accent} bg-card p-3 hover:bg-muted/40 hover:shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-primary/40`}
+              >
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">{row.label}</div>
+                <div className="mt-1 text-xl font-bold tabular-nums">{formatInr(row.b.amount)}</div>
+                <div className="text-[11px] text-muted-foreground">{row.b.count.toLocaleString("en-IN")} claims · click to view</div>
+              </button>
+            ))}
+          </div>
+          {recon.warnings.length > 0 ? (
+            <div className="mt-3 rounded-md bg-rose-500/10 border border-rose-500/30 px-3 py-2.5">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="h-4 w-4 text-rose-600 mt-0.5 shrink-0" />
+                <div>
+                  <div className="text-[12.5px] font-semibold text-rose-700 dark:text-rose-300">
+                    Mismatch detected in the current filter range
+                  </div>
+                  <ul className="mt-1 list-disc pl-4 text-[11px] text-rose-700/80 dark:text-rose-300/80 space-y-0.5">
+                    {recon.warnings.map((w) => <li key={w}>{w}</li>)}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-md bg-emerald-500/10 border border-emerald-500/30 px-3 py-2 text-[11.5px] text-emerald-700 dark:text-emerald-300 flex items-center gap-2">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              All invariants hold: Submitted ≤ Approved and Settled ≤ Submitted in this range.
+            </div>
+          )}
+        </SectionCard>
+
         {showFull && (<>
         {/* KPI grid - row 1 */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
