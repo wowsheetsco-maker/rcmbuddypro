@@ -497,6 +497,16 @@ export default function ExecutiveDashboard() {
     };
   }, [claims, rules]);
 
+  // Reconciliation report — single source of truth for Approved vs Submitted
+  // vs Docs-to-Submit. Drives the widget AND the runtime sanity assertion.
+  const recon = useMemo(() => computeReconciliation(claims), [claims]);
+  useEffect(() => {
+    if (recon.warnings.length > 0) {
+      // eslint-disable-next-line no-console
+      console.warn("[ExecutiveDashboard] reconciliation invariant broken:", recon.warnings);
+    }
+  }, [recon]);
+
   if (role && role !== "cfo" && role !== "admin") return <Navigate to="/" replace />;
 
   if (loading) {
