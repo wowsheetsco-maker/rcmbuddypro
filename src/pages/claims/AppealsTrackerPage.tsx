@@ -18,6 +18,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw, ListChecks,
+  AlertCircle, Clock, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
