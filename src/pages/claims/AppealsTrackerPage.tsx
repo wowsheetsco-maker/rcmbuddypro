@@ -328,16 +328,18 @@ export default function AppealsTrackerPage() {
 // Detail dialog — edit body/subject and see payer-specific next actions
 // ============================================================
 function AppealDetailDialog({
-  appeal, claim, onClose, onSaved,
+  appeal, claim, onClose, onSaved, onChecklistChange,
 }: {
   appeal: AppealRow | null;
   claim: Claim | null;
   onClose: () => void;
   onSaved: () => void;
+  onChecklistChange?: () => void;
 }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
     if (appeal) { setSubject(appeal.subject); setBody(appeal.body); }
