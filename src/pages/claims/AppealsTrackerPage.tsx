@@ -18,6 +18,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw, ListChecks,
+  AlertCircle, Clock, Download,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,8 +28,10 @@ import { getActionForCode } from "@/data/denialActions";
 import { insurerProfiles } from "@/data/insurerProfiles";
 import { formatInr, formatInrShort, type Claim } from "@/data/mockClaims";
 import {
-  getChecklist, setChecklistItem, getProgressMap, type ChecklistItem,
+  getChecklist, setChecklistItem, setChecklistDue, getSummaryMap, reminderStatus,
+  getChecklistRaw, type ChecklistItem,
 } from "@/lib/appealChecklist";
+import { downloadChecklistCsv, downloadChecklistPdf } from "@/lib/appealChecklistExport";
 
 type AppealStatus = "draft" | "submitted" | "accepted" | "rejected";
 
@@ -127,20 +130,22 @@ export default function AppealsTrackerPage() {
       });
   }, [appeals, filter, search, claimById]);
 
-  // Progress across all currently visible appeals (recomputed when checklists change).
-  const progressMap = useMemo(
-    () => getProgressMap(rows.map((a) => a.id)),
+  // Progress + reminder summary across all currently visible appeals.
+  const summaryMap = useMemo(
+    () => getSummaryMap(rows.map((a) => a.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, checklistTick],
   );
   const checklistTotals = useMemo(() => {
-    let done = 0, total = 0;
-    for (const id of Object.keys(progressMap)) {
-      done += progressMap[id].done;
-      total += progressMap[id].total;
+    let done = 0, total = 0, overdue = 0, dueSoon = 0;
+    for (const id of Object.keys(summaryMap)) {
+      done += summaryMap[id].done;
+      total += summaryMap[id].total;
+      overdue += summaryMap[id].overdue;
+      dueSoon += summaryMap[id].dueSoon;
     }
-    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [progressMap]);
+    return { done, total, overdue, dueSoon, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [summaryMap]);
 
 
   const setStatus = async (id: string, next: AppealStatus) => {
@@ -187,7 +192,17 @@ export default function AppealsTrackerPage() {
             caption={<span className="truncate">{formatInrShort(counts.gap)} short-paid tracked</span>} />
           <KpiCard label="Actions done" value={`${checklistTotals.pct}%`} loading={loading}
             icon={<ListChecks className="h-3.5 w-3.5 text-primary" />}
-            caption={<span className="truncate">{checklistTotals.done}/{checklistTotals.total} steps checked</span>} />
+            caption={
+              <span className="truncate">
+                {checklistTotals.done}/{checklistTotals.total} steps
+                {checklistTotals.overdue > 0 && (
+                  <span className="text-destructive font-medium"> · {checklistTotals.overdue} overdue</span>
+                )}
+                {checklistTotals.dueSoon > 0 && (
+                  <span className="text-warning font-medium"> · {checklistTotals.dueSoon} due soon</span>
+                )}
+              </span>
+            } />
         </KpiGrid>
 
         <Card className="shadow-sm">
@@ -255,21 +270,41 @@ export default function AppealsTrackerPage() {
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const p = progressMap[a.id] ?? { done: 0, total: 0 };
+                            const p = summaryMap[a.id] ?? { done: 0, total: 0, overdue: 0, dueSoon: 0 };
                             if (!p.total) return <span className="text-[11px] text-muted-foreground">—</span>;
                             const pct = Math.round((p.done / p.total) * 100);
                             const complete = p.done === p.total;
                             return (
-                              <div className="flex items-center gap-1.5 min-w-[90px]">
-                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                  <div
-                                    className={complete ? "h-full bg-success" : "h-full bg-primary"}
-                                    style={{ width: `${pct}%` }}
-                                  />
+                              <div className="space-y-1 min-w-[130px]">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                      className={complete ? "h-full bg-success" : "h-full bg-primary"}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                                    {p.done}/{p.total}
+                                  </span>
                                 </div>
-                                <span className="text-[10px] tabular-nums text-muted-foreground">
-                                  {p.done}/{p.total}
-                                </span>
+                                {(p.overdue > 0 || p.dueSoon > 0) && !complete && (
+                                  <div className="flex items-center gap-1">
+                                    {p.overdue > 0 && (
+                                      <Badge variant="outline"
+                                        className="text-[9px] px-1 py-0 h-4 bg-destructive/10 text-destructive border-destructive/40">
+                                        <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                                        {p.overdue} overdue
+                                      </Badge>
+                                    )}
+                                    {p.dueSoon > 0 && (
+                                      <Badge variant="outline"
+                                        className="text-[9px] px-1 py-0 h-4 bg-warning/10 text-warning border-warning/40">
+                                        <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                        {p.dueSoon} soon
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}
@@ -382,7 +417,42 @@ function AppealDetailDialog({
     onChecklistChange?.();
   };
 
+  const changeDue = (i: number, dueAt: string) => {
+    if (!appeal) return;
+    const next = setChecklistDue(appeal.id, i, dueAt || undefined);
+    setChecklist(next);
+    onChecklistChange?.();
+  };
+
   const checklistDone = checklist.filter((c) => c.done).length;
+  const checklistOverdue = checklist.filter((c) => !c.done && reminderStatus(c) === "overdue").length;
+  const checklistDueSoon = checklist.filter((c) => !c.done && reminderStatus(c) === "due_soon").length;
+
+  const buildExportMeta = () => ({
+    patient: claim?.patient_name ?? "—",
+    claimNumber: claim?.claim_number ?? appeal?.claim_id.slice(0, 8) ?? "",
+    payer: payerName || "—",
+    denialCode: code?.code ?? "—",
+    status: appeal?.status ?? "—",
+    gapAmount: appeal?.gap_amount ?? 0,
+    updatedAt: appeal ? new Date(appeal.updated_at).toLocaleString() : "",
+  });
+
+  const handleExportCsv = () => {
+    if (!appeal) return;
+    const items = getChecklistRaw(appeal.id);
+    if (!items.length) { toast.error("No checklist items to export"); return; }
+    downloadChecklistCsv(buildExportMeta(), items);
+    toast.success("CSV downloaded");
+  };
+
+  const handleExportPdf = () => {
+    if (!appeal) return;
+    const items = getChecklistRaw(appeal.id);
+    if (!items.length) { toast.error("No checklist items to export"); return; }
+    downloadChecklistPdf(buildExportMeta(), items);
+    toast.success("PDF downloaded");
+  };
 
   const save = async () => {
     if (!appeal) return;
@@ -467,24 +537,52 @@ function AppealDetailDialog({
             {/* Payer-specific checklist */}
             <Card className="shadow-none border-accent/30">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
                     <ListChecks className="h-3.5 w-3.5 text-accent" />
                     Payer checklist
                   </CardTitle>
-                  {checklist.length > 0 && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        checklistDone === checklist.length
-                          ? "text-[10px] bg-success/10 text-success border-success/40"
-                          : "text-[10px]"
-                      }
-                    >
-                      {checklistDone}/{checklist.length}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {checklist.length > 0 && (
+                      <Badge
+                        variant="outline"
+                        className={
+                          checklistDone === checklist.length
+                            ? "text-[10px] bg-success/10 text-success border-success/40"
+                            : "text-[10px]"
+                        }
+                      >
+                        {checklistDone}/{checklist.length}
+                      </Badge>
+                    )}
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 px-1.5"
+                      onClick={handleExportCsv} title="Download checklist as CSV">
+                      <Download className="h-3 w-3" /> CSV
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 px-1.5"
+                      onClick={handleExportPdf} title="Download checklist as PDF">
+                      <Download className="h-3 w-3" /> PDF
+                    </Button>
+                  </div>
                 </div>
+                {(checklistOverdue > 0 || checklistDueSoon > 0) && (
+                  <div className="flex items-center gap-1 pt-1">
+                    {checklistOverdue > 0 && (
+                      <Badge variant="outline"
+                        className="text-[10px] bg-destructive/10 text-destructive border-destructive/40">
+                        <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                        {checklistOverdue} overdue
+                      </Badge>
+                    )}
+                    {checklistDueSoon > 0 && (
+                      <Badge variant="outline"
+                        className="text-[10px] bg-warning/10 text-warning border-warning/40">
+                        <Clock className="h-2.5 w-2.5 mr-0.5" />
+                        {checklistDueSoon} due soon
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="text-[11px] space-y-2">
                 {code && action && (
@@ -498,28 +596,56 @@ function AppealDetailDialog({
                     No denial code mapped — check the source claim's status &amp; insurer comments.
                   </div>
                 ) : (
-                  <ul className="space-y-1.5 pt-1">
-                    {checklist.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Checkbox
-                          id={`step-${appeal.id}-${i}`}
-                          checked={item.done}
-                          onCheckedChange={(v) => toggleStep(i, v === true)}
-                          className="mt-0.5"
-                        />
-                        <label
-                          htmlFor={`step-${appeal.id}-${i}`}
-                          className={`flex-1 leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
-                        >
-                          {item.text}
-                          {item.done && item.doneAt && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">
-                              · {new Date(item.doneAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </label>
-                      </li>
-                    ))}
+                  <ul className="space-y-2 pt-1">
+                    {checklist.map((item, i) => {
+                      const remStatus = reminderStatus(item);
+                      const remTone =
+                        remStatus === "overdue" ? "bg-destructive/10 text-destructive border-destructive/40"
+                        : remStatus === "due_soon" ? "bg-warning/10 text-warning border-warning/40"
+                        : remStatus === "done" ? "bg-success/10 text-success border-success/40"
+                        : "bg-muted text-muted-foreground border-border";
+                      const remLabel =
+                        remStatus === "overdue" ? "Overdue"
+                        : remStatus === "due_soon" ? "Due soon"
+                        : remStatus === "done" ? "Done"
+                        : remStatus === "on_track" ? "On track"
+                        : "No due";
+                      return (
+                        <li key={i} className="flex items-start gap-2">
+                          <Checkbox
+                            id={`step-${appeal.id}-${i}`}
+                            checked={item.done}
+                            onCheckedChange={(v) => toggleStep(i, v === true)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 space-y-1">
+                            <label
+                              htmlFor={`step-${appeal.id}-${i}`}
+                              className={`block leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
+                            >
+                              {item.text}
+                            </label>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Input
+                                type="date"
+                                value={item.dueAt ?? ""}
+                                onChange={(e) => changeDue(i, e.target.value)}
+                                className="h-6 text-[10px] w-32 px-1.5"
+                                disabled={item.done}
+                              />
+                              <Badge variant="outline" className={`text-[9px] px-1 py-0 h-4 ${remTone}`}>
+                                {remLabel}
+                              </Badge>
+                              {item.done && item.doneAt && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  · done {new Date(item.doneAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {action && (
