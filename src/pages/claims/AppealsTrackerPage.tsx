@@ -417,7 +417,42 @@ function AppealDetailDialog({
     onChecklistChange?.();
   };
 
+  const changeDue = (i: number, dueAt: string) => {
+    if (!appeal) return;
+    const next = setChecklistDue(appeal.id, i, dueAt || undefined);
+    setChecklist(next);
+    onChecklistChange?.();
+  };
+
   const checklistDone = checklist.filter((c) => c.done).length;
+  const checklistOverdue = checklist.filter((c) => !c.done && reminderStatus(c) === "overdue").length;
+  const checklistDueSoon = checklist.filter((c) => !c.done && reminderStatus(c) === "due_soon").length;
+
+  const buildExportMeta = () => ({
+    patient: claim?.patient_name ?? "—",
+    claimNumber: claim?.claim_number ?? appeal?.claim_id.slice(0, 8) ?? "",
+    payer: payerName || "—",
+    denialCode: code?.code ?? "—",
+    status: appeal?.status ?? "—",
+    gapAmount: appeal?.gap_amount ?? 0,
+    updatedAt: appeal ? new Date(appeal.updated_at).toLocaleString() : "",
+  });
+
+  const handleExportCsv = () => {
+    if (!appeal) return;
+    const items = getChecklistRaw(appeal.id);
+    if (!items.length) { toast.error("No checklist items to export"); return; }
+    downloadChecklistCsv(buildExportMeta(), items);
+    toast.success("CSV downloaded");
+  };
+
+  const handleExportPdf = () => {
+    if (!appeal) return;
+    const items = getChecklistRaw(appeal.id);
+    if (!items.length) { toast.error("No checklist items to export"); return; }
+    downloadChecklistPdf(buildExportMeta(), items);
+    toast.success("PDF downloaded");
+  };
 
   const save = async () => {
     if (!appeal) return;
