@@ -191,7 +191,17 @@ export default function AppealsTrackerPage() {
             caption={<span className="truncate">{formatInrShort(counts.gap)} short-paid tracked</span>} />
           <KpiCard label="Actions done" value={`${checklistTotals.pct}%`} loading={loading}
             icon={<ListChecks className="h-3.5 w-3.5 text-primary" />}
-            caption={<span className="truncate">{checklistTotals.done}/{checklistTotals.total} steps checked</span>} />
+            caption={
+              <span className="truncate">
+                {checklistTotals.done}/{checklistTotals.total} steps
+                {checklistTotals.overdue > 0 && (
+                  <span className="text-destructive font-medium"> · {checklistTotals.overdue} overdue</span>
+                )}
+                {checklistTotals.dueSoon > 0 && (
+                  <span className="text-warning font-medium"> · {checklistTotals.dueSoon} due soon</span>
+                )}
+              </span>
+            } />
         </KpiGrid>
 
         <Card className="shadow-sm">
