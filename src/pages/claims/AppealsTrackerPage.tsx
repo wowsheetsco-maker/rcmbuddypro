@@ -127,6 +127,22 @@ export default function AppealsTrackerPage() {
       });
   }, [appeals, filter, search, claimById]);
 
+  // Progress across all currently visible appeals (recomputed when checklists change).
+  const progressMap = useMemo(
+    () => getProgressMap(rows.map((a) => a.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, checklistTick],
+  );
+  const checklistTotals = useMemo(() => {
+    let done = 0, total = 0;
+    for (const id of Object.keys(progressMap)) {
+      done += progressMap[id].done;
+      total += progressMap[id].total;
+    }
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [progressMap]);
+
+
   const setStatus = async (id: string, next: AppealStatus) => {
     const patch: Partial<AppealRow> = { status: next };
     if (next === "submitted") patch.sent_at = new Date().toISOString();
