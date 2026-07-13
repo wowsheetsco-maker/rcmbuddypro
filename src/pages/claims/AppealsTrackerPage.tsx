@@ -537,24 +537,52 @@ function AppealDetailDialog({
             {/* Payer-specific checklist */}
             <Card className="shadow-none border-accent/30">
               <CardHeader className="pb-2">
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
                   <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
                     <ListChecks className="h-3.5 w-3.5 text-accent" />
                     Payer checklist
                   </CardTitle>
-                  {checklist.length > 0 && (
-                    <Badge
-                      variant="outline"
-                      className={
-                        checklistDone === checklist.length
-                          ? "text-[10px] bg-success/10 text-success border-success/40"
-                          : "text-[10px]"
-                      }
-                    >
-                      {checklistDone}/{checklist.length}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-1">
+                    {checklist.length > 0 && (
+                      <Badge
+                        variant="outline"
+                        className={
+                          checklistDone === checklist.length
+                            ? "text-[10px] bg-success/10 text-success border-success/40"
+                            : "text-[10px]"
+                        }
+                      >
+                        {checklistDone}/{checklist.length}
+                      </Badge>
+                    )}
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 px-1.5"
+                      onClick={handleExportCsv} title="Download checklist as CSV">
+                      <Download className="h-3 w-3" /> CSV
+                    </Button>
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 px-1.5"
+                      onClick={handleExportPdf} title="Download checklist as PDF">
+                      <Download className="h-3 w-3" /> PDF
+                    </Button>
+                  </div>
                 </div>
+                {(checklistOverdue > 0 || checklistDueSoon > 0) && (
+                  <div className="flex items-center gap-1 pt-1">
+                    {checklistOverdue > 0 && (
+                      <Badge variant="outline"
+                        className="text-[10px] bg-destructive/10 text-destructive border-destructive/40">
+                        <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                        {checklistOverdue} overdue
+                      </Badge>
+                    )}
+                    {checklistDueSoon > 0 && (
+                      <Badge variant="outline"
+                        className="text-[10px] bg-warning/10 text-warning border-warning/40">
+                        <Clock className="h-2.5 w-2.5 mr-0.5" />
+                        {checklistDueSoon} due soon
+                      </Badge>
+                    )}
+                  </div>
+                )}
               </CardHeader>
               <CardContent className="text-[11px] space-y-2">
                 {code && action && (
@@ -568,28 +596,56 @@ function AppealDetailDialog({
                     No denial code mapped — check the source claim's status &amp; insurer comments.
                   </div>
                 ) : (
-                  <ul className="space-y-1.5 pt-1">
-                    {checklist.map((item, i) => (
-                      <li key={i} className="flex items-start gap-2">
-                        <Checkbox
-                          id={`step-${appeal.id}-${i}`}
-                          checked={item.done}
-                          onCheckedChange={(v) => toggleStep(i, v === true)}
-                          className="mt-0.5"
-                        />
-                        <label
-                          htmlFor={`step-${appeal.id}-${i}`}
-                          className={`flex-1 leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
-                        >
-                          {item.text}
-                          {item.done && item.doneAt && (
-                            <span className="ml-1 text-[10px] text-muted-foreground">
-                              · {new Date(item.doneAt).toLocaleDateString()}
-                            </span>
-                          )}
-                        </label>
-                      </li>
-                    ))}
+                  <ul className="space-y-2 pt-1">
+                    {checklist.map((item, i) => {
+                      const remStatus = reminderStatus(item);
+                      const remTone =
+                        remStatus === "overdue" ? "bg-destructive/10 text-destructive border-destructive/40"
+                        : remStatus === "due_soon" ? "bg-warning/10 text-warning border-warning/40"
+                        : remStatus === "done" ? "bg-success/10 text-success border-success/40"
+                        : "bg-muted text-muted-foreground border-border";
+                      const remLabel =
+                        remStatus === "overdue" ? "Overdue"
+                        : remStatus === "due_soon" ? "Due soon"
+                        : remStatus === "done" ? "Done"
+                        : remStatus === "on_track" ? "On track"
+                        : "No due";
+                      return (
+                        <li key={i} className="flex items-start gap-2">
+                          <Checkbox
+                            id={`step-${appeal.id}-${i}`}
+                            checked={item.done}
+                            onCheckedChange={(v) => toggleStep(i, v === true)}
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 space-y-1">
+                            <label
+                              htmlFor={`step-${appeal.id}-${i}`}
+                              className={`block leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
+                            >
+                              {item.text}
+                            </label>
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <Input
+                                type="date"
+                                value={item.dueAt ?? ""}
+                                onChange={(e) => changeDue(i, e.target.value)}
+                                className="h-6 text-[10px] w-32 px-1.5"
+                                disabled={item.done}
+                              />
+                              <Badge variant="outline" className={`text-[9px] px-1 py-0 h-4 ${remTone}`}>
+                                {remLabel}
+                              </Badge>
+                              {item.done && item.doneAt && (
+                                <span className="text-[10px] text-muted-foreground">
+                                  · done {new Date(item.doneAt).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
                 {action && (
