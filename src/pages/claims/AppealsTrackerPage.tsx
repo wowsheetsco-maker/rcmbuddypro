@@ -253,6 +253,27 @@ export default function AppealsTrackerPage() {
                             ? <Badge variant="secondary" className="text-[10px] font-mono">{code.code}</Badge>
                             : <span className="text-[11px] text-muted-foreground">—</span>}
                         </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const p = progressMap[a.id] ?? { done: 0, total: 0 };
+                            if (!p.total) return <span className="text-[11px] text-muted-foreground">—</span>;
+                            const pct = Math.round((p.done / p.total) * 100);
+                            const complete = p.done === p.total;
+                            return (
+                              <div className="flex items-center gap-1.5 min-w-[90px]">
+                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className={complete ? "h-full bg-success" : "h-full bg-primary"}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] tabular-nums text-muted-foreground">
+                                  {p.done}/{p.total}
+                                </span>
+                              </div>
+                            );
+                          })()}
+                        </TableCell>
                         <TableCell numeric className="text-xs font-medium">
                           {formatInr(a.gap_amount)}
                         </TableCell>
