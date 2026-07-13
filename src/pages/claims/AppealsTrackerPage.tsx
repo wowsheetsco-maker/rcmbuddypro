@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ import { insurerProfiles } from "@/data/insurerProfiles";
 import { formatInr, formatInrShort, type Claim } from "@/data/mockClaims";
 import {
   getChecklist, setChecklistItem, setChecklistDue, getSummaryMap, reminderStatus,
-  getChecklistRaw, type ChecklistItem,
+  getChecklistRaw, getAllChecklists, type ChecklistItem, type ReminderStatus,
 } from "@/lib/appealChecklist";
 import { downloadChecklistCsv, downloadChecklistPdf } from "@/lib/appealChecklistExport";
 
@@ -74,10 +74,48 @@ export default function AppealsTrackerPage() {
   const [appeals, setAppeals] = useState<AppealRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<AppealStatus | "all">("all");
+  const [reminderFilter, setReminderFilter] = useState<ReminderStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AppealRow | null>(null);
   const [checklistTick, setChecklistTick] = useState(0);
   const bumpChecklist = useCallback(() => setChecklistTick((n) => n + 1), []);
+
+  // Auto-refresh reminder badges every 60s so status transitions surface
+  // without needing a manual reload.
+  useEffect(() => {
+    const t = window.setInterval(() => setChecklistTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  // Toast when a checklist item newly transitions to overdue / due soon.
+  const notifiedRef = useRef<Set<string>>(new Set());
+  const firstScanRef = useRef(true);
+  useEffect(() => {
+    const map = getAllChecklists();
+    const nextNotified = new Set(notifiedRef.current);
+    const fresh: { key: string; status: "overdue" | "due_soon"; text: string; appealId: string }[] = [];
+    for (const [appealId, items] of Object.entries(map)) {
+      items.forEach((it, i) => {
+        if (it.done) return;
+        const s = reminderStatus(it);
+        if (s !== "overdue" && s !== "due_soon") return;
+        const key = `${appealId}:${i}:${s}`;
+        if (!nextNotified.has(key)) {
+          nextNotified.add(key);
+          fresh.push({ key, status: s, text: it.text, appealId });
+        }
+      });
+    }
+    notifiedRef.current = nextNotified;
+    // Suppress the burst on the very first scan so we don't toast the
+    // backlog every time the page mounts.
+    if (firstScanRef.current) { firstScanRef.current = false; return; }
+    for (const f of fresh) {
+      const label = f.status === "overdue" ? "Overdue" : "Due soon";
+      const toaster = f.status === "overdue" ? toast.error : toast.warning;
+      toaster(`${label}: ${f.text.length > 60 ? f.text.slice(0, 60) + "…" : f.text}`);
+    }
+  }, [checklistTick, appeals]);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -114,10 +152,30 @@ export default function AppealsTrackerPage() {
     ? (counts.accepted / (counts.accepted + counts.rejected)) * 100
     : 0;
 
+  // Full summary map over ALL appeals — needed so the reminder filter can
+  // apply before we compute the visible rows.
+  const summaryMap = useMemo(
+    () => getSummaryMap(appeals.map((a) => a.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appeals, checklistTick],
+  );
+
+  function matchesReminderFilter(appealId: string): boolean {
+    if (reminderFilter === "all") return true;
+    const s = summaryMap[appealId];
+    if (!s || s.total === 0) return false;
+    if (reminderFilter === "done") return s.done === s.total;
+    if (reminderFilter === "overdue") return s.overdue > 0;
+    if (reminderFilter === "due_soon") return s.dueSoon > 0;
+    if (reminderFilter === "on_track") return s.onTrack > 0 && s.overdue === 0 && s.dueSoon === 0 && s.done < s.total;
+    return true;
+  }
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return appeals
       .filter((a) => filter === "all" || normalizeStatus(a.status) === filter)
+      .filter((a) => matchesReminderFilter(a.id))
       .filter((a) => {
         if (!q) return true;
         const c = claimById.get(a.claim_id);
@@ -128,24 +186,21 @@ export default function AppealsTrackerPage() {
           (c?.tpa_name || "").toLowerCase().includes(q)
         );
       });
-  }, [appeals, filter, search, claimById]);
-
-  // Progress + reminder summary across all currently visible appeals.
-  const summaryMap = useMemo(
-    () => getSummaryMap(rows.map((a) => a.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, checklistTick],
-  );
+  }, [appeals, filter, reminderFilter, search, claimById, summaryMap]);
+
   const checklistTotals = useMemo(() => {
     let done = 0, total = 0, overdue = 0, dueSoon = 0;
-    for (const id of Object.keys(summaryMap)) {
-      done += summaryMap[id].done;
-      total += summaryMap[id].total;
-      overdue += summaryMap[id].overdue;
-      dueSoon += summaryMap[id].dueSoon;
+    for (const a of rows) {
+      const s = summaryMap[a.id];
+      if (!s) continue;
+      done += s.done;
+      total += s.total;
+      overdue += s.overdue;
+      dueSoon += s.dueSoon;
     }
     return { done, total, overdue, dueSoon, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [summaryMap]);
+  }, [summaryMap, rows]);
 
 
   const setStatus = async (id: string, next: AppealStatus) => {
@@ -223,6 +278,28 @@ export default function AppealsTrackerPage() {
                   placeholder="Search claim / patient / payer…"
                   className="h-7 text-xs w-60" />
               </div>
+            </div>
+            <div className="flex items-center gap-1.5 flex-wrap pt-2">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Actions:</span>
+              {([
+                { key: "all", label: "All", count: null, tone: "" },
+                { key: "overdue", label: "Overdue", count: checklistTotals.overdue,
+                  tone: "text-destructive border-destructive/40" },
+                { key: "due_soon", label: "Due soon", count: checklistTotals.dueSoon,
+                  tone: "text-warning border-warning/40" },
+                { key: "on_track", label: "On track", count: null, tone: "text-primary border-primary/40" },
+                { key: "done", label: "Done", count: null, tone: "text-success border-success/40" },
+              ] as const).map((r) => (
+                <Button key={r.key} size="sm"
+                  variant={reminderFilter === r.key ? "default" : "outline"}
+                  className={`h-7 text-[11px] gap-1 ${reminderFilter === r.key ? "" : r.tone}`}
+                  onClick={() => setReminderFilter(r.key as ReminderStatus | "all")}>
+                  {r.label}
+                  {typeof r.count === "number" && r.count > 0 && (
+                    <span className="tabular-nums">· {r.count}</span>
+                  )}
+                </Button>
+              ))}
             </div>
           </CardHeader>
           <CardContent>
