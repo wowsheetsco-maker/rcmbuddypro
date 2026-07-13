@@ -74,10 +74,48 @@ export default function AppealsTrackerPage() {
   const [appeals, setAppeals] = useState<AppealRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<AppealStatus | "all">("all");
+  const [reminderFilter, setReminderFilter] = useState<ReminderStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AppealRow | null>(null);
   const [checklistTick, setChecklistTick] = useState(0);
   const bumpChecklist = useCallback(() => setChecklistTick((n) => n + 1), []);
+
+  // Auto-refresh reminder badges every 60s so status transitions surface
+  // without needing a manual reload.
+  useEffect(() => {
+    const t = window.setInterval(() => setChecklistTick((n) => n + 1), 60_000);
+    return () => window.clearInterval(t);
+  }, []);
+
+  // Toast when a checklist item newly transitions to overdue / due soon.
+  const notifiedRef = useRef<Set<string>>(new Set());
+  const firstScanRef = useRef(true);
+  useEffect(() => {
+    const map = getAllChecklists();
+    const nextNotified = new Set(notifiedRef.current);
+    const fresh: { key: string; status: "overdue" | "due_soon"; text: string; appealId: string }[] = [];
+    for (const [appealId, items] of Object.entries(map)) {
+      items.forEach((it, i) => {
+        if (it.done) return;
+        const s = reminderStatus(it);
+        if (s !== "overdue" && s !== "due_soon") return;
+        const key = `${appealId}:${i}:${s}`;
+        if (!nextNotified.has(key)) {
+          nextNotified.add(key);
+          fresh.push({ key, status: s, text: it.text, appealId });
+        }
+      });
+    }
+    notifiedRef.current = nextNotified;
+    // Suppress the burst on the very first scan so we don't toast the
+    // backlog every time the page mounts.
+    if (firstScanRef.current) { firstScanRef.current = false; return; }
+    for (const f of fresh) {
+      const label = f.status === "overdue" ? "Overdue" : "Due soon";
+      const toaster = f.status === "overdue" ? toast.error : toast.warning;
+      toaster(`${label}: ${f.text.length > 60 ? f.text.slice(0, 60) + "…" : f.text}`);
+    }
+  }, [checklistTick, appeals]);
 
   const reload = useCallback(async () => {
     setLoading(true);
