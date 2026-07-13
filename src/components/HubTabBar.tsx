@@ -18,8 +18,9 @@ interface HubTab {
   label: string;
   path: string;
   /** Key into action-centre counts to show a numeric badge. */
-  badge?: "overdue" | "irdai" | "outstanding";
+  badge?: "overdue" | "irdai" | "outstanding" | "docsToSubmit";
 }
+
 
 interface Hub {
   key: string;
@@ -35,9 +36,10 @@ const HUBS: Hub[] = [
     icon: Search,
     tabs: [
       { label: "Payers",      path: "/claims/payers" },
+      { label: "Docs Not Submitted", path: "/claims/docs-to-submit", badge: "docsToSubmit" },
       { label: "All Claims",  path: "/claims" },
-      { label: "Docs to Submit", path: "/claims/docs-to-submit" },
       { label: "Submission",  path: "/claims/submission" },
+
       { label: "Outstanding", path: "/claims/outstanding", badge: "outstanding" },
       { label: "Follow-Up",   path: "/claims/follow-up", badge: "overdue" },
       { label: "Priority",    path: "/claims/priority" },
@@ -132,8 +134,12 @@ export default function HubTabBar() {
     if (tab.badge === "outstanding" && counts.recoveryAtRisk > 0) {
       return { text: formatCompact(counts.recoveryAtRisk), tone: "danger" };
     }
+    if (tab.badge === "docsToSubmit" && counts.docsToSubmit > 0) {
+      return { text: String(counts.docsToSubmit), tone: "warn" };
+    }
     return null;
   };
+
 
   const HubIcon = hub.icon;
   const tabs = hub.key === "admin"

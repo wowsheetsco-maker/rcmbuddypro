@@ -5,8 +5,10 @@ export interface ActionCentreCounts {
   overdueFollowUps: number;
   irdaiBreaches: number;
   recoveryAtRisk: number;
+  docsToSubmit: number;
   loading: boolean;
 }
+
 
 const SETTLED = new Set([
   "settled",
@@ -27,8 +29,10 @@ export function useActionCentreCounts(): ActionCentreCounts {
     overdueFollowUps: 0,
     irdaiBreaches: 0,
     recoveryAtRisk: 0,
+    docsToSubmit: 0,
     loading: true,
   });
+
 
   useEffect(() => {
     let cancelled = false;
@@ -42,8 +46,9 @@ export function useActionCentreCounts(): ActionCentreCounts {
           .lte("next_action_date", today),
         supabase
           .from("claims")
-          .select("id, claim_status, is_irdai_breach, outstanding_amount")
+          .select("id, claim_status, is_irdai_breach, outstanding_amount, approved_amount, claimed_amount, date_of_discharge")
           .limit(5000),
+
       ]);
 
       if (cancelled) return;
@@ -61,23 +66,32 @@ export function useActionCentreCounts(): ActionCentreCounts {
 
       let irdai = 0;
       let outstanding = 0;
+      let docsToSubmit = 0;
+      const DOCS_STATUSES = new Set([
+        "claim approved", "discharge approved",
+        "pre auth approved", "pre-auth approved",
+      ]);
       for (const c of (claimsRes.data ?? []) as Array<{
         claim_status: string;
         is_irdai_breach: boolean;
         outstanding_amount: number;
+        date_of_discharge: string | null;
       }>) {
         const status = (c.claim_status || "").toLowerCase().trim();
         const open = !SETTLED.has(status);
         if (open && c.is_irdai_breach) irdai += 1;
         if (open) outstanding += c.outstanding_amount || 0;
+        if (c.date_of_discharge && DOCS_STATUSES.has(status)) docsToSubmit += 1;
       }
 
       setState({
         overdueFollowUps: overdueClaims.size,
         irdaiBreaches: irdai,
         recoveryAtRisk: outstanding,
+        docsToSubmit,
         loading: false,
       });
+
     };
 
     void load();
