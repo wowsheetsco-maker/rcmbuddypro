@@ -269,21 +269,41 @@ export default function AppealsTrackerPage() {
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const p = progressMap[a.id] ?? { done: 0, total: 0 };
+                            const p = summaryMap[a.id] ?? { done: 0, total: 0, overdue: 0, dueSoon: 0 };
                             if (!p.total) return <span className="text-[11px] text-muted-foreground">—</span>;
                             const pct = Math.round((p.done / p.total) * 100);
                             const complete = p.done === p.total;
                             return (
-                              <div className="flex items-center gap-1.5 min-w-[90px]">
-                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                                  <div
-                                    className={complete ? "h-full bg-success" : "h-full bg-primary"}
-                                    style={{ width: `${pct}%` }}
-                                  />
+                              <div className="space-y-1 min-w-[130px]">
+                                <div className="flex items-center gap-1.5">
+                                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                    <div
+                                      className={complete ? "h-full bg-success" : "h-full bg-primary"}
+                                      style={{ width: `${pct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] tabular-nums text-muted-foreground">
+                                    {p.done}/{p.total}
+                                  </span>
                                 </div>
-                                <span className="text-[10px] tabular-nums text-muted-foreground">
-                                  {p.done}/{p.total}
-                                </span>
+                                {(p.overdue > 0 || p.dueSoon > 0) && !complete && (
+                                  <div className="flex items-center gap-1">
+                                    {p.overdue > 0 && (
+                                      <Badge variant="outline"
+                                        className="text-[9px] px-1 py-0 h-4 bg-destructive/10 text-destructive border-destructive/40">
+                                        <AlertCircle className="h-2.5 w-2.5 mr-0.5" />
+                                        {p.overdue} overdue
+                                      </Badge>
+                                    )}
+                                    {p.dueSoon > 0 && (
+                                      <Badge variant="outline"
+                                        className="text-[9px] px-1 py-0 h-4 bg-warning/10 text-warning border-warning/40">
+                                        <Clock className="h-2.5 w-2.5 mr-0.5" />
+                                        {p.dueSoon} soon
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             );
                           })()}
