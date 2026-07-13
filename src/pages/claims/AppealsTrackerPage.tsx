@@ -15,8 +15,9 @@ import {
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw,
+  Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,9 @@ import { mapToDenialCode } from "@/data/denialCodes";
 import { getActionForCode } from "@/data/denialActions";
 import { insurerProfiles } from "@/data/insurerProfiles";
 import { formatInr, formatInrShort, type Claim } from "@/data/mockClaims";
+import {
+  getChecklist, setChecklistItem, getProgressMap, type ChecklistItem,
+} from "@/lib/appealChecklist";
 
 type AppealStatus = "draft" | "submitted" | "accepted" | "rejected";
 
