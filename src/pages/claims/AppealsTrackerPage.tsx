@@ -73,6 +73,8 @@ export default function AppealsTrackerPage() {
   const [filter, setFilter] = useState<AppealStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AppealRow | null>(null);
+  const [checklistTick, setChecklistTick] = useState(0);
+  const bumpChecklist = useCallback(() => setChecklistTick((n) => n + 1), []);
 
   const reload = useCallback(async () => {
     setLoading(true);
