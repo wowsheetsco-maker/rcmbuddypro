@@ -176,7 +176,7 @@ export default function DocsToSubmitPage() {
         </Card>
       </div>
 
-      <ClaimDrawer claim={selected} open={!!selected} onOpenChange={(o) => !o && setSelected(null)} />
+      {selected && <ClaimDrawer claim={selected} onClose={() => setSelected(null)} />}
     </AppLayout>
   );
 }
