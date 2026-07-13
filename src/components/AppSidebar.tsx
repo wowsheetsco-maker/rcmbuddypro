@@ -283,7 +283,7 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
     const sectionPrefixes: Record<string, string[]> = {
       "My Tasks":   ["/my-tasks"],
       "Dashboard":  ["/"],
-      "Submission": ["/claims/payers", "/claims/docs-to-submit", "/claims/submission", "/claims/query"],
+      "Submission": ["/claims", "/claims/payers", "/claims/docs-to-submit", "/claims/submission", "/claims/query"],
       "Recovery":   ["/claims/outstanding", "/claims/follow-up", "/claims/priority", "/claims/ar", "/claims/denials", "/claims/denials-workflow", "/claims/appeals"],
       "Recon":      ["/claims/discrepancy", "/claims/reconciliation", "/claims/recon-alerts"],
       "Follow-Ups": ["/communications"],
