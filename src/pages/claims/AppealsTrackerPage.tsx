@@ -129,20 +129,22 @@ export default function AppealsTrackerPage() {
       });
   }, [appeals, filter, search, claimById]);
 
-  // Progress across all currently visible appeals (recomputed when checklists change).
-  const progressMap = useMemo(
-    () => getProgressMap(rows.map((a) => a.id)),
+  // Progress + reminder summary across all currently visible appeals.
+  const summaryMap = useMemo(
+    () => getSummaryMap(rows.map((a) => a.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [rows, checklistTick],
   );
   const checklistTotals = useMemo(() => {
-    let done = 0, total = 0;
-    for (const id of Object.keys(progressMap)) {
-      done += progressMap[id].done;
-      total += progressMap[id].total;
+    let done = 0, total = 0, overdue = 0, dueSoon = 0;
+    for (const id of Object.keys(summaryMap)) {
+      done += summaryMap[id].done;
+      total += summaryMap[id].total;
+      overdue += summaryMap[id].overdue;
+      dueSoon += summaryMap[id].dueSoon;
     }
-    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [progressMap]);
+    return { done, total, overdue, dueSoon, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [summaryMap]);
 
 
   const setStatus = async (id: string, next: AppealStatus) => {
