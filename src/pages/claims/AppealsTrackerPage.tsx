@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,7 +29,7 @@ import { insurerProfiles } from "@/data/insurerProfiles";
 import { formatInr, formatInrShort, type Claim } from "@/data/mockClaims";
 import {
   getChecklist, setChecklistItem, setChecklistDue, getSummaryMap, reminderStatus,
-  getChecklistRaw, type ChecklistItem,
+  getChecklistRaw, getAllChecklists, type ChecklistItem, type ReminderStatus,
 } from "@/lib/appealChecklist";
 import { downloadChecklistCsv, downloadChecklistPdf } from "@/lib/appealChecklistExport";
 
