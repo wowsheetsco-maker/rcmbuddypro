@@ -134,8 +134,12 @@ export default function HubTabBar() {
     if (tab.badge === "outstanding" && counts.recoveryAtRisk > 0) {
       return { text: formatCompact(counts.recoveryAtRisk), tone: "danger" };
     }
+    if (tab.badge === "docsToSubmit" && counts.docsToSubmit > 0) {
+      return { text: String(counts.docsToSubmit), tone: "warn" };
+    }
     return null;
   };
+
 
   const HubIcon = hub.icon;
   const tabs = hub.key === "admin"
