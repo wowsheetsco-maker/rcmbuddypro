@@ -162,3 +162,8 @@ export function getSummaryMap(appealIds: string[]): Record<string, ChecklistSumm
 export function getChecklistRaw(appealId: string): ChecklistItem[] {
   return load()[appealId] ?? [];
 }
+
+/** Return every persisted checklist, keyed by appeal id. */
+export function getAllChecklists(): ChecklistMap {
+  return load();
+}
