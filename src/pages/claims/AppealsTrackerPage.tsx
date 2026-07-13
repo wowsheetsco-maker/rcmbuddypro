@@ -464,29 +464,67 @@ function AppealDetailDialog({
               </CardContent>
             </Card>
 
-            {/* Denial-code playbook */}
-            <Card className="shadow-none">
+            {/* Payer-specific checklist */}
+            <Card className="shadow-none border-accent/30">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-accent" />
-                  Playbook for denial code
-                </CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                    <ListChecks className="h-3.5 w-3.5 text-accent" />
+                    Payer checklist
+                  </CardTitle>
+                  {checklist.length > 0 && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        checklistDone === checklist.length
+                          ? "text-[10px] bg-success/10 text-success border-success/40"
+                          : "text-[10px]"
+                      }
+                    >
+                      {checklistDone}/{checklist.length}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="text-[11px] space-y-2">
-                {code && action ? (
+                {code && action && (
                   <>
                     <Badge variant="outline" className="font-mono text-[10px]">{code.code}</Badge>
-                    <div className="italic">{action.appeal_angle}</div>
-                    <ol className="list-decimal list-inside space-y-0.5">
-                      {action.corrective.slice(0, 4).map((s, i) => <li key={i}>{s}</li>)}
-                    </ol>
-                    <div className="text-muted-foreground border-t pt-1">
-                      Escalate to: <span className="font-medium text-foreground">{action.escalation_to}</span>
-                    </div>
+                    <div className="italic text-muted-foreground">{action.appeal_angle}</div>
                   </>
-                ) : (
+                )}
+                {checklist.length === 0 ? (
                   <div className="text-muted-foreground">
                     No denial code mapped — check the source claim's status &amp; insurer comments.
+                  </div>
+                ) : (
+                  <ul className="space-y-1.5 pt-1">
+                    {checklist.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <Checkbox
+                          id={`step-${appeal.id}-${i}`}
+                          checked={item.done}
+                          onCheckedChange={(v) => toggleStep(i, v === true)}
+                          className="mt-0.5"
+                        />
+                        <label
+                          htmlFor={`step-${appeal.id}-${i}`}
+                          className={`flex-1 leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
+                        >
+                          {item.text}
+                          {item.done && item.doneAt && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">
+                              · {new Date(item.doneAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {action && (
+                  <div className="text-muted-foreground border-t pt-1">
+                    Escalate to: <span className="font-medium text-foreground">{action.escalation_to}</span>
                   </div>
                 )}
               </CardContent>
