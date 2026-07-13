@@ -173,7 +173,7 @@ export default function AppealsTrackerPage() {
           </Button>
         </div>
 
-        <KpiGrid cols={5}>
+        <KpiGrid cols={6}>
           <KpiCard label="Drafts" value={String(counts.draft)} loading={loading}
             icon={<FileText className="h-3.5 w-3.5 text-muted-foreground" />} />
           <KpiCard label="Submitted" value={String(counts.submitted)} loading={loading}
@@ -185,6 +185,9 @@ export default function AppealsTrackerPage() {
           <KpiCard label="Win rate" value={`${winRate.toFixed(0)}%`} loading={loading}
             icon={<Sparkles className="h-3.5 w-3.5 text-accent" />}
             caption={<span className="truncate">{formatInrShort(counts.gap)} short-paid tracked</span>} />
+          <KpiCard label="Actions done" value={`${checklistTotals.pct}%`} loading={loading}
+            icon={<ListChecks className="h-3.5 w-3.5 text-primary" />}
+            caption={<span className="truncate">{checklistTotals.done}/{checklistTotals.total} steps checked</span>} />
         </KpiGrid>
 
         <Card className="shadow-sm">
