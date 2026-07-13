@@ -35,46 +35,48 @@ interface Hub {
   groups?: HubGroup[];
 }
 
-const CLAIMS_GROUPS: HubGroup[] = [
-  {
-    label: "Submission",
-    tabs: [
-      { label: "Payers",             path: "/claims/payers" },
-      { label: "Docs Not Submitted", path: "/claims/docs-to-submit", badge: "docsToSubmit" },
-      { label: "All Claims",         path: "/claims" },
-      { label: "Submission",         path: "/claims/submission" },
-      { label: "Query",              path: "/claims/query" },
-    ],
-  },
-  {
-    label: "Recovery",
-    tabs: [
-      { label: "Outstanding",     path: "/claims/outstanding", badge: "outstanding" },
-      { label: "Follow-Up",       path: "/claims/follow-up", badge: "overdue" },
-      { label: "Priority",        path: "/claims/priority" },
-      { label: "AR Management",   path: "/claims/ar" },
-      { label: "Denials",         path: "/claims/denials" },
-      { label: "Denial Workflow", path: "/claims/denials-workflow" },
-      { label: "Appeals Tracker", path: "/claims/appeals" },
-    ],
-  },
-  {
-    label: "Recon",
-    tabs: [
-      { label: "Discrepancy",    path: "/claims/discrepancy" },
-      { label: "Reconciliation", path: "/claims/reconciliation" },
-      { label: "Recon Alerts",   path: "/claims/recon-alerts" },
-    ],
-  },
+const SUBMISSION_TABS: HubTab[] = [
+  { label: "Payers",             path: "/claims/payers" },
+  { label: "Docs Not Submitted", path: "/claims/docs-to-submit", badge: "docsToSubmit" },
+  { label: "All Claims",         path: "/claims" },
+  { label: "Submission",         path: "/claims/submission" },
+  { label: "Query",              path: "/claims/query" },
+];
+
+const RECOVERY_TABS: HubTab[] = [
+  { label: "Outstanding",     path: "/claims/outstanding", badge: "outstanding" },
+  { label: "Follow-Up",       path: "/claims/follow-up", badge: "overdue" },
+  { label: "Priority",        path: "/claims/priority" },
+  { label: "AR Management",   path: "/claims/ar" },
+  { label: "Denials",         path: "/claims/denials" },
+  { label: "Denial Workflow", path: "/claims/denials-workflow" },
+  { label: "Appeals Tracker", path: "/claims/appeals" },
+];
+
+const RECON_TABS: HubTab[] = [
+  { label: "Discrepancy",    path: "/claims/discrepancy" },
+  { label: "Reconciliation", path: "/claims/reconciliation" },
+  { label: "Recon Alerts",   path: "/claims/recon-alerts" },
 ];
 
 const HUBS: Hub[] = [
   {
-    key: "claims",
-    label: "Claims",
+    key: "claims-submission",
+    label: "Submission",
     icon: Search,
-    groups: CLAIMS_GROUPS,
-    tabs: CLAIMS_GROUPS.flatMap((g) => g.tabs),
+    tabs: SUBMISSION_TABS,
+  },
+  {
+    key: "claims-recovery",
+    label: "Recovery",
+    icon: Search,
+    tabs: RECOVERY_TABS,
+  },
+  {
+    key: "claims-recon",
+    label: "Recon",
+    icon: Search,
+    tabs: RECON_TABS,
   },
   {
     key: "followups",
@@ -118,6 +120,7 @@ const HUBS: Hub[] = [
     ],
   },
 ];
+
 
 export const ALL_HUBS = HUBS;
 
