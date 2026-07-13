@@ -15,8 +15,9 @@ import {
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
-  Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw,
+  Gavel, Loader2, ChevronDown, FileText, Sparkles, Building2, RefreshCw, ListChecks,
 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -25,6 +26,9 @@ import { mapToDenialCode } from "@/data/denialCodes";
 import { getActionForCode } from "@/data/denialActions";
 import { insurerProfiles } from "@/data/insurerProfiles";
 import { formatInr, formatInrShort, type Claim } from "@/data/mockClaims";
+import {
+  getChecklist, setChecklistItem, getProgressMap, type ChecklistItem,
+} from "@/lib/appealChecklist";
 
 type AppealStatus = "draft" | "submitted" | "accepted" | "rejected";
 
@@ -69,6 +73,8 @@ export default function AppealsTrackerPage() {
   const [filter, setFilter] = useState<AppealStatus | "all">("all");
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<AppealRow | null>(null);
+  const [checklistTick, setChecklistTick] = useState(0);
+  const bumpChecklist = useCallback(() => setChecklistTick((n) => n + 1), []);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -121,6 +127,22 @@ export default function AppealsTrackerPage() {
       });
   }, [appeals, filter, search, claimById]);
 
+  // Progress across all currently visible appeals (recomputed when checklists change).
+  const progressMap = useMemo(
+    () => getProgressMap(rows.map((a) => a.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [rows, checklistTick],
+  );
+  const checklistTotals = useMemo(() => {
+    let done = 0, total = 0;
+    for (const id of Object.keys(progressMap)) {
+      done += progressMap[id].done;
+      total += progressMap[id].total;
+    }
+    return { done, total, pct: total ? Math.round((done / total) * 100) : 0 };
+  }, [progressMap]);
+
+
   const setStatus = async (id: string, next: AppealStatus) => {
     const patch: Partial<AppealRow> = { status: next };
     if (next === "submitted") patch.sent_at = new Date().toISOString();
@@ -151,7 +173,7 @@ export default function AppealsTrackerPage() {
           </Button>
         </div>
 
-        <KpiGrid cols={5}>
+        <KpiGrid cols={6}>
           <KpiCard label="Drafts" value={String(counts.draft)} loading={loading}
             icon={<FileText className="h-3.5 w-3.5 text-muted-foreground" />} />
           <KpiCard label="Submitted" value={String(counts.submitted)} loading={loading}
@@ -163,6 +185,9 @@ export default function AppealsTrackerPage() {
           <KpiCard label="Win rate" value={`${winRate.toFixed(0)}%`} loading={loading}
             icon={<Sparkles className="h-3.5 w-3.5 text-accent" />}
             caption={<span className="truncate">{formatInrShort(counts.gap)} short-paid tracked</span>} />
+          <KpiCard label="Actions done" value={`${checklistTotals.pct}%`} loading={loading}
+            icon={<ListChecks className="h-3.5 w-3.5 text-primary" />}
+            caption={<span className="truncate">{checklistTotals.done}/{checklistTotals.total} steps checked</span>} />
         </KpiGrid>
 
         <Card className="shadow-sm">
@@ -198,6 +223,7 @@ export default function AppealsTrackerPage() {
                     <TableHead>Claim / Patient</TableHead>
                     <TableHead>Payer</TableHead>
                     <TableHead>Denial code</TableHead>
+                    <TableHead>Checklist</TableHead>
                     <TableHead align="right">Gap</TableHead>
                     <TableHead>Updated</TableHead>
                     <TableHead align="right">Actions</TableHead>
@@ -226,6 +252,27 @@ export default function AppealsTrackerPage() {
                           {code
                             ? <Badge variant="secondary" className="text-[10px] font-mono">{code.code}</Badge>
                             : <span className="text-[11px] text-muted-foreground">—</span>}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const p = progressMap[a.id] ?? { done: 0, total: 0 };
+                            if (!p.total) return <span className="text-[11px] text-muted-foreground">—</span>;
+                            const pct = Math.round((p.done / p.total) * 100);
+                            const complete = p.done === p.total;
+                            return (
+                              <div className="flex items-center gap-1.5 min-w-[90px]">
+                                <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <div
+                                    className={complete ? "h-full bg-success" : "h-full bg-primary"}
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                                <span className="text-[10px] tabular-nums text-muted-foreground">
+                                  {p.done}/{p.total}
+                                </span>
+                              </div>
+                            );
+                          })()}
                         </TableCell>
                         <TableCell numeric className="text-xs font-medium">
                           {formatInr(a.gap_amount)}
@@ -271,6 +318,7 @@ export default function AppealsTrackerPage() {
         claim={editing ? claimById.get(editing.claim_id) ?? null : null}
         onClose={() => setEditing(null)}
         onSaved={reload}
+        onChecklistChange={bumpChecklist}
       />
     </AppLayout>
   );
@@ -280,16 +328,18 @@ export default function AppealsTrackerPage() {
 // Detail dialog — edit body/subject and see payer-specific next actions
 // ============================================================
 function AppealDetailDialog({
-  appeal, claim, onClose, onSaved,
+  appeal, claim, onClose, onSaved, onChecklistChange,
 }: {
   appeal: AppealRow | null;
   claim: Claim | null;
   onClose: () => void;
   onSaved: () => void;
+  onChecklistChange?: () => void;
 }) {
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const [saving, setSaving] = useState(false);
+  const [checklist, setChecklist] = useState<ChecklistItem[]>([]);
 
   useEffect(() => {
     if (appeal) { setSubject(appeal.subject); setBody(appeal.body); }
@@ -306,6 +356,33 @@ function AppealDetailDialog({
 
   const code = claim ? mapToDenialCode(claim.claim_status, claim.insurer_comments) : null;
   const action = getActionForCode(code);
+
+  // Build the payer+denial-code checklist and load its persisted state.
+  const steps = useMemo(() => {
+    const list: string[] = [];
+    if (action) list.push(...action.corrective);
+    if (profile?.escalationMatrix?.[0]) {
+      list.push(`Escalate to ${profile.escalationMatrix[0].name} (${profile.escalationMatrix[0].level}) within ${profile.escalationMatrix[0].responseHours}h`);
+    }
+    if (profile?.submissionMode) {
+      list.push(`Resubmit via ${profile.submissionMode} per ${payerName} SOP`);
+    }
+    return list;
+  }, [action, profile, payerName]);
+
+  useEffect(() => {
+    if (!appeal) { setChecklist([]); return; }
+    setChecklist(getChecklist(appeal.id, steps));
+  }, [appeal, steps]);
+
+  const toggleStep = (i: number, done: boolean) => {
+    if (!appeal) return;
+    const next = setChecklistItem(appeal.id, i, done);
+    setChecklist(next);
+    onChecklistChange?.();
+  };
+
+  const checklistDone = checklist.filter((c) => c.done).length;
 
   const save = async () => {
     if (!appeal) return;
@@ -387,29 +464,67 @@ function AppealDetailDialog({
               </CardContent>
             </Card>
 
-            {/* Denial-code playbook */}
-            <Card className="shadow-none">
+            {/* Payer-specific checklist */}
+            <Card className="shadow-none border-accent/30">
               <CardHeader className="pb-2">
-                <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5 text-accent" />
-                  Playbook for denial code
-                </CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle className="text-xs font-semibold flex items-center gap-1.5">
+                    <ListChecks className="h-3.5 w-3.5 text-accent" />
+                    Payer checklist
+                  </CardTitle>
+                  {checklist.length > 0 && (
+                    <Badge
+                      variant="outline"
+                      className={
+                        checklistDone === checklist.length
+                          ? "text-[10px] bg-success/10 text-success border-success/40"
+                          : "text-[10px]"
+                      }
+                    >
+                      {checklistDone}/{checklist.length}
+                    </Badge>
+                  )}
+                </div>
               </CardHeader>
               <CardContent className="text-[11px] space-y-2">
-                {code && action ? (
+                {code && action && (
                   <>
                     <Badge variant="outline" className="font-mono text-[10px]">{code.code}</Badge>
-                    <div className="italic">{action.appeal_angle}</div>
-                    <ol className="list-decimal list-inside space-y-0.5">
-                      {action.corrective.slice(0, 4).map((s, i) => <li key={i}>{s}</li>)}
-                    </ol>
-                    <div className="text-muted-foreground border-t pt-1">
-                      Escalate to: <span className="font-medium text-foreground">{action.escalation_to}</span>
-                    </div>
+                    <div className="italic text-muted-foreground">{action.appeal_angle}</div>
                   </>
-                ) : (
+                )}
+                {checklist.length === 0 ? (
                   <div className="text-muted-foreground">
                     No denial code mapped — check the source claim's status &amp; insurer comments.
+                  </div>
+                ) : (
+                  <ul className="space-y-1.5 pt-1">
+                    {checklist.map((item, i) => (
+                      <li key={i} className="flex items-start gap-2">
+                        <Checkbox
+                          id={`step-${appeal.id}-${i}`}
+                          checked={item.done}
+                          onCheckedChange={(v) => toggleStep(i, v === true)}
+                          className="mt-0.5"
+                        />
+                        <label
+                          htmlFor={`step-${appeal.id}-${i}`}
+                          className={`flex-1 leading-snug cursor-pointer ${item.done ? "line-through text-muted-foreground" : ""}`}
+                        >
+                          {item.text}
+                          {item.done && item.doneAt && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">
+                              · {new Date(item.doneAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </label>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {action && (
+                  <div className="text-muted-foreground border-t pt-1">
+                    Escalate to: <span className="font-medium text-foreground">{action.escalation_to}</span>
                   </div>
                 )}
               </CardContent>
