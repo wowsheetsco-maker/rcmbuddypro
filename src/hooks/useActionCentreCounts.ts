@@ -46,8 +46,9 @@ export function useActionCentreCounts(): ActionCentreCounts {
           .lte("next_action_date", today),
         supabase
           .from("claims")
-          .select("id, claim_status, is_irdai_breach, outstanding_amount")
+          .select("id, claim_status, is_irdai_breach, outstanding_amount, approved_amount, claimed_amount, date_of_discharge")
           .limit(5000),
+
       ]);
 
       if (cancelled) return;
