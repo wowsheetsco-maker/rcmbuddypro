@@ -279,6 +279,28 @@ export default function AppealsTrackerPage() {
                   className="h-7 text-xs w-60" />
               </div>
             </div>
+            <div className="flex items-center gap-1.5 flex-wrap pt-2">
+              <span className="text-[10px] uppercase tracking-wide text-muted-foreground mr-1">Actions:</span>
+              {([
+                { key: "all", label: "All", count: null, tone: "" },
+                { key: "overdue", label: "Overdue", count: checklistTotals.overdue,
+                  tone: "text-destructive border-destructive/40" },
+                { key: "due_soon", label: "Due soon", count: checklistTotals.dueSoon,
+                  tone: "text-warning border-warning/40" },
+                { key: "on_track", label: "On track", count: null, tone: "text-primary border-primary/40" },
+                { key: "done", label: "Done", count: null, tone: "text-success border-success/40" },
+              ] as const).map((r) => (
+                <Button key={r.key} size="sm"
+                  variant={reminderFilter === r.key ? "default" : "outline"}
+                  className={`h-7 text-[11px] gap-1 ${reminderFilter === r.key ? "" : r.tone}`}
+                  onClick={() => setReminderFilter(r.key as ReminderStatus | "all")}>
+                  {r.label}
+                  {typeof r.count === "number" && r.count > 0 && (
+                    <span className="tabular-nums">· {r.count}</span>
+                  )}
+                </Button>
+              ))}
+            </div>
           </CardHeader>
           <CardContent>
             {rows.length === 0 ? (
