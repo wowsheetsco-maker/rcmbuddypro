@@ -357,6 +357,33 @@ function AppealDetailDialog({
   const code = claim ? mapToDenialCode(claim.claim_status, claim.insurer_comments) : null;
   const action = getActionForCode(code);
 
+  // Build the payer+denial-code checklist and load its persisted state.
+  const steps = useMemo(() => {
+    const list: string[] = [];
+    if (action) list.push(...action.corrective);
+    if (profile?.escalationMatrix?.[0]) {
+      list.push(`Escalate to ${profile.escalationMatrix[0].name} (${profile.escalationMatrix[0].level}) within ${profile.escalationMatrix[0].responseHours}h`);
+    }
+    if (profile?.submissionMode) {
+      list.push(`Resubmit via ${profile.submissionMode} per ${payerName} SOP`);
+    }
+    return list;
+  }, [action, profile, payerName]);
+
+  useEffect(() => {
+    if (!appeal) { setChecklist([]); return; }
+    setChecklist(getChecklist(appeal.id, steps));
+  }, [appeal, steps]);
+
+  const toggleStep = (i: number, done: boolean) => {
+    if (!appeal) return;
+    const next = setChecklistItem(appeal.id, i, done);
+    setChecklist(next);
+    onChecklistChange?.();
+  };
+
+  const checklistDone = checklist.filter((c) => c.done).length;
+
   const save = async () => {
     if (!appeal) return;
     setSaving(true);
