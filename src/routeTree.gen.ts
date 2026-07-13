@@ -29,10 +29,12 @@ import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_a
 import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
 import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
 import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
+import { Route as AuthenticatedClaimsReconAlertsRouteImport } from './routes/_authenticated.claims.recon-alerts'
 import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
 import { Route as AuthenticatedClaimsPayersRouteImport } from './routes/_authenticated.claims.payers'
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
+import { Route as AuthenticatedClaimsDocsToSubmitRouteImport } from './routes/_authenticated.claims.docs-to-submit'
 import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
 import { Route as AuthenticatedClaimsDenialsWorkflowRouteImport } from './routes/_authenticated.claims.denials-workflow'
 import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
@@ -152,6 +154,12 @@ const AuthenticatedClaimsReconciliationRoute =
     path: '/reconciliation',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedClaimsReconAlertsRoute =
+  AuthenticatedClaimsReconAlertsRouteImport.update({
+    id: '/recon-alerts',
+    path: '/recon-alerts',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedClaimsPriorityRoute =
   AuthenticatedClaimsPriorityRouteImport.update({
     id: '/priority',
@@ -174,6 +182,12 @@ const AuthenticatedClaimsImportRoute =
   AuthenticatedClaimsImportRouteImport.update({
     id: '/import',
     path: '/import',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsDocsToSubmitRoute =
+  AuthenticatedClaimsDocsToSubmitRouteImport.update({
+    id: '/docs-to-submit',
+    path: '/docs-to-submit',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
 const AuthenticatedClaimsDiscrepancyRoute =
@@ -267,10 +281,12 @@ export interface FileRoutesByFullPath {
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
+  '/claims/docs-to-submit': typeof AuthenticatedClaimsDocsToSubmitRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
@@ -302,10 +318,12 @@ export interface FileRoutesByTo {
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
+  '/claims/docs-to-submit': typeof AuthenticatedClaimsDocsToSubmitRoute
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
@@ -341,10 +359,12 @@ export interface FileRoutesById {
   '/_authenticated/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/_authenticated/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
   '/_authenticated/claims/discrepancy': typeof AuthenticatedClaimsDiscrepancyRoute
+  '/_authenticated/claims/docs-to-submit': typeof AuthenticatedClaimsDocsToSubmitRoute
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/_authenticated/claims/payers': typeof AuthenticatedClaimsPayersRoute
   '/_authenticated/claims/priority': typeof AuthenticatedClaimsPriorityRoute
+  '/_authenticated/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/_authenticated/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/_authenticated/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/_authenticated/claims/tds': typeof AuthenticatedClaimsTdsRoute
@@ -380,10 +400,12 @@ export interface FileRouteTypes {
     | '/claims/denials'
     | '/claims/denials-workflow'
     | '/claims/discrepancy'
+    | '/claims/docs-to-submit'
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/payers'
     | '/claims/priority'
+    | '/claims/recon-alerts'
     | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
@@ -415,10 +437,12 @@ export interface FileRouteTypes {
     | '/claims/denials'
     | '/claims/denials-workflow'
     | '/claims/discrepancy'
+    | '/claims/docs-to-submit'
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/payers'
     | '/claims/priority'
+    | '/claims/recon-alerts'
     | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
@@ -453,10 +477,12 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/denials'
     | '/_authenticated/claims/denials-workflow'
     | '/_authenticated/claims/discrepancy'
+    | '/_authenticated/claims/docs-to-submit'
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
     | '/_authenticated/claims/payers'
     | '/_authenticated/claims/priority'
+    | '/_authenticated/claims/recon-alerts'
     | '/_authenticated/claims/reconciliation'
     | '/_authenticated/claims/submission'
     | '/_authenticated/claims/tds'
@@ -628,6 +654,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsReconciliationRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/recon-alerts': {
+      id: '/_authenticated/claims/recon-alerts'
+      path: '/recon-alerts'
+      fullPath: '/claims/recon-alerts'
+      preLoaderRoute: typeof AuthenticatedClaimsReconAlertsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/priority': {
       id: '/_authenticated/claims/priority'
       path: '/priority'
@@ -654,6 +687,13 @@ declare module '@tanstack/react-router' {
       path: '/import'
       fullPath: '/claims/import'
       preLoaderRoute: typeof AuthenticatedClaimsImportRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/docs-to-submit': {
+      id: '/_authenticated/claims/docs-to-submit'
+      path: '/docs-to-submit'
+      fullPath: '/claims/docs-to-submit'
+      preLoaderRoute: typeof AuthenticatedClaimsDocsToSubmitRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
     '/_authenticated/claims/discrepancy': {
@@ -767,10 +807,12 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsDenialsRoute: typeof AuthenticatedClaimsDenialsRoute
   AuthenticatedClaimsDenialsWorkflowRoute: typeof AuthenticatedClaimsDenialsWorkflowRoute
   AuthenticatedClaimsDiscrepancyRoute: typeof AuthenticatedClaimsDiscrepancyRoute
+  AuthenticatedClaimsDocsToSubmitRoute: typeof AuthenticatedClaimsDocsToSubmitRoute
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
   AuthenticatedClaimsPayersRoute: typeof AuthenticatedClaimsPayersRoute
   AuthenticatedClaimsPriorityRoute: typeof AuthenticatedClaimsPriorityRoute
+  AuthenticatedClaimsReconAlertsRoute: typeof AuthenticatedClaimsReconAlertsRoute
   AuthenticatedClaimsReconciliationRoute: typeof AuthenticatedClaimsReconciliationRoute
   AuthenticatedClaimsSubmissionRoute: typeof AuthenticatedClaimsSubmissionRoute
   AuthenticatedClaimsTdsRoute: typeof AuthenticatedClaimsTdsRoute
@@ -783,10 +825,12 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsDenialsWorkflowRoute:
     AuthenticatedClaimsDenialsWorkflowRoute,
   AuthenticatedClaimsDiscrepancyRoute: AuthenticatedClaimsDiscrepancyRoute,
+  AuthenticatedClaimsDocsToSubmitRoute: AuthenticatedClaimsDocsToSubmitRoute,
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
   AuthenticatedClaimsPayersRoute: AuthenticatedClaimsPayersRoute,
   AuthenticatedClaimsPriorityRoute: AuthenticatedClaimsPriorityRoute,
+  AuthenticatedClaimsReconAlertsRoute: AuthenticatedClaimsReconAlertsRoute,
   AuthenticatedClaimsReconciliationRoute:
     AuthenticatedClaimsReconciliationRoute,
   AuthenticatedClaimsSubmissionRoute: AuthenticatedClaimsSubmissionRoute,
@@ -869,13 +913,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

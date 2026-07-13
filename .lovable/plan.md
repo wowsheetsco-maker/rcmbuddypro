@@ -1,88 +1,57 @@
-## Simplified Wellness / OPD module
+## Overview
 
-Replace the existing 15+ OPD pages with a focused 5-screen workflow. Old DB tables stay (no data loss) but old pages are removed from navigation.
+Five related enhancements. Several already exist as pages — the work is to close specific gaps you named (alert rules, code tagging, SLA reminders, benchmark charts, and a Docs-to-Submit tab), not to rebuild them.
 
-### Screens
+Since these are all substantial, I want to confirm scope before writing code so we don't sprawl. Below is what I'd build, in the order I'd ship it.
 
-1. **Providers & Contracts**
-   - List wellness providers (corporates / payors) with contract dates, billing cycle, contact person, email, phone.
-   - Reuses `opd_corporates` table (already has these fields).
-   - Add / edit / archive.
+---
 
-2. **Packages**
-   - Per-provider package catalogue (name, type: Consultation / Health Check, price, includes).
-   - New table `wellness_packages` linked to corporate.
+### 1. Docs-to-Submit tab in Claims menu (smallest, do first)
 
-3. **Requests Inbox** (the heart of the module)
-   - Auto-pulls new emails from connected Gmail (label filter, e.g. `Wellness`) every 5 min via cron → creates rows in `wellness_requests`.
-   - Manual "Add request" button as fallback.
-   - Each row: client name, contact, requested service, provider, status (`new`, `confirmed`, `cancelled`, `rescheduled`, `completed`).
-   - Row actions: **Confirm**, **Cancel**, **Reschedule** → opens dialog → on submit sends:
-     - Email (Lovable Emails)
-     - WhatsApp (existing `whatsapp.functions` integration)
-     - "Call" button = `tel:` link (no backend call needed)
-   - After consultation/health check: **Send Report** action → upload PDF → emails + WhatsApps it to client, marks request `completed`.
+- New route `/_authenticated/claims/docs-to-submit` → `DocsToSubmitPage`.
+- Uses existing `isDocsToSubmit()` from `claimStatusBuckets.ts` (approved status + discharged, not yet submitted).
+- Table: claim no, patient, discharge date, days since discharge, approved amount, payer, assignee. Row action → "Mark submitted" (opens submission drawer).
+- Add "Docs to Submit" link in the Claims sidebar group with a live count badge.
 
-4. **Invoices** (monthly, per provider)
-   - "Generate monthly invoice" picks a provider + month → aggregates all `completed` requests in that period × package price → creates invoice → email to provider's billing contact.
-   - Excel + PDF export (reuse existing `opdInvoiceExport.ts`).
+### 2. Reconciliation alert rules (settlement + TDS shortfall)
 
-5. **Management Dashboard**
-   - Month filter + per-provider breakdown: requests received, confirmed, completed, cancelled, revenue, outstanding.
-   - PDF export button.
+- Add `reconciliation_alerts` table (org-scoped, RLS + grants) with rule config: threshold % variance, TDS-tolerance %, notify channel.
+- Server fn `evaluateReconciliationAlerts` — on each settled claim, compute expected = approved − expected_TDS; if settled < expected − tolerance, insert a notification row.
+- UI: alert rules panel in Settings → Notifications, alert inbox surfaced on Bank Reconciliation page (extends existing page, no new nav).
+- No cron yet — evaluate on claim update trigger + on-demand "Re-scan" button.
 
-### Technical details
+### 3. Denial recovery workflow upgrades
 
-**Database migration**
-- New table `wellness_packages` (corporate_id, name, type, price, description, active).
-- New table `wellness_requests` (corporate_id, package_id, client_name, client_email, client_phone, requested_at, scheduled_at, status, source: `email`/`manual`, source_message_id, report_url, report_sent_at, confirmation_sent_at, notes).
-- New table `wellness_gmail_sync` (single row per org: last_history_id, label_filter, enabled).
-- RLS: org-scoped, same pattern as existing OPD tables.
+- Extend existing `DenialWorkflowPage`: add denial-code multi-select per claim (dictionary already in `data/denialCodes.ts`).
+- Appeal status column (draft → submitted → accepted/rejected) writing to existing `claim_appeals` table.
+- "Suggested next action" panel — reuses `playbookMatch.ts` + payer from `insurerProfiles.ts` to render 2–3 concrete steps.
 
-**Gmail intake**
-- Connect Google Mail via `standard_connectors--connect` (`google_mail`).
-- Server route `/api/public/hooks/wellness-gmail-poll` — lists unread messages matching configured query (default `label:wellness is:unread newer_than:7d`), extracts sender / subject / snippet, inserts into `wellness_requests`, marks message read.
-- pg_cron schedule every 5 minutes.
+### 4. Stuck-claims worklist with SLA
 
-**Client messaging**
-- Email: scaffold transactional template `wellness-confirmation`, `wellness-reschedule`, `wellness-cancellation`, `wellness-report`.
-- WhatsApp: reuse `src/lib/whatsapp.functions.ts` `sendWhatsAppMessage`.
-- Call: `tel:` link in UI.
+- Extend `PriorityWorklistPage` (do not create new route): add filter chip "Stuck" that limits to Processing / Claim in Progress / Settlement Initiated where `days_since_last_update > sla_days` (configurable per payer, default 15).
+- Row badge shows SLA breach severity. "Send reminder" button writes a follow-up + optional WhatsApp/email via existing `whatsapp.functions` / reminders pipeline.
+- Nightly cron (`pg_cron` → existing dispatch-notifications hook) emails owners of breached rows.
 
-**Report upload**
-- Storage bucket `wellness-reports` (private, signed URL for client email).
+### 5. Payer & TPA benchmark dashboards
 
-**Navigation cleanup**
-- `OpdLanding.tsx` becomes a 5-tile hub for the new screens.
-- Remove old OPD pages from `_LegacyApp.tsx` routes; keep files in place (unreferenced) so no build break, but they won't be reachable.
+- Extend existing `PayerScorecardPage` + `TpaReportPage`:
+  - Add month-by-month trend chart (denial rate %, avg turnaround days, net realization %) — data already available via `payerTrends.ts` + `payerBenchmarks.ts`.
+  - Add a "vs peer average" column so each payer/TPA can be benchmarked against the org average.
+- No new routes needed.
 
-### Files
+---
 
-**New**
-- `src/pages/wellness/WellnessProvidersPage.tsx` (thin wrapper around existing corporates query)
-- `src/pages/wellness/WellnessPackagesPage.tsx`
-- `src/pages/wellness/WellnessRequestsPage.tsx` (Inbox + actions)
-- `src/pages/wellness/WellnessInvoicesPage.tsx`
-- `src/pages/wellness/WellnessDashboardPage.tsx`
-- `src/routes/api/public/hooks/wellness-gmail-poll.ts`
-- `src/lib/wellnessMessaging.ts` (helpers wrapping email + WhatsApp sends)
-- `src/lib/email-templates/wellness-confirmation.tsx` (+ reschedule / cancel / report)
+## Technical notes
 
-**Modified**
-- `src/pages/opd/OpdLanding.tsx` — replace tile grid with 5 new tiles.
-- `src/_LegacyApp.tsx` — register new routes, remove old OPD routes.
+- One migration: `reconciliation_alerts` table + `reconciliation_alert_events` log, both with `org_id` + RLS + GRANTs.
+- No new secrets; alerts reuse existing notification pipeline.
+- All logic goes through `createServerFn` (no edge functions).
+- Extend, don't duplicate — most of the surface area already exists (`DenialWorkflowPage`, `PriorityWorklistPage`, `PayerScorecardPage`, `TpaReportPage`, `BankReconciliationPage`).
 
-**Migration**
-- 3 new tables + RLS + storage bucket + pg_cron job.
+---
 
-### Order of operations
+## Questions before I start
 
-1. DB migration (tables + bucket + cron).
-2. Connect Gmail connector (will prompt you).
-3. Build screens 1→5.
-4. Build Gmail poll route + reminder templates.
-5. Rewire `OpdLanding` and routes.
-
-I'll need you to connect your Gmail account when prompted (mid-build). Estimated end state: ~6 new files, 1 migration, old OPD UI hidden.
-
-Approve to proceed.
+1. **Scope:** ship all 5, or start with #1 + #2 (the two you'll see value from fastest) and queue the rest?
+2. **Alert delivery:** in-app only, or also email/WhatsApp on first pass?
+3. **Stuck-claim SLA default:** 15 days good, or a different threshold per stage (Processing 10, Settlement Initiated 30)?
