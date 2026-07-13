@@ -101,7 +101,9 @@ const ROLE_META: Record<Role, { label: string; icon: LucideIcon; tagline: string
 const NAV_GROUPS: NavGroup[] = [
   { label: "My Tasks",   icon: ListChecks,      path: "/my-tasks" },
   { label: "Dashboard",  icon: LayoutDashboard, path: "/", roles: ["cfo", "admin", "billing"] },
-  { label: "Claims",     icon: Search,          path: "/claims/payers" },
+  { label: "Submission", icon: Search,          path: "/claims/payers" },
+  { label: "Recovery",   icon: Flame,           path: "/claims/outstanding" },
+  { label: "Recon",      icon: Network,         path: "/claims/discrepancy" },
   { label: "Follow-Ups", icon: CalendarIcon,    path: "/communications/calendar", roles: ["billing", "ops", "admin"] },
   { label: "Gov Schemes", icon: Landmark,       path: "/gov-schemes" },
   { label: "OPD & Wellness", icon: Stethoscope, path: "/opd" },
@@ -281,7 +283,9 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
     const sectionPrefixes: Record<string, string[]> = {
       "My Tasks":   ["/my-tasks"],
       "Dashboard":  ["/"],
-      "Claims":     ["/claims"],
+      "Submission": ["/claims", "/claims/payers", "/claims/docs-to-submit", "/claims/submission", "/claims/query"],
+      "Recovery":   ["/claims/outstanding", "/claims/follow-up", "/claims/priority", "/claims/ar", "/claims/denials", "/claims/denials-workflow", "/claims/appeals"],
+      "Recon":      ["/claims/discrepancy", "/claims/reconciliation", "/claims/recon-alerts"],
       "Follow-Ups": ["/communications"],
       "Analytics":  ["/analytics", "/dashboard/executive"],
       "Admin Console": ["/settings", "/providers"],
