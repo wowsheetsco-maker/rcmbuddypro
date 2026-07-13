@@ -318,6 +318,7 @@ export default function AppealsTrackerPage() {
         claim={editing ? claimById.get(editing.claim_id) ?? null : null}
         onClose={() => setEditing(null)}
         onSaved={reload}
+        onChecklistChange={bumpChecklist}
       />
     </AppLayout>
   );
