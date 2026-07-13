@@ -5,8 +5,10 @@ export interface ActionCentreCounts {
   overdueFollowUps: number;
   irdaiBreaches: number;
   recoveryAtRisk: number;
+  docsToSubmit: number;
   loading: boolean;
 }
+
 
 const SETTLED = new Set([
   "settled",
