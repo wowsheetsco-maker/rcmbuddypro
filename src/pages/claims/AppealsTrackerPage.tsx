@@ -223,6 +223,7 @@ export default function AppealsTrackerPage() {
                     <TableHead>Claim / Patient</TableHead>
                     <TableHead>Payer</TableHead>
                     <TableHead>Denial code</TableHead>
+                    <TableHead>Checklist</TableHead>
                     <TableHead align="right">Gap</TableHead>
                     <TableHead>Updated</TableHead>
                     <TableHead align="right">Actions</TableHead>
