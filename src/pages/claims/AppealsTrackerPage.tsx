@@ -152,10 +152,30 @@ export default function AppealsTrackerPage() {
     ? (counts.accepted / (counts.accepted + counts.rejected)) * 100
     : 0;
 
+  // Full summary map over ALL appeals — needed so the reminder filter can
+  // apply before we compute the visible rows.
+  const summaryMap = useMemo(
+    () => getSummaryMap(appeals.map((a) => a.id)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appeals, checklistTick],
+  );
+
+  function matchesReminderFilter(appealId: string): boolean {
+    if (reminderFilter === "all") return true;
+    const s = summaryMap[appealId];
+    if (!s || s.total === 0) return false;
+    if (reminderFilter === "done") return s.done === s.total;
+    if (reminderFilter === "overdue") return s.overdue > 0;
+    if (reminderFilter === "due_soon") return s.dueSoon > 0;
+    if (reminderFilter === "on_track") return s.onTrack > 0 && s.overdue === 0 && s.dueSoon === 0 && s.done < s.total;
+    return true;
+  }
+
   const rows = useMemo(() => {
     const q = search.trim().toLowerCase();
     return appeals
       .filter((a) => filter === "all" || normalizeStatus(a.status) === filter)
+      .filter((a) => matchesReminderFilter(a.id))
       .filter((a) => {
         if (!q) return true;
         const c = claimById.get(a.claim_id);
@@ -166,24 +186,21 @@ export default function AppealsTrackerPage() {
           (c?.tpa_name || "").toLowerCase().includes(q)
         );
       });
-  }, [appeals, filter, search, claimById]);
-
-  // Progress + reminder summary across all currently visible appeals.
-  const summaryMap = useMemo(
-    () => getSummaryMap(rows.map((a) => a.id)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [rows, checklistTick],
-  );
+  }, [appeals, filter, reminderFilter, search, claimById, summaryMap]);
+
   const checklistTotals = useMemo(() => {
     let done = 0, total = 0, overdue = 0, dueSoon = 0;
-    for (const id of Object.keys(summaryMap)) {
-      done += summaryMap[id].done;
-      total += summaryMap[id].total;
-      overdue += summaryMap[id].overdue;
-      dueSoon += summaryMap[id].dueSoon;
+    for (const a of rows) {
+      const s = summaryMap[a.id];
+      if (!s) continue;
+      done += s.done;
+      total += s.total;
+      overdue += s.overdue;
+      dueSoon += s.dueSoon;
     }
     return { done, total, overdue, dueSoon, pct: total ? Math.round((done / total) * 100) : 0 };
-  }, [summaryMap]);
+  }, [summaryMap, rows]);
 
 
   const setStatus = async (id: string, next: AppealStatus) => {
