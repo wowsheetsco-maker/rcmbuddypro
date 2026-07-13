@@ -48,6 +48,7 @@ const HUBS: Hub[] = [
       { label: "Query",       path: "/claims/query" },
       { label: "Denials",     path: "/claims/denials" },
       { label: "Denial Workflow", path: "/claims/denials-workflow" },
+      { label: "Appeals Tracker", path: "/claims/appeals" },
     ],
   },
   {
@@ -65,6 +66,7 @@ const HUBS: Hub[] = [
     icon: BarChart3,
     tabs: [
       { label: "Payer Scorecard",     path: "/analytics/payer-scorecard" },
+      { label: "Benchmarks",          path: "/analytics/benchmarks" },
       { label: "Corporate Scorecard", path: "/analytics/corporate" },
       { label: "Staff Scorecard",     path: "/analytics/staff-scorecard" },
       { label: "Cashflow Trend",      path: "/analytics/cash-flow" },

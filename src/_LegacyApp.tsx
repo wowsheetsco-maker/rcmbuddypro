@@ -29,6 +29,8 @@ import DiscrepancyTrackerPage from "./pages/claims/DiscrepancyTrackerPage";
 import BankReconciliationPage from "./pages/claims/BankReconciliationPage";
 import DocsToSubmitPage from "./pages/claims/DocsToSubmitPage";
 import ReconciliationAlertsPage from "./pages/claims/ReconciliationAlertsPage";
+import AppealsTrackerPage from "./pages/claims/AppealsTrackerPage";
+import BenchmarksPage from "./pages/analytics/BenchmarksPage";
 import ArManagementPage from "./pages/claims/ArManagementPage";
 import QueryPage from "./pages/claims/QueryPage";
 // Communications
@@ -175,6 +177,8 @@ const ROUTES: Record<string, RouteEntry> = {
   "/claims/reconciliation": BankReconciliationPage,
   "/claims/recon-alerts": ReconciliationAlertsPage,
   "/claims/docs-to-submit": DocsToSubmitPage,
+  "/claims/appeals": AppealsTrackerPage,
+  "/analytics/benchmarks": BenchmarksPage,
   "/claims/ar": ArManagementPage,
   "/claims/query": QueryPage,
 

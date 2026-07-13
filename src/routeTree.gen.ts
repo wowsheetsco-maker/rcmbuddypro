@@ -39,9 +39,11 @@ import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_au
 import { Route as AuthenticatedClaimsDenialsWorkflowRouteImport } from './routes/_authenticated.claims.denials-workflow'
 import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
 import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
+import { Route as AuthenticatedClaimsAppealsRouteImport } from './routes/_authenticated.claims.appeals'
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
+import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
 import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
 import { Route as ApiPublicHooksWellnessMonthlyInvoicesRouteImport } from './routes/api/public/hooks/wellness-monthly-invoices'
 import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
@@ -213,6 +215,12 @@ const AuthenticatedClaimsArRoute = AuthenticatedClaimsArRouteImport.update({
   path: '/ar',
   getParentRoute: () => AuthenticatedClaimsRoute,
 } as any)
+const AuthenticatedClaimsAppealsRoute =
+  AuthenticatedClaimsAppealsRouteImport.update({
+    id: '/appeals',
+    path: '/appeals',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
 const AuthenticatedAnalyticsTpaReportRoute =
   AuthenticatedAnalyticsTpaReportRouteImport.update({
     id: '/tpa-report',
@@ -229,6 +237,12 @@ const AuthenticatedAnalyticsCashFlowRoute =
   AuthenticatedAnalyticsCashFlowRouteImport.update({
     id: '/cash-flow',
     path: '/cash-flow',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
+const AuthenticatedAnalyticsBenchmarksRoute =
+  AuthenticatedAnalyticsBenchmarksRouteImport.update({
+    id: '/benchmarks',
+    path: '/benchmarks',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
 const ApiPublicHooksWhatsappDeliveryRoute =
@@ -274,9 +288,11 @@ export interface FileRoutesByFullPath {
   '/my-tasks': typeof AuthenticatedMyTasksRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
+  '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
@@ -311,9 +327,11 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
   '/today': typeof AuthenticatedTodayRoute
+  '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
   '/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
@@ -352,9 +370,11 @@ export interface FileRoutesById {
   '/_authenticated/my-tasks': typeof AuthenticatedMyTasksRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
+  '/_authenticated/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/_authenticated/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
+  '/_authenticated/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/_authenticated/claims/ar': typeof AuthenticatedClaimsArRoute
   '/_authenticated/claims/denials': typeof AuthenticatedClaimsDenialsRoute
   '/_authenticated/claims/denials-workflow': typeof AuthenticatedClaimsDenialsWorkflowRoute
@@ -393,9 +413,11 @@ export interface FileRouteTypes {
     | '/my-tasks'
     | '/settings'
     | '/today'
+    | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
     | '/analytics/tpa-report'
+    | '/claims/appeals'
     | '/claims/ar'
     | '/claims/denials'
     | '/claims/denials-workflow'
@@ -430,9 +452,11 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/my-tasks'
     | '/today'
+    | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
     | '/analytics/tpa-report'
+    | '/claims/appeals'
     | '/claims/ar'
     | '/claims/denials'
     | '/claims/denials-workflow'
@@ -470,9 +494,11 @@ export interface FileRouteTypes {
     | '/_authenticated/my-tasks'
     | '/_authenticated/settings'
     | '/_authenticated/today'
+    | '/_authenticated/analytics/benchmarks'
     | '/_authenticated/analytics/cash-flow'
     | '/_authenticated/analytics/payer-scorecard'
     | '/_authenticated/analytics/tpa-report'
+    | '/_authenticated/claims/appeals'
     | '/_authenticated/claims/ar'
     | '/_authenticated/claims/denials'
     | '/_authenticated/claims/denials-workflow'
@@ -724,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsArRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/appeals': {
+      id: '/_authenticated/claims/appeals'
+      path: '/appeals'
+      fullPath: '/claims/appeals'
+      preLoaderRoute: typeof AuthenticatedClaimsAppealsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/analytics/tpa-report': {
       id: '/_authenticated/analytics/tpa-report'
       path: '/tpa-report'
@@ -743,6 +776,13 @@ declare module '@tanstack/react-router' {
       path: '/cash-flow'
       fullPath: '/analytics/cash-flow'
       preLoaderRoute: typeof AuthenticatedAnalyticsCashFlowRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
+    '/_authenticated/analytics/benchmarks': {
+      id: '/_authenticated/analytics/benchmarks'
+      path: '/benchmarks'
+      fullPath: '/analytics/benchmarks'
+      preLoaderRoute: typeof AuthenticatedAnalyticsBenchmarksRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
     '/api/public/hooks/whatsapp-delivery': {
@@ -784,6 +824,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedAnalyticsRouteChildren {
+  AuthenticatedAnalyticsBenchmarksRoute: typeof AuthenticatedAnalyticsBenchmarksRoute
   AuthenticatedAnalyticsCashFlowRoute: typeof AuthenticatedAnalyticsCashFlowRoute
   AuthenticatedAnalyticsPayerScorecardRoute: typeof AuthenticatedAnalyticsPayerScorecardRoute
   AuthenticatedAnalyticsTpaReportRoute: typeof AuthenticatedAnalyticsTpaReportRoute
@@ -791,6 +832,8 @@ interface AuthenticatedAnalyticsRouteChildren {
 
 const AuthenticatedAnalyticsRouteChildren: AuthenticatedAnalyticsRouteChildren =
   {
+    AuthenticatedAnalyticsBenchmarksRoute:
+      AuthenticatedAnalyticsBenchmarksRoute,
     AuthenticatedAnalyticsCashFlowRoute: AuthenticatedAnalyticsCashFlowRoute,
     AuthenticatedAnalyticsPayerScorecardRoute:
       AuthenticatedAnalyticsPayerScorecardRoute,
@@ -803,6 +846,7 @@ const AuthenticatedAnalyticsRouteWithChildren =
   )
 
 interface AuthenticatedClaimsRouteChildren {
+  AuthenticatedClaimsAppealsRoute: typeof AuthenticatedClaimsAppealsRoute
   AuthenticatedClaimsArRoute: typeof AuthenticatedClaimsArRoute
   AuthenticatedClaimsDenialsRoute: typeof AuthenticatedClaimsDenialsRoute
   AuthenticatedClaimsDenialsWorkflowRoute: typeof AuthenticatedClaimsDenialsWorkflowRoute
@@ -820,6 +864,7 @@ interface AuthenticatedClaimsRouteChildren {
 }
 
 const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
+  AuthenticatedClaimsAppealsRoute: AuthenticatedClaimsAppealsRoute,
   AuthenticatedClaimsArRoute: AuthenticatedClaimsArRoute,
   AuthenticatedClaimsDenialsRoute: AuthenticatedClaimsDenialsRoute,
   AuthenticatedClaimsDenialsWorkflowRoute:
