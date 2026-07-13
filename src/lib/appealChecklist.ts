@@ -120,20 +120,22 @@ export interface ChecklistSummary {
   total: number;
   overdue: number;
   dueSoon: number;
+  onTrack: number;
 }
 
 export function getSummary(appealId: string): ChecklistSummary {
   const list = load()[appealId];
-  if (!list?.length) return { done: 0, total: 0, overdue: 0, dueSoon: 0 };
+  if (!list?.length) return { done: 0, total: 0, overdue: 0, dueSoon: 0, onTrack: 0 };
   const now = new Date();
-  let done = 0, overdue = 0, dueSoon = 0;
+  let done = 0, overdue = 0, dueSoon = 0, onTrack = 0;
   for (const it of list) {
     if (it.done) { done += 1; continue; }
     const s = reminderStatus(it, now);
     if (s === "overdue") overdue += 1;
     else if (s === "due_soon") dueSoon += 1;
+    else if (s === "on_track") onTrack += 1;
   }
-  return { done, total: list.length, overdue, dueSoon };
+  return { done, total: list.length, overdue, dueSoon, onTrack };
 }
 
 /** Bulk-read summaries for many appeals in a single localStorage load. */
@@ -144,17 +146,18 @@ export function getSummaryMap(appealIds: string[]): Record<string, ChecklistSumm
   for (const id of appealIds) {
     const list = map[id];
     if (!list?.length) {
-      out[id] = { done: 0, total: 0, overdue: 0, dueSoon: 0 };
+      out[id] = { done: 0, total: 0, overdue: 0, dueSoon: 0, onTrack: 0 };
       continue;
     }
-    let done = 0, overdue = 0, dueSoon = 0;
+    let done = 0, overdue = 0, dueSoon = 0, onTrack = 0;
     for (const it of list) {
       if (it.done) { done += 1; continue; }
       const s = reminderStatus(it, now);
       if (s === "overdue") overdue += 1;
       else if (s === "due_soon") dueSoon += 1;
+      else if (s === "on_track") onTrack += 1;
     }
-    out[id] = { done, total: list.length, overdue, dueSoon };
+    out[id] = { done, total: list.length, overdue, dueSoon, onTrack };
   }
   return out;
 }
