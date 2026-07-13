@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from "react";
 import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import {
-  Swords, BarChart3, MessageSquare, Network, Settings, Search, Sparkles, MoreHorizontal,
+  BarChart3, MessageSquare, Settings, Search, MoreHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -21,37 +21,60 @@ interface HubTab {
   badge?: "overdue" | "irdai" | "outstanding" | "docsToSubmit";
 }
 
+interface HubGroup {
+  label: string;
+  tabs: HubTab[];
+}
 
 interface Hub {
   key: string;
   label: string;
   icon: LucideIcon;
   tabs: HubTab[];
+  /** Optional grouped layout; when present, renders as inline clusters instead of the flat tab bar. */
+  groups?: HubGroup[];
 }
+
+const CLAIMS_GROUPS: HubGroup[] = [
+  {
+    label: "Submission",
+    tabs: [
+      { label: "Payers",             path: "/claims/payers" },
+      { label: "Docs Not Submitted", path: "/claims/docs-to-submit", badge: "docsToSubmit" },
+      { label: "All Claims",         path: "/claims" },
+      { label: "Submission",         path: "/claims/submission" },
+      { label: "Query",              path: "/claims/query" },
+    ],
+  },
+  {
+    label: "Recovery",
+    tabs: [
+      { label: "Outstanding",     path: "/claims/outstanding", badge: "outstanding" },
+      { label: "Follow-Up",       path: "/claims/follow-up", badge: "overdue" },
+      { label: "Priority",        path: "/claims/priority" },
+      { label: "AR Management",   path: "/claims/ar" },
+      { label: "Denials",         path: "/claims/denials" },
+      { label: "Denial Workflow", path: "/claims/denials-workflow" },
+      { label: "Appeals Tracker", path: "/claims/appeals" },
+    ],
+  },
+  {
+    label: "Recon",
+    tabs: [
+      { label: "Discrepancy",    path: "/claims/discrepancy" },
+      { label: "Reconciliation", path: "/claims/reconciliation" },
+      { label: "Recon Alerts",   path: "/claims/recon-alerts" },
+    ],
+  },
+];
 
 const HUBS: Hub[] = [
   {
     key: "claims",
     label: "Claims",
     icon: Search,
-    tabs: [
-      { label: "Payers",      path: "/claims/payers" },
-      { label: "Docs Not Submitted", path: "/claims/docs-to-submit", badge: "docsToSubmit" },
-      { label: "All Claims",  path: "/claims" },
-      { label: "Submission",  path: "/claims/submission" },
-
-      { label: "Outstanding", path: "/claims/outstanding", badge: "outstanding" },
-      { label: "Follow-Up",   path: "/claims/follow-up", badge: "overdue" },
-      { label: "Priority",    path: "/claims/priority" },
-      { label: "Discrepancy", path: "/claims/discrepancy" },
-      { label: "Reconciliation", path: "/claims/reconciliation" },
-      { label: "Recon Alerts", path: "/claims/recon-alerts" },
-      { label: "AR Management", path: "/claims/ar" },
-      { label: "Query",       path: "/claims/query" },
-      { label: "Denials",     path: "/claims/denials" },
-      { label: "Denial Workflow", path: "/claims/denials-workflow" },
-      { label: "Appeals Tracker", path: "/claims/appeals" },
-    ],
+    groups: CLAIMS_GROUPS,
+    tabs: CLAIMS_GROUPS.flatMap((g) => g.tabs),
   },
   {
     key: "followups",
@@ -122,7 +145,6 @@ export default function HubTabBar() {
 
   if (!hub) return null;
 
-
   const badgeFor = (tab: HubTab): { text: string; tone: "danger" | "warn" } | null => {
     if (!tab.badge) return null;
     if (tab.badge === "overdue" && counts.overdueFollowUps > 0) {
@@ -140,8 +162,104 @@ export default function HubTabBar() {
     return null;
   };
 
-
   const HubIcon = hub.icon;
+
+  const renderTabPill = (tab: HubTab, idx: number, total: number, active: boolean) => {
+    const b = badgeFor(tab);
+    return (
+      <Link
+        key={tab.path}
+        to={tab.path}
+        ref={(el) => { tabRefs.current[idx] = el; }}
+        role="tab"
+        aria-selected={active}
+        aria-current={active ? "page" : undefined}
+        tabIndex={active || (idx === 0 && !tabRefs.current.some(Boolean)) ? 0 : -1}
+        onKeyDown={(e) => onKeyDown(e, idx, total)}
+        className={cn(
+          "flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[12.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+          active
+            ? "bg-primary/10 text-primary font-semibold"
+            : "text-muted-foreground hover:bg-muted hover:text-foreground",
+        )}
+      >
+        {tab.label}
+        {b && (
+          <Badge
+            variant="outline"
+            className={cn(
+              "h-4 px-1 text-[9.5px] font-semibold tabular-nums",
+              b.tone === "danger"
+                ? "border-destructive/30 bg-destructive/10 text-destructive"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
+            )}
+          >
+            {b.text}
+          </Badge>
+        )}
+      </Link>
+    );
+  };
+
+  const focusTab = (idx: number) => {
+    const node = tabRefs.current[idx];
+    if (node) node.focus();
+  };
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLAnchorElement>, idx: number, total: number) {
+    const last = total - 1;
+    let next = idx;
+    if (e.key === "ArrowRight") next = idx === last ? 0 : idx + 1;
+    else if (e.key === "ArrowLeft") next = idx === 0 ? last : idx - 1;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = last;
+    else if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const path = tabRefs.current[idx]?.getAttribute("href");
+      if (path) navigate(path);
+      return;
+    } else return;
+    e.preventDefault();
+    focusTab(next);
+    const path = tabRefs.current[next]?.getAttribute("href");
+    if (path) navigate(path);
+  }
+
+  // Grouped layout (currently used by Claims hub).
+  if (hub.groups) {
+    const groups = hub.groups;
+    const flat = groups.flatMap((g) => g.tabs);
+    let cursor = 0;
+    return (
+      <div className="sticky top-[calc(3rem+2.5rem)] z-[9] border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:hidden">
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-1.5 overflow-x-auto px-3 py-1.5 md:px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          role="tablist"
+          aria-label={`${hub.label} sections`}
+        >
+          <div className="flex shrink-0 items-center gap-1.5 pr-1 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <HubIcon className="h-3.5 w-3.5" />
+            {hub.label}
+          </div>
+          {groups.map((g, gi) => (
+            <div key={g.label} className="flex items-center gap-1.5">
+              {gi > 0 && <span className="hidden h-5 w-px bg-border md:inline-block" aria-hidden />}
+              <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">
+                {g.label}
+              </span>
+              <div className="flex items-center gap-1">
+                {g.tabs.map((tab) => {
+                  const idx = cursor++;
+                  return renderTabPill(tab, idx, flat.length, tab.path === pathname);
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const tabs = hub.key === "admin"
     ? hub.tabs.filter((t) => {
         const s = ADMIN_CONSOLE_SECTIONS.find((sec) => sec.path === t.path);
@@ -159,29 +277,6 @@ export default function HubTabBar() {
     hidden = tabs.filter((t) => !visible.includes(t));
   }
 
-  const focusTab = (idx: number) => {
-    const node = tabRefs.current[idx];
-    if (node) node.focus();
-  };
-
-  const onKeyDown = (e: React.KeyboardEvent<HTMLAnchorElement>, idx: number) => {
-    const last = visible.length - 1;
-    let next = idx;
-    if (e.key === "ArrowRight") next = idx === last ? 0 : idx + 1;
-    else if (e.key === "ArrowLeft") next = idx === 0 ? last : idx - 1;
-    else if (e.key === "Home") next = 0;
-    else if (e.key === "End") next = last;
-    else if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      navigate(visible[idx].path);
-      return;
-    } else return;
-    e.preventDefault();
-    focusTab(next);
-    // Activation follows focus, like ARIA "automatic" tabs
-    navigate(visible[next].path);
-  };
-
   return (
     <div className="sticky top-[calc(3rem+2.5rem)] z-[9] border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 print:hidden">
       <div
@@ -194,43 +289,7 @@ export default function HubTabBar() {
           {hub.label}
         </div>
         <div className="flex items-center gap-1">
-          {visible.map((tab, idx) => {
-            const active = tab.path === pathname;
-            const b = badgeFor(tab);
-            return (
-              <Link
-                key={tab.path}
-                to={tab.path}
-                ref={(el) => { tabRefs.current[idx] = el; }}
-                role="tab"
-                aria-selected={active}
-                aria-current={active ? "page" : undefined}
-                tabIndex={active || (activeIdx === -1 && idx === 0) ? 0 : -1}
-                onKeyDown={(e) => onKeyDown(e, idx)}
-                className={cn(
-                  "flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1 text-[12.5px] transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-                  active
-                    ? "bg-primary/10 text-primary font-semibold"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                )}
-              >
-                {tab.label}
-                {b && (
-                  <Badge
-                    variant="outline"
-                    className={cn(
-                      "h-4 px-1 text-[9.5px] font-semibold tabular-nums",
-                      b.tone === "danger"
-                        ? "border-destructive/30 bg-destructive/10 text-destructive"
-                        : "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-400",
-                    )}
-                  >
-                    {b.text}
-                  </Badge>
-                )}
-              </Link>
-            );
-          })}
+          {visible.map((tab, idx) => renderTabPill(tab, idx, visible.length, tab.path === pathname))}
           {hidden.length > 0 && (
             <Popover>
               <PopoverTrigger asChild>
