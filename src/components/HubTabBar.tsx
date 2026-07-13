@@ -18,8 +18,9 @@ interface HubTab {
   label: string;
   path: string;
   /** Key into action-centre counts to show a numeric badge. */
-  badge?: "overdue" | "irdai" | "outstanding";
+  badge?: "overdue" | "irdai" | "outstanding" | "docsToSubmit";
 }
+
 
 interface Hub {
   key: string;
