@@ -29,8 +29,10 @@ export function useActionCentreCounts(): ActionCentreCounts {
     overdueFollowUps: 0,
     irdaiBreaches: 0,
     recoveryAtRisk: 0,
+    docsToSubmit: 0,
     loading: true,
   });
+
 
   useEffect(() => {
     let cancelled = false;
