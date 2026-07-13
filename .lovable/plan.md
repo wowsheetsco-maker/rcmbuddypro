@@ -1,57 +1,50 @@
-## Overview
+## Goal
+The Claims hub currently has 14 tabs crammed into one horizontal bar with a "More" overflow. Group them into 3 logical clusters so users can scan faster and stop losing items in the overflow menu.
 
-Five related enhancements. Several already exist as pages — the work is to close specific gaps you named (alert rules, code tagging, SLA reminders, benchmark charts, and a Docs-to-Submit tab), not to rebuild them.
+## Proposed grouping (3 clusters)
 
-Since these are all substantial, I want to confirm scope before writing code so we don't sprawl. Below is what I'd build, in the order I'd ship it.
+**1. Submission & Intake**
+- Payers
+- Docs Not Submitted
+- All Claims
+- Submission
+- Query
 
----
+**2. Recovery & Follow-Up**
+- Outstanding
+- Follow-Up
+- Priority
+- AR Management
+- Denials
+- Denial Workflow
+- Appeals Tracker
 
-### 1. Docs-to-Submit tab in Claims menu (smallest, do first)
+**3. Reconciliation & Quality**
+- Discrepancy
+- Reconciliation
+- Recon Alerts
 
-- New route `/_authenticated/claims/docs-to-submit` → `DocsToSubmitPage`.
-- Uses existing `isDocsToSubmit()` from `claimStatusBuckets.ts` (approved status + discharged, not yet submitted).
-- Table: claim no, patient, discharge date, days since discharge, approved amount, payer, assignee. Row action → "Mark submitted" (opens submission drawer).
-- Add "Docs to Submit" link in the Claims sidebar group with a live count badge.
+## UI approach
+In `src/components/HubTabBar.tsx`, when the active hub is `claims`, render three grouped clusters inline on the same sticky bar, separated by a thin vertical divider and a small uppercase group label (Submission / Recovery / Reconciliation). Each cluster keeps the existing pill styling, active state, keyboard nav, and badges (Docs Not Submitted, Outstanding, Follow-Up).
 
-### 2. Reconciliation alert rules (settlement + TDS shortfall)
+```text
+[CLAIMS] SUBMISSION  Payers · Docs Not Submitted(25) · All · Submission · Query
+         | RECOVERY  Outstanding(₹3.1Cr) · Follow-Up · Priority · AR · Denials · Workflow · Appeals
+         | RECON     Discrepancy · Reconciliation · Recon Alerts
+```
 
-- Add `reconciliation_alerts` table (org-scoped, RLS + grants) with rule config: threshold % variance, TDS-tolerance %, notify channel.
-- Server fn `evaluateReconciliationAlerts` — on each settled claim, compute expected = approved − expected_TDS; if settled < expected − tolerance, insert a notification row.
-- UI: alert rules panel in Settings → Notifications, alert inbox surfaced on Bank Reconciliation page (extends existing page, no new nav).
-- No cron yet — evaluate on claim update trigger + on-demand "Re-scan" button.
+On narrow viewports the bar stays horizontally scrollable (current behavior); the "More" overflow popover is removed for claims since grouping makes all tabs visible. On desktop the three groups sit on one row; if space is tight they wrap to a second row (groups stay intact).
 
-### 3. Denial recovery workflow upgrades
+## Technical changes
+- Extend the `Hub` type in `HubTabBar.tsx` to optionally carry `groups: { label: string; tabs: HubTab[] }[]` alongside/instead of `tabs`.
+- Convert the `claims` hub entry to use `groups` with the three clusters above; leave `followups`, `analytics`, `admin` unchanged (still flat `tabs`).
+- In the render path, if `hub.groups` is set, map over groups → render group label chip + tab pills + divider; skip the `MAX_VISIBLE_TABS`/overflow logic for grouped hubs. Keep keyboard nav working across all visible tabs by flattening `visible` from the groups.
+- Preserve badge rendering (`badgeFor`) and admin-subrole filtering pattern (not needed for claims but keep code intact for admin hub).
 
-- Extend existing `DenialWorkflowPage`: add denial-code multi-select per claim (dictionary already in `data/denialCodes.ts`).
-- Appeal status column (draft → submitted → accepted/rejected) writing to existing `claim_appeals` table.
-- "Suggested next action" panel — reuses `playbookMatch.ts` + payer from `insurerProfiles.ts` to render 2–3 concrete steps.
+## Out of scope
+- No routing changes; tab paths stay the same.
+- No sidebar/left-nav rewrite — this stays in the existing top hub tab bar.
+- No changes to page contents.
 
-### 4. Stuck-claims worklist with SLA
-
-- Extend `PriorityWorklistPage` (do not create new route): add filter chip "Stuck" that limits to Processing / Claim in Progress / Settlement Initiated where `days_since_last_update > sla_days` (configurable per payer, default 15).
-- Row badge shows SLA breach severity. "Send reminder" button writes a follow-up + optional WhatsApp/email via existing `whatsapp.functions` / reminders pipeline.
-- Nightly cron (`pg_cron` → existing dispatch-notifications hook) emails owners of breached rows.
-
-### 5. Payer & TPA benchmark dashboards
-
-- Extend existing `PayerScorecardPage` + `TpaReportPage`:
-  - Add month-by-month trend chart (denial rate %, avg turnaround days, net realization %) — data already available via `payerTrends.ts` + `payerBenchmarks.ts`.
-  - Add a "vs peer average" column so each payer/TPA can be benchmarked against the org average.
-- No new routes needed.
-
----
-
-## Technical notes
-
-- One migration: `reconciliation_alerts` table + `reconciliation_alert_events` log, both with `org_id` + RLS + GRANTs.
-- No new secrets; alerts reuse existing notification pipeline.
-- All logic goes through `createServerFn` (no edge functions).
-- Extend, don't duplicate — most of the surface area already exists (`DenialWorkflowPage`, `PriorityWorklistPage`, `PayerScorecardPage`, `TpaReportPage`, `BankReconciliationPage`).
-
----
-
-## Questions before I start
-
-1. **Scope:** ship all 5, or start with #1 + #2 (the two you'll see value from fastest) and queue the rest?
-2. **Alert delivery:** in-app only, or also email/WhatsApp on first pass?
-3. **Stuck-claim SLA default:** 15 days good, or a different threshold per stage (Processing 10, Settlement Initiated 30)?
+## Confirm before build
+Is the 3-way grouping above the split you want, or would you prefer a different distribution (e.g., splitting Denials/Appeals into their own group)?
