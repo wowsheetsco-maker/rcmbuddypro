@@ -97,6 +97,7 @@ const HUBS: Hub[] = [
       { label: "Corporate Scorecard", path: "/analytics/corporate" },
       { label: "Staff Scorecard",     path: "/analytics/staff-scorecard" },
       { label: "Cashflow Trend",      path: "/analytics/cash-flow" },
+      { label: "Submission TAT",      path: "/analytics/submission-tat" },
     ],
   },
   {
