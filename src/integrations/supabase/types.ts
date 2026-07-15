@@ -1409,6 +1409,7 @@ export type Database = {
             | Database["public"]["Enums"]["claim_status_code"]
             | null
           claimed_amount: number
+          coder_name: string | null
           copay: number
           created_at: string
           data_quality: Json
@@ -1449,8 +1450,10 @@ export type Database = {
           tds_amount: number
           tpa_name: string
           tpa_spoc: string | null
+          treating_doctor: string | null
           treatment: string | null
           updated_at: string
+          ward: string | null
         }
         Insert: {
           action_plan?: string | null
@@ -1467,6 +1470,7 @@ export type Database = {
             | Database["public"]["Enums"]["claim_status_code"]
             | null
           claimed_amount?: number
+          coder_name?: string | null
           copay?: number
           created_at?: string
           data_quality?: Json
@@ -1507,8 +1511,10 @@ export type Database = {
           tds_amount?: number
           tpa_name: string
           tpa_spoc?: string | null
+          treating_doctor?: string | null
           treatment?: string | null
           updated_at?: string
+          ward?: string | null
         }
         Update: {
           action_plan?: string | null
@@ -1525,6 +1531,7 @@ export type Database = {
             | Database["public"]["Enums"]["claim_status_code"]
             | null
           claimed_amount?: number
+          coder_name?: string | null
           copay?: number
           created_at?: string
           data_quality?: Json
@@ -1565,8 +1572,10 @@ export type Database = {
           tds_amount?: number
           tpa_name?: string
           tpa_spoc?: string | null
+          treating_doctor?: string | null
           treatment?: string | null
           updated_at?: string
+          ward?: string | null
         }
         Relationships: [
           {

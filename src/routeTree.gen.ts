@@ -41,6 +41,7 @@ import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authen
 import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
 import { Route as AuthenticatedClaimsAppealsRouteImport } from './routes/_authenticated.claims.appeals'
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
+import { Route as AuthenticatedAnalyticsSubmissionTatRouteImport } from './routes/_authenticated.analytics.submission-tat'
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
@@ -227,6 +228,12 @@ const AuthenticatedAnalyticsTpaReportRoute =
     path: '/tpa-report',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
+const AuthenticatedAnalyticsSubmissionTatRoute =
+  AuthenticatedAnalyticsSubmissionTatRouteImport.update({
+    id: '/submission-tat',
+    path: '/submission-tat',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
 const AuthenticatedAnalyticsPayerScorecardRoute =
   AuthenticatedAnalyticsPayerScorecardRouteImport.update({
     id: '/payer-scorecard',
@@ -291,6 +298,7 @@ export interface FileRoutesByFullPath {
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
@@ -330,6 +338,7 @@ export interface FileRoutesByTo {
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/claims/ar': typeof AuthenticatedClaimsArRoute
@@ -373,6 +382,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/_authenticated/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/_authenticated/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/_authenticated/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
   '/_authenticated/claims/ar': typeof AuthenticatedClaimsArRoute
@@ -416,6 +426,7 @@ export interface FileRouteTypes {
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
+    | '/analytics/submission-tat'
     | '/analytics/tpa-report'
     | '/claims/appeals'
     | '/claims/ar'
@@ -455,6 +466,7 @@ export interface FileRouteTypes {
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/payer-scorecard'
+    | '/analytics/submission-tat'
     | '/analytics/tpa-report'
     | '/claims/appeals'
     | '/claims/ar'
@@ -497,6 +509,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics/benchmarks'
     | '/_authenticated/analytics/cash-flow'
     | '/_authenticated/analytics/payer-scorecard'
+    | '/_authenticated/analytics/submission-tat'
     | '/_authenticated/analytics/tpa-report'
     | '/_authenticated/claims/appeals'
     | '/_authenticated/claims/ar'
@@ -764,6 +777,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsTpaReportRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
+    '/_authenticated/analytics/submission-tat': {
+      id: '/_authenticated/analytics/submission-tat'
+      path: '/submission-tat'
+      fullPath: '/analytics/submission-tat'
+      preLoaderRoute: typeof AuthenticatedAnalyticsSubmissionTatRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
     '/_authenticated/analytics/payer-scorecard': {
       id: '/_authenticated/analytics/payer-scorecard'
       path: '/payer-scorecard'
@@ -827,6 +847,7 @@ interface AuthenticatedAnalyticsRouteChildren {
   AuthenticatedAnalyticsBenchmarksRoute: typeof AuthenticatedAnalyticsBenchmarksRoute
   AuthenticatedAnalyticsCashFlowRoute: typeof AuthenticatedAnalyticsCashFlowRoute
   AuthenticatedAnalyticsPayerScorecardRoute: typeof AuthenticatedAnalyticsPayerScorecardRoute
+  AuthenticatedAnalyticsSubmissionTatRoute: typeof AuthenticatedAnalyticsSubmissionTatRoute
   AuthenticatedAnalyticsTpaReportRoute: typeof AuthenticatedAnalyticsTpaReportRoute
 }
 
@@ -837,6 +858,8 @@ const AuthenticatedAnalyticsRouteChildren: AuthenticatedAnalyticsRouteChildren =
     AuthenticatedAnalyticsCashFlowRoute: AuthenticatedAnalyticsCashFlowRoute,
     AuthenticatedAnalyticsPayerScorecardRoute:
       AuthenticatedAnalyticsPayerScorecardRoute,
+    AuthenticatedAnalyticsSubmissionTatRoute:
+      AuthenticatedAnalyticsSubmissionTatRoute,
     AuthenticatedAnalyticsTpaReportRoute: AuthenticatedAnalyticsTpaReportRoute,
   }
 
@@ -958,13 +981,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
