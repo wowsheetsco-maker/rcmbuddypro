@@ -7,10 +7,15 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { useGlobalFilter } from "@/components/global-filter-context";
 import { cn } from "@/lib/utils";
 
-type PresetId = "7d" | "30d" | "90d" | "mtd" | "qtd" | "ytd" | "12m" | "all" | "custom";
+type PresetId = "7d" | "30d" | "90d" | "mtd" | "qtd" | "ytd" | "12m" | "fytd" | "prev_fy" | "all" | "custom";
 
 function startOf(d: Date) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
 function addDays(d: Date, n: number) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+
+/** Indian Financial Year: 1 Apr → 31 Mar. Returns start year for the FY containing `d`. */
+function fyStartYear(d: Date): number {
+  return d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+}
 
 function rangeForPreset(id: PresetId): { from: Date | null; to: Date | null } {
   const today = startOf(new Date());
@@ -25,6 +30,14 @@ function rangeForPreset(id: PresetId): { from: Date | null; to: Date | null } {
     }
     case "ytd": return { from: new Date(today.getFullYear(), 0, 1), to: today };
     case "12m": return { from: addDays(today, -364), to: today };
+    case "fytd": {
+      const y = fyStartYear(today);
+      return { from: new Date(y, 3, 1), to: today };
+    }
+    case "prev_fy": {
+      const y = fyStartYear(today) - 1;
+      return { from: new Date(y, 3, 1), to: new Date(y + 1, 2, 31) };
+    }
     case "all":
     default: return { from: null, to: null };
   }
@@ -36,7 +49,9 @@ const PRESETS: { id: PresetId; label: string }[] = [
   { id: "90d", label: "Last 90 days" },
   { id: "mtd", label: "Month to date" },
   { id: "qtd", label: "Quarter to date" },
-  { id: "ytd", label: "Year to date" },
+  { id: "ytd", label: "Calendar YTD" },
+  { id: "fytd", label: "Financial YTD (Apr →)" },
+  { id: "prev_fy", label: "Previous FY (Apr–Mar)" },
   { id: "12m", label: "Last 12 months" },
   { id: "all", label: "All time" },
 ];
