@@ -54,9 +54,10 @@ const RECOVERY_TABS: HubTab[] = [
 ];
 
 const RECON_TABS: HubTab[] = [
-  { label: "Discrepancy",    path: "/claims/discrepancy" },
-  { label: "Reconciliation", path: "/claims/reconciliation" },
-  { label: "Recon Alerts",   path: "/claims/recon-alerts" },
+  { label: "Discrepancy",     path: "/claims/discrepancy" },
+  { label: "Reconciliation",  path: "/claims/reconciliation" },
+  { label: "Recon Alerts",    path: "/claims/recon-alerts" },
+  { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
 ];
 
 const HUBS: Hub[] = [
@@ -92,6 +93,8 @@ const HUBS: Hub[] = [
     label: "Analytics",
     icon: BarChart3,
     tabs: [
+      { label: "Leakage",             path: "/analytics/leakage" },
+      { label: "Exceptions",          path: "/analytics/exceptions" },
       { label: "Payer Scorecard",     path: "/analytics/payer-scorecard" },
       { label: "Benchmarks",          path: "/analytics/benchmarks" },
       { label: "Corporate Scorecard", path: "/analytics/corporate" },

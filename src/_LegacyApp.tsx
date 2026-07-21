@@ -31,6 +31,9 @@ import DocsToSubmitPage from "./pages/claims/DocsToSubmitPage";
 import ReconciliationAlertsPage from "./pages/claims/ReconciliationAlertsPage";
 import AppealsTrackerPage from "./pages/claims/AppealsTrackerPage";
 import BenchmarksPage from "./pages/analytics/BenchmarksPage";
+import LeakageDashboardPage from "./pages/analytics/LeakageDashboardPage";
+import ExecutiveExceptionsPage from "./pages/analytics/ExecutiveExceptionsPage";
+import ZeroCancelledRegisterPage from "./pages/claims/ZeroCancelledRegisterPage";
 import ArManagementPage from "./pages/claims/ArManagementPage";
 import QueryPage from "./pages/claims/QueryPage";
 // Communications
@@ -179,6 +182,9 @@ const ROUTES: Record<string, RouteEntry> = {
   "/claims/docs-to-submit": DocsToSubmitPage,
   "/claims/appeals": AppealsTrackerPage,
   "/analytics/benchmarks": BenchmarksPage,
+  "/analytics/leakage": LeakageDashboardPage,
+  "/analytics/exceptions": ExecutiveExceptionsPage,
+  "/claims/zero-cancelled": ZeroCancelledRegisterPage,
   "/claims/ar": ArManagementPage,
   "/claims/query": QueryPage,
 

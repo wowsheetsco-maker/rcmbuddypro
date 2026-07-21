@@ -26,6 +26,7 @@ import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenti
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated.settings.users'
 import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
 import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
+import { Route as AuthenticatedClaimsZeroCancelledRouteImport } from './routes/_authenticated.claims.zero-cancelled'
 import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
 import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
 import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
@@ -43,6 +44,8 @@ import { Route as AuthenticatedClaimsAppealsRouteImport } from './routes/_authen
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
 import { Route as AuthenticatedAnalyticsSubmissionTatRouteImport } from './routes/_authenticated.analytics.submission-tat'
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
+import { Route as AuthenticatedAnalyticsLeakageRouteImport } from './routes/_authenticated.analytics.leakage'
+import { Route as AuthenticatedAnalyticsExceptionsRouteImport } from './routes/_authenticated.analytics.exceptions'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
 import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
@@ -139,6 +142,12 @@ const AuthenticatedDashboardExecutiveRoute =
     id: '/executive',
     path: '/executive',
     getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedClaimsZeroCancelledRoute =
+  AuthenticatedClaimsZeroCancelledRouteImport.update({
+    id: '/zero-cancelled',
+    path: '/zero-cancelled',
+    getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
 const AuthenticatedClaimsTdsRoute = AuthenticatedClaimsTdsRouteImport.update({
   id: '/tds',
@@ -240,6 +249,18 @@ const AuthenticatedAnalyticsPayerScorecardRoute =
     path: '/payer-scorecard',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
+const AuthenticatedAnalyticsLeakageRoute =
+  AuthenticatedAnalyticsLeakageRouteImport.update({
+    id: '/leakage',
+    path: '/leakage',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
+const AuthenticatedAnalyticsExceptionsRoute =
+  AuthenticatedAnalyticsExceptionsRouteImport.update({
+    id: '/exceptions',
+    path: '/exceptions',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
 const AuthenticatedAnalyticsCashFlowRoute =
   AuthenticatedAnalyticsCashFlowRouteImport.update({
     id: '/cash-flow',
@@ -297,6 +318,8 @@ export interface FileRoutesByFullPath {
   '/today': typeof AuthenticatedTodayRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
+  '/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
+  '/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
@@ -314,6 +337,7 @@ export interface FileRoutesByFullPath {
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
+  '/claims/zero-cancelled': typeof AuthenticatedClaimsZeroCancelledRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
@@ -337,6 +361,8 @@ export interface FileRoutesByTo {
   '/today': typeof AuthenticatedTodayRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
+  '/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
+  '/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
@@ -354,6 +380,7 @@ export interface FileRoutesByTo {
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/claims/tds': typeof AuthenticatedClaimsTdsRoute
+  '/claims/zero-cancelled': typeof AuthenticatedClaimsZeroCancelledRoute
   '/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
@@ -381,6 +408,8 @@ export interface FileRoutesById {
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
+  '/_authenticated/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
+  '/_authenticated/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/_authenticated/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
   '/_authenticated/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
@@ -398,6 +427,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
   '/_authenticated/claims/submission': typeof AuthenticatedClaimsSubmissionRoute
   '/_authenticated/claims/tds': typeof AuthenticatedClaimsTdsRoute
+  '/_authenticated/claims/zero-cancelled': typeof AuthenticatedClaimsZeroCancelledRoute
   '/_authenticated/dashboard/executive': typeof AuthenticatedDashboardExecutiveRoute
   '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
@@ -425,6 +455,8 @@ export interface FileRouteTypes {
     | '/today'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
+    | '/analytics/exceptions'
+    | '/analytics/leakage'
     | '/analytics/payer-scorecard'
     | '/analytics/submission-tat'
     | '/analytics/tpa-report'
@@ -442,6 +474,7 @@ export interface FileRouteTypes {
     | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
+    | '/claims/zero-cancelled'
     | '/dashboard/executive'
     | '/settings/permissions'
     | '/settings/users'
@@ -465,6 +498,8 @@ export interface FileRouteTypes {
     | '/today'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
+    | '/analytics/exceptions'
+    | '/analytics/leakage'
     | '/analytics/payer-scorecard'
     | '/analytics/submission-tat'
     | '/analytics/tpa-report'
@@ -482,6 +517,7 @@ export interface FileRouteTypes {
     | '/claims/reconciliation'
     | '/claims/submission'
     | '/claims/tds'
+    | '/claims/zero-cancelled'
     | '/dashboard/executive'
     | '/settings/permissions'
     | '/settings/users'
@@ -508,6 +544,8 @@ export interface FileRouteTypes {
     | '/_authenticated/today'
     | '/_authenticated/analytics/benchmarks'
     | '/_authenticated/analytics/cash-flow'
+    | '/_authenticated/analytics/exceptions'
+    | '/_authenticated/analytics/leakage'
     | '/_authenticated/analytics/payer-scorecard'
     | '/_authenticated/analytics/submission-tat'
     | '/_authenticated/analytics/tpa-report'
@@ -525,6 +563,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/reconciliation'
     | '/_authenticated/claims/submission'
     | '/_authenticated/claims/tds'
+    | '/_authenticated/claims/zero-cancelled'
     | '/_authenticated/dashboard/executive'
     | '/_authenticated/settings/permissions'
     | '/_authenticated/settings/users'
@@ -672,6 +711,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardExecutiveRouteImport
       parentRoute: typeof AuthenticatedDashboardRoute
     }
+    '/_authenticated/claims/zero-cancelled': {
+      id: '/_authenticated/claims/zero-cancelled'
+      path: '/zero-cancelled'
+      fullPath: '/claims/zero-cancelled'
+      preLoaderRoute: typeof AuthenticatedClaimsZeroCancelledRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/tds': {
       id: '/_authenticated/claims/tds'
       path: '/tds'
@@ -791,6 +837,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsPayerScorecardRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
+    '/_authenticated/analytics/leakage': {
+      id: '/_authenticated/analytics/leakage'
+      path: '/leakage'
+      fullPath: '/analytics/leakage'
+      preLoaderRoute: typeof AuthenticatedAnalyticsLeakageRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
+    '/_authenticated/analytics/exceptions': {
+      id: '/_authenticated/analytics/exceptions'
+      path: '/exceptions'
+      fullPath: '/analytics/exceptions'
+      preLoaderRoute: typeof AuthenticatedAnalyticsExceptionsRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
     '/_authenticated/analytics/cash-flow': {
       id: '/_authenticated/analytics/cash-flow'
       path: '/cash-flow'
@@ -846,6 +906,8 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAnalyticsRouteChildren {
   AuthenticatedAnalyticsBenchmarksRoute: typeof AuthenticatedAnalyticsBenchmarksRoute
   AuthenticatedAnalyticsCashFlowRoute: typeof AuthenticatedAnalyticsCashFlowRoute
+  AuthenticatedAnalyticsExceptionsRoute: typeof AuthenticatedAnalyticsExceptionsRoute
+  AuthenticatedAnalyticsLeakageRoute: typeof AuthenticatedAnalyticsLeakageRoute
   AuthenticatedAnalyticsPayerScorecardRoute: typeof AuthenticatedAnalyticsPayerScorecardRoute
   AuthenticatedAnalyticsSubmissionTatRoute: typeof AuthenticatedAnalyticsSubmissionTatRoute
   AuthenticatedAnalyticsTpaReportRoute: typeof AuthenticatedAnalyticsTpaReportRoute
@@ -856,6 +918,9 @@ const AuthenticatedAnalyticsRouteChildren: AuthenticatedAnalyticsRouteChildren =
     AuthenticatedAnalyticsBenchmarksRoute:
       AuthenticatedAnalyticsBenchmarksRoute,
     AuthenticatedAnalyticsCashFlowRoute: AuthenticatedAnalyticsCashFlowRoute,
+    AuthenticatedAnalyticsExceptionsRoute:
+      AuthenticatedAnalyticsExceptionsRoute,
+    AuthenticatedAnalyticsLeakageRoute: AuthenticatedAnalyticsLeakageRoute,
     AuthenticatedAnalyticsPayerScorecardRoute:
       AuthenticatedAnalyticsPayerScorecardRoute,
     AuthenticatedAnalyticsSubmissionTatRoute:
@@ -883,6 +948,7 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsReconciliationRoute: typeof AuthenticatedClaimsReconciliationRoute
   AuthenticatedClaimsSubmissionRoute: typeof AuthenticatedClaimsSubmissionRoute
   AuthenticatedClaimsTdsRoute: typeof AuthenticatedClaimsTdsRoute
+  AuthenticatedClaimsZeroCancelledRoute: typeof AuthenticatedClaimsZeroCancelledRoute
   AuthenticatedClaimsIndexRoute: typeof AuthenticatedClaimsIndexRoute
 }
 
@@ -903,6 +969,7 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
     AuthenticatedClaimsReconciliationRoute,
   AuthenticatedClaimsSubmissionRoute: AuthenticatedClaimsSubmissionRoute,
   AuthenticatedClaimsTdsRoute: AuthenticatedClaimsTdsRoute,
+  AuthenticatedClaimsZeroCancelledRoute: AuthenticatedClaimsZeroCancelledRoute,
   AuthenticatedClaimsIndexRoute: AuthenticatedClaimsIndexRoute,
 }
 
@@ -981,13 +1048,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
