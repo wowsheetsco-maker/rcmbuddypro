@@ -82,10 +82,10 @@ function Inner() {
       </div>
 
       <KpiGrid>
-        <KpiCard title="₹0 approved claims" value={zero.length.toLocaleString("en-IN")} icon={Ban} tone="warning" hint={`₹${formatInr(zeroValue)} originally claimed`} />
-        <KpiCard title="Cancelled / withdrawn" value={cancelled.length.toLocaleString("en-IN")} icon={FileMinus} hint={`₹${formatInr(cancelledValue)} originally claimed`} />
-        <KpiCard title="Total in window" value={scoped.length.toLocaleString("en-IN")} hint="Claims within date filter" />
-        <KpiCard title="Combined leakage risk" value={formatInr(zeroValue + cancelledValue)} hint="Claimed value of unproductive claims" />
+        <KpiCard label="₹0 approved claims" value={zero.length.toLocaleString("en-IN")} icon={<Ban className="h-4 w-4" />} tone="denial" caption={`${formatInr(zeroValue)} originally claimed`} />
+        <KpiCard label="Cancelled / withdrawn" value={cancelled.length.toLocaleString("en-IN")} icon={<FileMinus className="h-4 w-4" />} caption={`${formatInr(cancelledValue)} originally claimed`} />
+        <KpiCard label="Total in window" value={scoped.length.toLocaleString("en-IN")} caption="Claims within date filter" />
+        <KpiCard label="Combined leakage risk" value={formatInr(zeroValue + cancelledValue)} caption="Claimed value of unproductive claims" />
       </KpiGrid>
 
       <Card>

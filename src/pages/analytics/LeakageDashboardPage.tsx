@@ -73,28 +73,28 @@ function Inner() {
 
       <KpiGrid>
         <KpiCard
-          title="Total leakage flagged"
+          label="Total leakage flagged"
           value={formatInr(total.amount)}
-          icon={IndianRupee}
-          tone="danger"
-          hint={`${total.claims} detections across ${buckets.filter(b=>b.claims>0).length} categories`}
+          icon={<IndianRupee className="h-4 w-4" />}
+          tone="denial"
+          caption={`${total.claims} detections across ${buckets.filter(b=>b.claims>0).length} categories`}
         />
         <KpiCard
-          title="Highest single category"
+          label="Highest single category"
           value={buckets[0]?.claims ? formatInr(buckets[0].amount) : "—"}
-          icon={AlertTriangle}
-          tone="warning"
-          hint={buckets[0]?.title ?? "No detections"}
+          icon={<AlertTriangle className="h-4 w-4" />}
+          tone="denial"
+          caption={buckets[0]?.title ?? "No detections"}
         />
         <KpiCard
-          title="Claims to review"
+          label="Claims to review"
           value={total.claims.toLocaleString("en-IN")}
-          hint="Sum across buckets (a claim may appear in >1)"
+          caption="Sum across buckets (a claim may appear in >1)"
         />
         <KpiCard
-          title="Data window"
+          label="Data window"
           value={loading ? "…" : `${scoped.length}`}
-          hint="Claims in current date filter"
+          caption="Claims in current date filter"
         />
       </KpiGrid>
 
