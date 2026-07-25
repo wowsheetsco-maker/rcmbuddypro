@@ -45,6 +45,7 @@ import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/
 import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
 import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
 import { Route as AuthenticatedClaimsZeroCancelledRouteImport } from './routes/_authenticated.claims.zero-cancelled'
+import { Route as AuthenticatedDashboardIndexRouteImport } from './routes/_authenticated.dashboard.index'
 import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
 import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
@@ -256,6 +257,12 @@ const AuthenticatedClaimsZeroCancelledRoute =
     path: '/zero-cancelled',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
+const AuthenticatedDashboardIndexRoute =
+  AuthenticatedDashboardIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
 const AuthenticatedDashboardExecutiveRoute =
   AuthenticatedDashboardExecutiveRouteImport.update({
     id: '/executive',
@@ -350,6 +357,7 @@ export interface FileRoutesByFullPath {
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
@@ -364,7 +372,6 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRouteWithChildren
-  '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
   '/today': typeof AuthenticatedTodayRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
@@ -394,6 +401,7 @@ export interface FileRoutesByTo {
   '/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/claims': typeof AuthenticatedClaimsIndexRoute
+  '/dashboard': typeof AuthenticatedDashboardIndexRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
@@ -442,6 +450,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/permissions': typeof AuthenticatedSettingsPermissionsRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/claims/': typeof AuthenticatedClaimsIndexRoute
+  '/_authenticated/dashboard/': typeof AuthenticatedDashboardIndexRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/api/public/hooks/dispatch-notifications': typeof ApiPublicHooksDispatchNotificationsRoute
   '/api/public/hooks/opd-appointment-reminders': typeof ApiPublicHooksOpdAppointmentRemindersRoute
@@ -490,6 +499,7 @@ export interface FileRouteTypes {
     | '/settings/permissions'
     | '/settings/users'
     | '/claims/'
+    | '/dashboard/'
     | '/settings/'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
@@ -504,7 +514,6 @@ export interface FileRouteTypes {
     | '/login'
     | '/reset-password'
     | '/analytics'
-    | '/dashboard'
     | '/my-tasks'
     | '/today'
     | '/analytics/benchmarks'
@@ -534,6 +543,7 @@ export interface FileRouteTypes {
     | '/settings/permissions'
     | '/settings/users'
     | '/claims'
+    | '/dashboard'
     | '/settings'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
@@ -581,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/permissions'
     | '/_authenticated/settings/users'
     | '/_authenticated/claims/'
+    | '/_authenticated/dashboard/'
     | '/_authenticated/settings/'
     | '/api/public/hooks/dispatch-notifications'
     | '/api/public/hooks/opd-appointment-reminders'
@@ -857,6 +868,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsZeroCancelledRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/dashboard/': {
+      id: '/_authenticated/dashboard/'
+      path: '/'
+      fullPath: '/dashboard/'
+      preLoaderRoute: typeof AuthenticatedDashboardIndexRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
     '/_authenticated/dashboard/executive': {
       id: '/_authenticated/dashboard/executive'
       path: '/executive'
@@ -1000,11 +1018,13 @@ const AuthenticatedClaimsRouteWithChildren =
 
 interface AuthenticatedDashboardRouteChildren {
   AuthenticatedDashboardExecutiveRoute: typeof AuthenticatedDashboardExecutiveRoute
+  AuthenticatedDashboardIndexRoute: typeof AuthenticatedDashboardIndexRoute
 }
 
 const AuthenticatedDashboardRouteChildren: AuthenticatedDashboardRouteChildren =
   {
     AuthenticatedDashboardExecutiveRoute: AuthenticatedDashboardExecutiveRoute,
+    AuthenticatedDashboardIndexRoute: AuthenticatedDashboardIndexRoute,
   }
 
 const AuthenticatedDashboardRouteWithChildren =
@@ -1070,3 +1090,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
