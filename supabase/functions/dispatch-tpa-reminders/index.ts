@@ -16,6 +16,7 @@ const corsHeaders = {
 const IST_OFFSET_MIN = 330; // +05:30
 
 interface Schedule {
+  org_id: string;
   id: string;
   name: string;
   scope: string;
@@ -197,31 +198,39 @@ Deno.serve(async (req) => {
   }
 
   // Fetch all open/relevant claims once (pending or discrepancy candidates)
-  const { data: claimsData } = await supabase
-    .from("claims")
-    .select("id,claim_number,patient_name,policy_number,date_of_admission,date_of_discharge,doc_submission_date,outstanding_amount,claimed_amount,approved_amount,claim_creation_date,claim_status,is_irdai_breach,tpa_name,insurance_company_name")
-    .order("claim_creation_date", { ascending: true })
-    .limit(5000);
-  const claims = (claimsData ?? []) as ClaimRow[];
-
-  // Resolve fallback contacts when no recipient override
-  const { data: contactsData } = await supabase
-    .from("insurer_contacts")
-    .select("provider,email,cc_emails,contact_name")
-    .eq("is_primary", true);
-  const contacts = (contactsData ?? []) as Array<{
-    provider: string; email: string; cc_emails: string | null; contact_name: string;
-  }>;
-  const findContact = (name: string | null) => {
-    if (!name) return null;
-    const t = name.toLowerCase();
-    return contacts.find((c) => c.provider.toLowerCase() === t) ?? null;
-  };
+  // Claims and contacts are fetched per-schedule below, scoped to that
+  // schedule's org_id, to prevent cross-tenant data mixing when two orgs
+  // share a TPA name.
 
   const results: Array<{ id: string; ok: boolean; sent?: number; error?: string }> = [];
 
   for (const s of due) {
     try {
+      // Scope every read to this schedule's org so one hospital's claims
+      // and contacts can never be attached to another hospital's reminder.
+      const { data: claimsData } = await supabase
+        .from("claims")
+        .select("id,claim_number,patient_name,policy_number,date_of_admission,date_of_discharge,doc_submission_date,outstanding_amount,claimed_amount,approved_amount,claim_creation_date,claim_status,is_irdai_breach,tpa_name,insurance_company_name")
+        .eq("org_id", s.org_id)
+        .order("claim_creation_date", { ascending: true })
+        .limit(5000);
+      const claims = (claimsData ?? []) as ClaimRow[];
+
+      const { data: contactsData } = await supabase
+        .from("insurer_contacts")
+        .select("provider,email,cc_emails,contact_name")
+        .eq("org_id", s.org_id)
+        .eq("is_primary", true);
+      const contacts = (contactsData ?? []) as Array<{
+        provider: string; email: string; cc_emails: string | null; contact_name: string;
+      }>;
+      const findContact = (name: string | null) => {
+        if (!name) return null;
+        const t = name.toLowerCase();
+        return contacts.find((c) => c.provider.toLowerCase() === t) ?? null;
+      };
+
+
       const matched = pickClaims(s, claims);
       const tpaForLabel = s.scope === "tpa"
         ? s.tpa_name ?? "Unknown TPA"
