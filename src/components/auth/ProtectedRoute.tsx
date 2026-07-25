@@ -150,7 +150,9 @@ export function ProtectedRoute({
     allowedRoles.length > 0 &&
     (authLoading || !orgRole || !allowedRoles.includes(orgRole));
 
-  if (status !== "authed" || membershipPending || roleCheckPending || (!!userId && !authLoading && !orgId)) {
+  const orgContextRequired = !!allowedRoles && allowedRoles.length > 0;
+
+  if (status !== "authed" || membershipPending || roleCheckPending || (orgContextRequired && !!userId && !authLoading && !orgId)) {
     return (
       <div
         role="status"
