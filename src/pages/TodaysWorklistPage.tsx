@@ -1,24 +1,29 @@
-import React, { useMemo, useState } from "react";
-import { Loader2, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Loader2, ArrowRight, CheckCircle2, Clock, User, Users, Globe2 } from "lucide-react";
 import { RcmIcons } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, agingVariant } from "@/components/ui/badge";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ListItemSkeleton } from "@/components/skeletons";
 import AppLayout from "@/components/AppLayout";
 import ClaimDrawer from "@/components/ClaimDrawer";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { useFollowUpData } from "@/hooks/useFollowUpData";
 import { useActingUserId } from "@/hooks/useActingUser";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsPlatformAdmin } from "@/hooks/useIsPlatformAdmin";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { type Claim, formatInr, formatDays } from "@/data/mockClaims";
 import { isDocsToSubmit } from "@/lib/claimStatusBuckets";
+import { cn } from "@/lib/utils";
 
 const SETTLED = new Set(["settled", "paid", "closed", "claim settled"]);
 const DENIED = /denied|rejected|repudiat/i;
 const QUERY_RX = /query|shortfall|clarification|pending.*info/i;
 const HIGH_VALUE_AR_DAYS = 60;
+
+type Scope = "mine" | "team" | "all";
+const SCOPE_KEY = "rcm-today-scope";
 
 interface QueueItem {
   claim: Claim;
@@ -27,18 +32,44 @@ interface QueueItem {
   amount: number;
 }
 
+/** Role-based default: junior executives → Mine; managers/admins → Team; owners/platform admins → All. */
+function defaultScope(role: string | null, isPlatformAdmin: boolean): Scope {
+  if (isPlatformAdmin || role === "owner") return "all";
+  if (role === "admin") return "team";
+  return "mine";
+}
+
 export default function TodaysWorklistPage() {
   const { claims, loading, isMock, refetch } = useLiveClaims();
   const { followUps, loading: fuLoading } = useFollowUpData();
   const [actingUserId] = useActingUserId();
-  const [mineOnly, setMineOnly] = useState<boolean>(() => {
-    try { return localStorage.getItem("rcm-today-mine-only") === "1"; } catch { return false; }
-  });
+  const { role, isLoading: roleLoading } = useAuth();
+  const { isAdmin: isPlatformAdmin, loading: paLoading } = useIsPlatformAdmin();
+  const { teamIds } = useTeamMembers();
   const [selected, setSelected] = useState<Claim | null>(null);
 
-  const toggleMineOnly = (v: boolean) => {
-    setMineOnly(v);
-    try { localStorage.setItem("rcm-today-mine-only", v ? "1" : "0"); } catch { /* noop */ }
+  const [scope, setScope] = useState<Scope | null>(() => {
+    try {
+      const v = localStorage.getItem(SCOPE_KEY);
+      if (v === "mine" || v === "team" || v === "all") return v;
+      // Migrate legacy "mine only" switch.
+      if (localStorage.getItem("rcm-today-mine-only") === "1") return "mine";
+    } catch { /* noop */ }
+    return null;
+  });
+
+  // Apply role-based default once auth resolves, if the user hasn't chosen yet.
+  useEffect(() => {
+    if (scope !== null) return;
+    if (roleLoading || paLoading) return;
+    setScope(defaultScope(role, isPlatformAdmin));
+  }, [scope, role, isPlatformAdmin, roleLoading, paLoading]);
+
+  const effectiveScope: Scope = scope ?? "mine";
+
+  const updateScope = (v: Scope) => {
+    setScope(v);
+    try { localStorage.setItem(SCOPE_KEY, v); } catch { /* noop */ }
   };
 
   const claimsById = useMemo(() => new Map(claims.map((c) => [c.id, c])), [claims]);
