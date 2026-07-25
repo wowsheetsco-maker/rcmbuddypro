@@ -48,6 +48,7 @@ export default function PaymentAdvicePage() {
       const res = await parsePaymentAdvicePdf(file, {
         enableOcr,
         forceOcr,
+        ocr: { language: ocrLang, scale: ocrScale, rotate: ocrRotate, tableMode: ocrTableMode },
         onProgress: (msg, pct) => setProgress({ msg, pct }),
       });
       setAdvice(res);
@@ -62,7 +63,7 @@ export default function PaymentAdvicePage() {
       setParsing(false);
       setProgress(null);
     }
-  }, [enableOcr, forceOcr]);
+  }, [enableOcr, forceOcr, ocrLang, ocrScale, ocrRotate, ocrTableMode]);
 
   const runManual = useCallback(() => {
     if (!manualText.trim()) return;
