@@ -934,6 +934,8 @@ export default function ImportClaimsPage() {
           open={wizardOpen}
           onOpenChange={setWizardOpen}
           detectedHeaders={parseResult.detectedHeaders}
+          headerStats={parseResult.headerStats}
+          totalRows={parseResult.totalRows}
           initialMapping={effectiveMapping(parseResult.detectedHeaders, overrideMap ?? undefined)}
           onSave={(m) => {
             setOverrideMap(m);
