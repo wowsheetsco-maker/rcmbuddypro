@@ -16,6 +16,7 @@ const corsHeaders = {
 const IST_OFFSET_MIN = 330; // +05:30
 
 interface Schedule {
+  org_id: string;
   id: string;
   name: string;
   scope: string;
