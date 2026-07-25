@@ -140,7 +140,7 @@ export default function PaymentAdvicePage() {
               />
               {parsing && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Working…</span>}
             </div>
-            <div className="flex flex-wrap gap-6 text-xs">
+            <div className="flex flex-wrap gap-6 text-xs items-center">
               <label className="flex items-center gap-2">
                 <Switch checked={enableOcr} onCheckedChange={setEnableOcr} disabled={parsing} />
                 <span className="flex items-center gap-1"><ScanLine className="h-3 w-3" />OCR fallback for scanned PDFs</span>
@@ -149,7 +149,62 @@ export default function PaymentAdvicePage() {
                 <Switch checked={forceOcr} onCheckedChange={setForceOcr} disabled={parsing || !enableOcr} />
                 <span>Force OCR (ignore embedded text)</span>
               </label>
+              <Button
+                size="sm" variant="ghost" className="h-7 text-xs"
+                onClick={() => setShowOcrSettings((v) => !v)}
+                disabled={!enableOcr}
+              >
+                <Settings2 className="h-3 w-3 mr-1" />OCR settings
+              </Button>
             </div>
+            {showOcrSettings && enableOcr && (
+              <div className="rounded-md border bg-muted/30 p-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-[11px]">Language</Label>
+                  <Select value={ocrLang} onValueChange={setOcrLang} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="eng">English</SelectItem>
+                      <SelectItem value="eng+hin">English + Hindi</SelectItem>
+                      <SelectItem value="eng+tam">English + Tamil</SelectItem>
+                      <SelectItem value="eng+tel">English + Telugu</SelectItem>
+                      <SelectItem value="eng+mar">English + Marathi</SelectItem>
+                      <SelectItem value="eng+ben">English + Bengali</SelectItem>
+                      <SelectItem value="eng+guj">English + Gujarati</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px]">DPI / Scale</Label>
+                  <Select value={String(ocrScale)} onValueChange={(v) => setOcrScale(Number(v))} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">72 DPI (fast)</SelectItem>
+                      <SelectItem value="1.5">108 DPI</SelectItem>
+                      <SelectItem value="2">144 DPI (default)</SelectItem>
+                      <SelectItem value="3">216 DPI (accurate)</SelectItem>
+                      <SelectItem value="4">288 DPI (slow)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px]">Rotate / Deskew</Label>
+                  <Select value={String(ocrRotate)} onValueChange={(v) => setOcrRotate(Number(v) as 0 | 90 | 180 | 270)} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0° (upright)</SelectItem>
+                      <SelectItem value="90">90° clockwise</SelectItem>
+                      <SelectItem value="180">180° (upside-down)</SelectItem>
+                      <SelectItem value="270">270° clockwise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-end gap-2 pb-1">
+                  <Switch checked={ocrTableMode} onCheckedChange={setOcrTableMode} disabled={parsing} />
+                  <span className="text-xs">Table mode<span className="block text-[10px] text-muted-foreground">Preserve column spacing</span></span>
+                </label>
+              </div>
+            )}
             {progress && (
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-muted-foreground">
