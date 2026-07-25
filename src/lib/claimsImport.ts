@@ -110,6 +110,22 @@ const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
   "employee code": "employee_code",
   "insurercomments": "insurer_comments",
   "insurer comments": "insurer_comments",
+  "treating doctor": "treating_doctor",
+  "doctor name": "treating_doctor",
+  "consultant": "treating_doctor",
+  "ward": "ward",
+  "ward name": "ward",
+  "room type": "ward",
+  "coder": "coder_name",
+  "coder name": "coder_name",
+  "medical coder": "coder_name",
+  "tpa spoc": "tpa_spoc",
+  "tpa contact": "tpa_spoc",
+  "tpa email": "tpa_spoc",
+  "hospital spoc": "hospital_spoc",
+  "insurance coordinator": "hospital_spoc",
+  "remarks": "remarks",
+  "notes": "remarks",
   // The remaining columns (UHID, InvoiceNumber, Courier *) are not stored —
   // intentionally absent from the map so we report them as "ignored".
 };
