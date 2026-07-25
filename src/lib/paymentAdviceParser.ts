@@ -5,14 +5,12 @@
  * This parser extracts text from a PDF using pdfjs-dist, then applies
  * heuristics to pull out:
  *   - the top-level UTR / payment reference and payment date
- *   - claim-wise line items: claim number, patient name, billed / approved,
- *     TDS, disallowance, net paid
+ *   - claim-wise line items across common bank / TPA layouts
  *
- * The output feeds a UTR → many-claims matcher so a single bank credit can
- * be reconciled against every claim it settled.
+ * If the PDF has no selectable text (scanned image), we fall back to
+ * client-side OCR via tesseract.js (lazy-loaded).
  */
 import * as pdfjsLib from "pdfjs-dist";
-// Vite-friendly worker URL
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
@@ -30,6 +28,18 @@ export interface PaymentAdviceLine {
   raw_line: string;
 }
 
+export type AdviceLayout =
+  | "star_health"
+  | "care_health"
+  | "hdfc_ergo"
+  | "icici_lombard"
+  | "bajaj_allianz"
+  | "medi_assist"
+  | "paramount"
+  | "vidal"
+  | "generic_table"
+  | "generic_text";
+
 export interface ParsedPaymentAdvice {
   utr: string | null;
   payment_date: string | null;
@@ -37,17 +47,34 @@ export interface ParsedPaymentAdvice {
   total_amount: number;
   lines: PaymentAdviceLine[];
   raw_text: string;
+  layout: AdviceLayout;
+  used_ocr: boolean;
 }
 
-/** Load a PDF file and return concatenated text, keeping line breaks. */
-export async function extractPdfText(file: File | ArrayBuffer): Promise<string> {
+export interface ExtractOptions {
+  /** allow OCR fallback when the PDF has little/no embedded text */
+  enableOcr?: boolean;
+  /** force OCR even when text is available */
+  forceOcr?: boolean;
+  onProgress?: (msg: string, pct: number) => void;
+}
+
+/** Extract text from a PDF, preserving line breaks by y-coordinate.
+ *  Falls back to OCR when embedded text is insufficient.
+ */
+export async function extractPdfText(
+  file: File | ArrayBuffer,
+  opts: ExtractOptions = {},
+): Promise<{ text: string; used_ocr: boolean }> {
   const data = file instanceof ArrayBuffer ? file : await file.arrayBuffer();
   const doc = await pdfjsLib.getDocument({ data }).promise;
-  const pages: string[] = [];
+  const pageTexts: string[] = [];
+  let totalChars = 0;
+
   for (let p = 1; p <= doc.numPages; p++) {
+    opts.onProgress?.(`Reading page ${p} of ${doc.numPages}…`, (p / doc.numPages) * 40);
     const page = await doc.getPage(p);
     const content = await page.getTextContent();
-    // Reconstruct lines by y-coordinate
     const rows = new Map<number, { x: number; str: string }[]>();
     for (const item of content.items as Array<{ str: string; transform: number[] }>) {
       if (!item.str) continue;
@@ -57,23 +84,57 @@ export async function extractPdfText(file: File | ArrayBuffer): Promise<string> 
       rows.get(y)!.push({ x, str: item.str });
     }
     const ys = Array.from(rows.keys()).sort((a, b) => b - a);
+    const pageLines: string[] = [];
     for (const y of ys) {
       const parts = rows.get(y)!.sort((a, b) => a.x - b.x).map((p) => p.str);
-      pages.push(parts.join(" "));
+      pageLines.push(parts.join(" "));
     }
-    pages.push(""); // page break
+    const joined = pageLines.join("\n");
+    totalChars += joined.replace(/\s/g, "").length;
+    pageTexts.push(joined);
   }
-  return pages.join("\n");
+
+  const looksScanned = totalChars < Math.max(60, doc.numPages * 40);
+  if (!opts.forceOcr && (!looksScanned || !opts.enableOcr)) {
+    return { text: pageTexts.join("\n\n"), used_ocr: false };
+  }
+  if (!opts.enableOcr && !opts.forceOcr) {
+    return { text: pageTexts.join("\n\n"), used_ocr: false };
+  }
+
+  // ---- OCR fallback ----
+  opts.onProgress?.("Scanned PDF detected — starting OCR…", 45);
+  const { default: Tesseract } = await import("tesseract.js");
+  const ocrPages: string[] = [];
+  for (let p = 1; p <= doc.numPages; p++) {
+    const page = await doc.getPage(p);
+    const viewport = page.getViewport({ scale: 2 });
+    const canvas = document.createElement("canvas");
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    const ctx = canvas.getContext("2d")!;
+    await page.render({ canvasContext: ctx, viewport, canvas } as unknown as Parameters<typeof page.render>[0]).promise;
+    opts.onProgress?.(`OCR page ${p} of ${doc.numPages}…`, 45 + (p / doc.numPages) * 50);
+    const result = await Tesseract.recognize(canvas, "eng", {
+      logger: (m: { status?: string; progress?: number }) => {
+        if (m.status === "recognizing text" && typeof m.progress === "number") {
+          const base = 45 + ((p - 1) / doc.numPages) * 50;
+          opts.onProgress?.(`OCR page ${p} (${Math.round(m.progress * 100)}%)…`, base + (m.progress * 50) / doc.numPages);
+        }
+      },
+    });
+    ocrPages.push(result.data.text || "");
+  }
+  return { text: ocrPages.join("\n\n"), used_ocr: true };
 }
 
-const UTR_LABEL_RE = /\b(?:UTR|Payment\s*Ref(?:erence)?|NEFT\s*Ref|RTGS\s*Ref|Transaction\s*(?:Ref|ID)|Cheque\s*(?:No|Number))\s*[:\-#]?\s*([A-Z0-9]{8,25})/i;
+// -------------------- Header extraction --------------------
+
+const UTR_LABEL_RE = /\b(?:UTR(?:\s*No\.?)?|Payment\s*Ref(?:erence)?|NEFT\s*(?:Ref|No)?|RTGS\s*(?:Ref|No)?|Transaction\s*(?:Ref|ID|No)|Cheque\s*(?:No|Number))\s*[:\-#]?\s*([A-Z0-9]{8,25})/i;
 const UTR_STANDALONE_RE = /\b([A-Z]{2,6}[A-Z0-9]{8,20})\b/;
-
-const DATE_LABEL_RE = /\b(?:Payment\s*Date|Paid\s*On|Date\s*of\s*Payment|Value\s*Date|UTR\s*Date)\s*[:\-]?\s*([0-9]{1,2}[-/][0-9]{1,2}[-/][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}\s*[A-Za-z]{3,9}\s*[0-9]{2,4})/i;
-
-const TOTAL_LABEL_RE = /\b(?:Total\s*(?:Net\s*)?(?:Payable|Paid|Amount|Payment)|Grand\s*Total|Net\s*Amount)\s*[:\-]?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+(?:\.[0-9]+)?)/i;
-
-const PAYER_LABEL_RE = /\b(?:Payer|From|Insurer|TPA|Company\s*Name|Paid\s*By)\s*[:\-]?\s*([A-Za-z][A-Za-z0-9 .,&()\-]{4,60})/i;
+const DATE_LABEL_RE = /\b(?:Payment\s*Date|Paid\s*On|Date\s*of\s*Payment|Value\s*Date|UTR\s*Date|Cheque\s*Date|Settlement\s*Date)\s*[:\-]?\s*([0-9]{1,2}[-/][0-9]{1,2}[-/][0-9]{2,4}|[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{1,2}\s*[A-Za-z]{3,9}\s*[0-9]{2,4})/i;
+const TOTAL_LABEL_RE = /\b(?:Total\s*(?:Net\s*)?(?:Payable|Paid|Amount|Payment|Settlement)|Grand\s*Total|Net\s*(?:Payable|Amount))\s*[:\-]?\s*(?:Rs\.?|INR|₹)?\s*([0-9,]+(?:\.[0-9]+)?)/i;
+const PAYER_LABEL_RE = /\b(?:Payer|From|Insurer|TPA|Company\s*Name|Paid\s*By|Insurance\s*Company)\s*[:\-]?\s*([A-Za-z][A-Za-z0-9 .,&()\-]{4,60})/i;
 
 const NUMBER_RE = /-?[0-9]{1,3}(?:,[0-9]{2,3})*(?:\.[0-9]{1,2})?|-?[0-9]+(?:\.[0-9]{1,2})?/g;
 
@@ -103,16 +164,142 @@ function parseDateLoose(s: string): string | null {
   return null;
 }
 
-/** Looks like a claim number: alphanumeric, 6-20 chars, contains at least 4 digits. */
 function looksLikeClaimNo(tok: string): boolean {
-  if (tok.length < 6 || tok.length > 22) return false;
+  if (tok.length < 6 || tok.length > 24) return false;
   if (!/^[A-Z0-9/-]+$/i.test(tok)) return false;
   const digits = tok.replace(/[^0-9]/g, "").length;
   return digits >= 5;
 }
 
-function extractPatientName(tokens: string[], claimIdx: number): string | null {
-  // Patient name usually appears right after claim number, before numeric columns
+// -------------------- Layout detection --------------------
+
+const LAYOUT_SIGNATURES: Array<{ layout: AdviceLayout; payer: string; patterns: RegExp[] }> = [
+  { layout: "star_health",   payer: "Star Health",         patterns: [/star\s*health/i, /star\s*allied/i] },
+  { layout: "care_health",   payer: "Care Health",         patterns: [/\bcare\s*health\b/i, /\breligare\s*health\b/i] },
+  { layout: "hdfc_ergo",     payer: "HDFC ERGO",           patterns: [/hdfc\s*ergo/i] },
+  { layout: "icici_lombard", payer: "ICICI Lombard",       patterns: [/icici\s*lombard/i] },
+  { layout: "bajaj_allianz", payer: "Bajaj Allianz",       patterns: [/bajaj\s*allianz/i] },
+  { layout: "medi_assist",   payer: "Medi Assist",         patterns: [/medi\s*assist/i, /mahyco/i] },
+  { layout: "paramount",     payer: "Paramount Health",    patterns: [/paramount\s*health/i, /\bphs\b/i] },
+  { layout: "vidal",         payer: "Vidal Health",        patterns: [/vidal\s*health/i, /vidalhealth/i] },
+];
+
+function detectLayout(headerText: string, allText: string): { layout: AdviceLayout; payer_hint: string | null } {
+  for (const sig of LAYOUT_SIGNATURES) {
+    if (sig.patterns.some((p) => p.test(headerText) || p.test(allText))) {
+      return { layout: sig.layout, payer_hint: sig.payer };
+    }
+  }
+  // Look for a table header row containing typical column names
+  if (/claim\s*(no|number|id).*(patient|insured).*(bill|approved|paid|net)/i.test(allText)) {
+    return { layout: "generic_table", payer_hint: null };
+  }
+  return { layout: "generic_text", payer_hint: null };
+}
+
+// -------------------- Column-header aware extraction --------------------
+
+interface ColumnMap {
+  claim?: number;
+  patient?: number;
+  billed?: number;
+  approved?: number;
+  disallowance?: number;
+  tds?: number;
+  net?: number;
+}
+
+const HEADER_ALIASES: Array<[keyof ColumnMap, RegExp]> = [
+  ["claim",        /\b(claim\s*(?:no|number|id|ref)|cl\.\s*no|bill\s*no)\b/i],
+  ["patient",      /\b(patient(?:\s*name)?|insured(?:\s*name)?|member(?:\s*name)?|beneficiary)\b/i],
+  ["billed",       /\b(bill(?:ed)?\s*(?:amount|amt)?|claimed\s*(?:amount|amt)|gross|invoice)\b/i],
+  ["approved",     /\b(approv(?:ed)?\s*(?:amount|amt)?|sanction(?:ed)?|payable|passed)\b/i],
+  ["disallowance", /\b(disallow(?:ed|ance)?|deduct(?:ion|ed)?|non[- ]?payable|less)\b/i],
+  ["tds",          /\b(tds|tax\s*deduc)\b/i],
+  ["net",          /\b(net\s*(?:paid|payable|amount|amt)|paid\s*amount|settlement\s*amount|final)\b/i],
+];
+
+function findHeaderRow(lines: string[]): { idx: number; map: ColumnMap } | null {
+  for (let i = 0; i < Math.min(lines.length, 80); i++) {
+    const l = lines[i];
+    if (!/claim/i.test(l)) continue;
+    const map: ColumnMap = {};
+    for (const [key, re] of HEADER_ALIASES) {
+      const m = l.match(re);
+      if (m && m.index !== undefined) map[key] = m.index;
+    }
+    // Require at least claim + one amount column
+    const amountCols = ["billed", "approved", "net"].filter((k) => (map as Record<string, number | undefined>)[k] !== undefined).length;
+    if (map.claim !== undefined && amountCols >= 1) return { idx: i, map };
+  }
+  return null;
+}
+
+function tokenizeWithPositions(line: string): Array<{ text: string; start: number }> {
+  const out: Array<{ text: string; start: number }> = [];
+  const re = /\S+/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(line))) out.push({ text: m[0], start: m.index });
+  return out;
+}
+
+function pickByColumn(tokens: Array<{ text: string; start: number }>, col: number | undefined, isNumeric: boolean): string | null {
+  if (col === undefined) return null;
+  let best: { tok: { text: string; start: number }; dist: number } | null = null;
+  for (const tok of tokens) {
+    if (isNumeric && !/^-?[0-9,.]+$/.test(tok.text)) continue;
+    const mid = tok.start + tok.text.length / 2;
+    const dist = Math.abs(mid - col);
+    if (!best || dist < best.dist) best = { tok, dist };
+  }
+  return best ? best.tok.text : null;
+}
+
+function parseRowByColumns(line: string, map: ColumnMap): PaymentAdviceLine | null {
+  const tokens = tokenizeWithPositions(line);
+  const claimTok = pickByColumn(tokens, map.claim, false);
+  if (!claimTok || !looksLikeClaimNo(claimTok)) return null;
+
+  // Patient name spans between claim col and first numeric col
+  const firstNumCol = Math.min(
+    ...(["billed", "approved", "disallowance", "tds", "net"] as const)
+      .map((k) => map[k])
+      .filter((v): v is number => v !== undefined),
+  );
+  const patientStart = (map.patient ?? map.claim! + claimTok.length + 1);
+  let patientName: string | null = null;
+  if (map.patient !== undefined) {
+    const parts = tokens
+      .filter((t) => t.start >= patientStart - 2 && t.start < firstNumCol - 2 && !/^-?[0-9,.]+$/.test(t.text))
+      .map((t) => t.text);
+    const n = parts.join(" ").replace(/[^A-Za-z .]/g, "").trim();
+    if (n.length >= 3) patientName = n;
+  }
+
+  const num = (v: string | null): number | null => (v ? parseNumber(v) : null);
+  const billed   = num(pickByColumn(tokens, map.billed, true));
+  const approved = num(pickByColumn(tokens, map.approved, true));
+  const disallow = num(pickByColumn(tokens, map.disallowance, true));
+  const tds      = num(pickByColumn(tokens, map.tds, true));
+  const netStr   = pickByColumn(tokens, map.net, true);
+  const net      = netStr ? parseNumber(netStr) : (approved ?? 0);
+  if (!net || net <= 0) return null;
+
+  return {
+    claim_number: claimTok,
+    patient_name: patientName,
+    billed_amount: billed,
+    approved_amount: approved,
+    disallowance: disallow,
+    tds,
+    net_paid: net,
+    raw_line: line,
+  };
+}
+
+// -------------------- Fallback heuristic row parser --------------------
+
+function extractPatientNameFallback(tokens: string[], claimIdx: number): string | null {
   const nameToks: string[] = [];
   for (let i = claimIdx + 1; i < tokens.length; i++) {
     const t = tokens[i];
@@ -126,76 +313,104 @@ function extractPatientName(tokens: string[], claimIdx: number): string | null {
   return name.length >= 3 ? name : null;
 }
 
-export function parsePaymentAdviceText(text: string): ParsedPaymentAdvice {
-  const lines = text.split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+function parseRowHeuristic(raw: string): PaymentAdviceLine | null {
+  const tokens = raw.split(/\s+/);
+  const claimIdx = tokens.findIndex(looksLikeClaimNo);
+  if (claimIdx < 0) return null;
+  const nums = raw.match(NUMBER_RE) ?? [];
+  const monetary = nums.map(parseNumber).filter((n) => Math.abs(n) >= 1);
+  if (monetary.length < 1) return null;
+  if (/\btotal\b/i.test(raw) && !tokens[claimIdx].match(/[0-9]{5,}/)) return null;
 
-  // Header extraction — scan first 40 lines
-  const head = lines.slice(0, 40).join(" \n ");
+  const patient = extractPatientNameFallback(tokens, claimIdx);
+  const net = monetary[monetary.length - 1];
+  let billed: number | null = null, approved: number | null = null, disallow: number | null = null, tds: number | null = null;
+  if (monetary.length >= 4) {
+    billed = monetary[0]; approved = monetary[1];
+    const rest = monetary.slice(2, -1);
+    const tdsIdx = rest.findIndex((v) => v > 0 && approved && v <= approved * 0.15);
+    if (tdsIdx >= 0) tds = rest[tdsIdx];
+    const others = rest.filter((_, i) => i !== tdsIdx);
+    if (others.length) disallow = others[0];
+  } else if (monetary.length === 3) { billed = monetary[0]; approved = monetary[1]; }
+  else if (monetary.length === 2) { approved = monetary[0]; }
+
+  return {
+    claim_number: tokens[claimIdx],
+    patient_name: patient,
+    billed_amount: billed,
+    approved_amount: approved,
+    disallowance: disallow,
+    tds,
+    net_paid: net,
+    raw_line: raw,
+  };
+}
+
+// -------------------- Top-level parse --------------------
+
+export function parsePaymentAdviceText(text: string, used_ocr = false): ParsedPaymentAdvice {
+  const rawLines = text.split(/\r?\n/).map((l) => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+  const head = rawLines.slice(0, 40).join(" \n ");
+
   const utrLabel = head.match(UTR_LABEL_RE);
   const utr = utrLabel?.[1] ?? head.match(UTR_STANDALONE_RE)?.[1] ?? null;
   const payment_date = parseDateLoose((head.match(DATE_LABEL_RE)?.[1] ?? "").trim()) || null;
   const totalRaw = head.match(TOTAL_LABEL_RE)?.[1];
   const totalFromHeader = totalRaw ? parseNumber(totalRaw) : 0;
-  const payer_name = head.match(PAYER_LABEL_RE)?.[1]?.trim() ?? null;
+
+  const detected = detectLayout(head, text);
+  const explicitPayer = head.match(PAYER_LABEL_RE)?.[1]?.trim() ?? null;
+  const payer_name = explicitPayer ?? detected.payer_hint;
+
+  // Retain original raw lines (with positions) for column-aware parsing
+  const posLines = text.split(/\r?\n/);
+  const header = findHeaderRow(posLines);
 
   const outLines: PaymentAdviceLine[] = [];
-  for (const raw of lines) {
-    const tokens = raw.split(/\s+/);
-    // Find a claim-like token
-    const claimIdx = tokens.findIndex(looksLikeClaimNo);
-    if (claimIdx < 0) continue;
-    const nums = raw.match(NUMBER_RE) ?? [];
-    // Require at least 1 monetary value on the row
-    const monetary = nums.map(parseNumber).filter((n) => Math.abs(n) >= 1);
-    if (monetary.length < 1) continue;
-    // Skip rows that look like totals
-    if (/\btotal\b/i.test(raw) && !tokens[claimIdx].match(/[0-9]{5,}/)) continue;
+  const seen = new Set<number>();
 
-    const patient = extractPatientName(tokens, claimIdx);
-    // Heuristic: last number = net paid, prior numbers may be billed/approved/disallow/tds
-    const net = monetary[monetary.length - 1];
-    let billed: number | null = null;
-    let approved: number | null = null;
-    let disallow: number | null = null;
-    let tds: number | null = null;
-    if (monetary.length >= 4) {
-      billed = monetary[0];
-      approved = monetary[1];
-      // pick a small (~10%) value as TDS if present
-      const rest = monetary.slice(2, -1);
-      const tdsIdx = rest.findIndex((v) => v > 0 && approved && v <= approved * 0.15);
-      if (tdsIdx >= 0) tds = rest[tdsIdx];
-      const others = rest.filter((_, i) => i !== tdsIdx);
-      if (others.length) disallow = others[0];
-    } else if (monetary.length === 3) {
-      billed = monetary[0];
-      approved = monetary[1];
-    } else if (monetary.length === 2) {
-      approved = monetary[0];
+  if (header) {
+    for (let i = header.idx + 1; i < posLines.length; i++) {
+      const l = posLines[i];
+      if (!l || !l.trim()) continue;
+      if (/^\s*(total|grand\s*total|net\s*total|sub\s*total)\b/i.test(l)) continue;
+      const row = parseRowByColumns(l, header.map);
+      if (row) { outLines.push(row); seen.add(i); }
     }
+  }
 
-    outLines.push({
-      claim_number: tokens[claimIdx],
-      patient_name: patient,
-      billed_amount: billed,
-      approved_amount: approved,
-      disallowance: disallow,
-      tds,
-      net_paid: net,
-      raw_line: raw,
-    });
+  // Fallback heuristic for lines the column parser missed (or when no header)
+  for (let i = 0; i < posLines.length; i++) {
+    if (seen.has(i)) continue;
+    const l = posLines[i].replace(/\s+/g, " ").trim();
+    if (!l) continue;
+    if (/^\s*(total|grand\s*total|net\s*total|sub\s*total)\b/i.test(l)) continue;
+    const row = parseRowHeuristic(l);
+    if (row) {
+      // avoid duplicates by (claim_number + net)
+      const key = `${row.claim_number}|${row.net_paid}`;
+      if (!outLines.some((x) => `${x.claim_number}|${x.net_paid}` === key)) {
+        outLines.push(row);
+      }
+    }
   }
 
   const total_amount = totalFromHeader > 0
     ? totalFromHeader
     : outLines.reduce((s, l) => s + (l.net_paid || 0), 0);
 
-  return { utr, payment_date, payer_name, total_amount, lines: outLines, raw_text: text };
+  const layout: AdviceLayout = detected.layout === "generic_text" && header ? "generic_table" : detected.layout;
+
+  return { utr, payment_date, payer_name, total_amount, lines: outLines, raw_text: text, layout, used_ocr };
 }
 
-export async function parsePaymentAdvicePdf(file: File): Promise<ParsedPaymentAdvice> {
-  const text = await extractPdfText(file);
-  return parsePaymentAdviceText(text);
+export async function parsePaymentAdvicePdf(file: File, opts: ExtractOptions = {}): Promise<ParsedPaymentAdvice> {
+  const { text, used_ocr } = await extractPdfText(file, opts);
+  opts.onProgress?.("Parsing rows…", 96);
+  const res = parsePaymentAdviceText(text, used_ocr);
+  opts.onProgress?.("Done", 100);
+  return res;
 }
 
 // -------------------- UTR → many-claims matcher --------------------
@@ -213,7 +428,7 @@ export interface AdviceMatchClaim {
 export interface AdviceLineMatch {
   line: PaymentAdviceLine;
   claim: AdviceMatchClaim | null;
-  confidence: number; // 0..100
+  confidence: number;
   method: "claim_number" | "initial_claim_number" | "patient+amount" | "amount_only" | "none";
   reasons: string[];
 }
@@ -232,15 +447,10 @@ function nameSimilarity(a: string, b: string): number {
 }
 
 export interface MatchAdviceOptions {
-  amountTolerancePct?: number; // default 2
-  amountToleranceAbs?: number; // default 5
+  amountTolerancePct?: number;
+  amountToleranceAbs?: number;
 }
 
-/**
- * Match every line of a payment advice against candidate claims.
- * Prioritizes exact claim-number match, then patient + amount, then amount.
- * Returns per-line match plus a reconciliation summary (matched vs total).
- */
 export function matchAdviceLines(
   advice: ParsedPaymentAdvice,
   claims: AdviceMatchClaim[],
@@ -258,12 +468,10 @@ export function matchAdviceLines(
   const matches: AdviceLineMatch[] = advice.lines.map((line) => {
     const reasons: string[] = [];
     const lineKey = stripKey(line.claim_number);
-    // 1. Exact claim-number match
     if (lineKey && byClaimNo.has(lineKey) && !used.has(byClaimNo.get(lineKey)!.id)) {
       const c = byClaimNo.get(lineKey)!;
       used.add(c.id);
       reasons.push("Claim number matches exactly");
-      // Bonus: amount agrees
       let conf = 92;
       if (line.net_paid > 0 && c.approved_amount) {
         const target = Number(c.approved_amount);
@@ -273,7 +481,6 @@ export function matchAdviceLines(
       }
       return { line, claim: c, confidence: conf, method: "claim_number" as const, reasons };
     }
-    // 2. Substring / partial claim-number
     if (lineKey) {
       for (const c of claims) {
         if (used.has(c.id)) continue;
@@ -285,7 +492,6 @@ export function matchAdviceLines(
         }
       }
     }
-    // 3. Patient name + amount
     if (line.patient_name) {
       let best: { c: AdviceMatchClaim; score: number } | null = null;
       for (const c of claims) {
@@ -307,7 +513,6 @@ export function matchAdviceLines(
         return { line, claim: best.c, confidence: 78, method: "patient+amount" as const, reasons };
       }
     }
-    // 4. Amount only (last resort — low confidence)
     if (line.net_paid > 0) {
       for (const c of claims) {
         if (used.has(c.id)) continue;
@@ -338,3 +543,16 @@ export function matchAdviceLines(
     },
   };
 }
+
+export const LAYOUT_LABELS: Record<AdviceLayout, string> = {
+  star_health: "Star Health",
+  care_health: "Care Health",
+  hdfc_ergo: "HDFC ERGO",
+  icici_lombard: "ICICI Lombard",
+  bajaj_allianz: "Bajaj Allianz",
+  medi_assist: "Medi Assist",
+  paramount: "Paramount Health",
+  vidal: "Vidal Health",
+  generic_table: "Generic (table-based)",
+  generic_text: "Generic (text-based)",
+};
