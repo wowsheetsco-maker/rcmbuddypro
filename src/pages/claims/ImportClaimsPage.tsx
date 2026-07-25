@@ -594,14 +594,28 @@ export default function ImportClaimsPage() {
                   Review the preview below, then confirm to import.
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={reset}
-                disabled={importing}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {parseResult.detectedHeaders.length > 0 && (
+                  <ReadinessBadge mapping={effectiveMapping(parseResult.detectedHeaders, overrideMap ?? undefined)} />
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setWizardOpen(true)}
+                  disabled={importing || parseResult.detectedHeaders.length === 0}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1" />
+                  Field mapping
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  disabled={importing}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Stats */}
