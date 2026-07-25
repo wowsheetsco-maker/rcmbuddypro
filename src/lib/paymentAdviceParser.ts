@@ -116,26 +116,36 @@ export async function extractPdfText(
   }
 
   // ---- OCR fallback ----
-  opts.onProgress?.("Scanned PDF detected — starting OCR…", 45);
+  const lang = opts.ocr?.language || "eng";
+  const scale = Math.max(1, Math.min(4, opts.ocr?.scale ?? 2));
+  const rotate = opts.ocr?.rotate ?? 0;
+  const tableMode = opts.ocr?.tableMode ?? true;
+  opts.onProgress?.(`Scanned PDF detected — starting OCR (${lang} @ ${Math.round(72 * scale)} DPI)…`, 45);
   const { default: Tesseract } = await import("tesseract.js");
   const ocrPages: string[] = [];
   for (let p = 1; p <= doc.numPages; p++) {
     const page = await doc.getPage(p);
-    const viewport = page.getViewport({ scale: 2 });
+    const viewport = page.getViewport({ scale, rotation: rotate });
     const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
     const ctx = canvas.getContext("2d")!;
     await page.render({ canvasContext: ctx, viewport, canvas } as unknown as Parameters<typeof page.render>[0]).promise;
     opts.onProgress?.(`OCR page ${p} of ${doc.numPages}…`, 45 + (p / doc.numPages) * 50);
-    const result = await Tesseract.recognize(canvas, "eng", {
+    const tessOptions: Record<string, unknown> = {
       logger: (m: { status?: string; progress?: number }) => {
         if (m.status === "recognizing text" && typeof m.progress === "number") {
           const base = 45 + ((p - 1) / doc.numPages) * 50;
           opts.onProgress?.(`OCR page ${p} (${Math.round(m.progress * 100)}%)…`, base + (m.progress * 50) / doc.numPages);
         }
       },
-    });
+    };
+    if (tableMode) {
+      tessOptions.preserve_interword_spaces = "1";
+      // PSM 6 = Assume a single uniform block of text — best for tabular remittance advices
+      tessOptions.tessedit_pageseg_mode = "6";
+    }
+    const result = await Tesseract.recognize(canvas, lang, tessOptions);
     ocrPages.push(result.data.text || "");
   }
   return { text: ocrPages.join("\n\n"), used_ocr: true };
