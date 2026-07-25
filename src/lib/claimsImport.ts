@@ -66,6 +66,10 @@ export interface ParseResult {
   totalRows: number;
   detectedHeaders: string[];
   unmappedHeaders: string[];
+  /** Non-empty-value counts per detected header. Used by the mapping wizard's
+   *  live population preview so users see "1,834 / 2,000 populated" for each
+   *  candidate mapping before committing. */
+  headerStats: Record<string, { filled: number; total: number }>;
 }
 
 // --- Header mapping (template → DB column) -----------------------------------
@@ -158,11 +162,39 @@ const REQUIRED_FIELDS: (keyof ClaimUpsertRow)[] = [
   "claim_creation_date",
 ];
 
+/** Header normalisation: case-insensitive, punctuation-agnostic, and expands
+ *  common HIMS abbreviations (amt→amount, no→number, dt→date, ins→insurance,
+ *  pt→patient, hosp→hospital, adm→admission, dis→discharge, dept→department,
+ *  ref→reference). This lets the same HEADER_MAP entry match "Claim No.",
+ *  "CLAIM_NUMBER", "claim-no", and "claim  #" without extra entries. */
 function normaliseHeader(h: unknown): string {
-  return String(h ?? "")
+  const raw = String(h ?? "")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, " ");
+    // Collapse punctuation and symbols to spaces so "claim-no." == "claim no"
+    .replace(/[._\-\/\\|#*&+,;:()\[\]{}"'`~?!@$%^=<>]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Word-level synonym expansion — only applied when the whole token matches
+  // so we don't rewrite "amount" back to itself accidentally.
+  const SYN: Record<string, string> = {
+    amt: "amount", amnt: "amount", val: "amount",
+    no: "number", num: "number", nbr: "number", "#": "number",
+    dt: "date", dtd: "date",
+    ins: "insurance", insr: "insurance", insco: "insurance company",
+    pt: "patient", pat: "patient",
+    hosp: "hospital", hospt: "hospital",
+    adm: "admission", disch: "discharge", dis: "discharge",
+    dept: "department", dr: "doctor",
+    ref: "reference", refno: "reference number",
+    utr: "utr", neft: "neft", // keep short codes intact
+  };
+  return raw
+    .split(" ")
+    .map((tok) => SYN[tok] ?? tok)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseExcelDate(value: unknown): string | null {
@@ -351,6 +383,7 @@ export async function parseClaimsFile(
       totalRows: 0,
       detectedHeaders: [],
       unmappedHeaders: [],
+      headerStats: {},
     };
   }
   const ws = wb.Sheets[firstSheet];
@@ -381,9 +414,19 @@ export async function parseClaimsFile(
 
   const errors: ParseError[] = [];
   const rows: ClaimUpsertRow[] = [];
+  // Track per-header population so the wizard can show live "populated / total"
+  // counts before the user commits a mapping change.
+  const headerStats: Record<string, { filled: number; total: number }> = {};
+  for (const h of detectedHeaders) headerStats[h] = { filled: 0, total: 0 };
   raw.forEach((r, i) => {
     // Skip completely empty rows
     if (Object.values(r).every((v) => v === null || v === "")) return;
+    for (const h of detectedHeaders) {
+      const v = r[h];
+      const filled = v !== null && v !== undefined && String(v).trim() !== "";
+      headerStats[h].total += 1;
+      if (filled) headerStats[h].filled += 1;
+    }
     const built = buildRow(r, headerToField, i + 1, errors);
     if (built) rows.push(built);
   });
@@ -394,6 +437,7 @@ export async function parseClaimsFile(
     totalRows: raw.length,
     detectedHeaders,
     unmappedHeaders,
+    headerStats,
   };
 }
 
