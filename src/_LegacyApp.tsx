@@ -178,6 +178,7 @@ const ROUTES: Record<string, RouteEntry> = {
   "/claims/data-quality": DataQualityPage,
   "/claims/discrepancy": DiscrepancyTrackerPage,
   "/claims/reconciliation": BankReconciliationPage,
+  "/claims/payment-advice": PaymentAdvicePage,
   "/claims/recon-alerts": ReconciliationAlertsPage,
   "/claims/docs-to-submit": DocsToSubmitPage,
   "/claims/appeals": AppealsTrackerPage,
