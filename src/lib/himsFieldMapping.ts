@@ -5,7 +5,25 @@
 // The wizard reads a CSV/XLSX file, offers a mapping UI keyed off these
 // helpers, and passes the resulting override map back to `parseClaimsFile`.
 
-import type { ClaimUpsertRow } from "./claimsImport";
+import { HEADER_MAP, type ClaimUpsertRow } from "./claimsImport";
+
+/** Reconstruct the effective header→field mapping after applying overrides on top of the built-in HEADER_MAP. */
+export function effectiveMapping(
+  detectedHeaders: string[],
+  override?: Record<string, keyof ClaimUpsertRow>,
+): Record<string, keyof ClaimUpsertRow> {
+  const norm = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
+  const overrideNorm: Record<string, keyof ClaimUpsertRow> = {};
+  for (const [k, v] of Object.entries(override ?? {})) overrideNorm[norm(k)] = v;
+  const out: Record<string, keyof ClaimUpsertRow> = {};
+  for (const h of detectedHeaders) {
+    const o = overrideNorm[norm(h)];
+    if (o) { out[h] = o; continue; }
+    const b = HEADER_MAP[norm(h)];
+    if (b && b !== "_skip") out[h] = b;
+  }
+  return out;
+}
 
 export type ClaimField = keyof ClaimUpsertRow | "_skip";
 
