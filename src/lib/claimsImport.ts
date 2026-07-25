@@ -355,6 +355,7 @@ export async function parseClaimsFile(
       totalRows: 0,
       detectedHeaders: [],
       unmappedHeaders: [],
+      headerStats: {},
     };
   }
   const ws = wb.Sheets[firstSheet];
