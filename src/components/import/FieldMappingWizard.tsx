@@ -112,10 +112,34 @@ export default function FieldMappingWizard({
     });
   };
 
+  const toggleExcluded = (header: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(header)) {
+        next.delete(header);
+      } else {
+        next.add(header);
+        // Excluding a header must also drop any mapping it currently has,
+        // otherwise the exclusion doesn't affect readiness or the report.
+        setMapping((m) => {
+          if (!(header in m)) return m;
+          const { [header]: _drop, ...rest } = m;
+          return rest;
+        });
+      }
+      return next;
+    });
+  };
+
   const acceptGuess = (header: string) => {
     const m = scored.matches[header];
     if (m?.field) setHeaderMap(header, m.field);
   };
+
+  const report = useMemo(
+    () => buildValidationReport(detectedHeaders, mapping, scored.matches, excluded),
+    [detectedHeaders, mapping, scored.matches, excluded],
+  );
 
   const exportTemplate = () => {
     const name = typeof window !== "undefined"
