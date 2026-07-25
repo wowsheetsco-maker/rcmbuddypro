@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle2, AlertCircle, Sparkles, Download, Upload, HelpCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Sparkles, Download, Upload, HelpCircle, Ban, ClipboardCheck, TrendingUp, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { ClaimUpsertRow } from "@/lib/claimsImport";
 import {
@@ -19,7 +19,9 @@ import {
   CRITICAL_FIELDS,
   serializeTemplate,
   parseTemplate,
+  buildValidationReport,
   type HeaderMatch,
+  type ValidationReport,
 } from "@/lib/himsFieldMapping";
 
 type Mapping = Record<string, keyof ClaimUpsertRow>;
