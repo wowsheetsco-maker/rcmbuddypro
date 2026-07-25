@@ -424,3 +424,55 @@ function QueueCard({ title, subtitle, icon: Icon, tone, items, loading, empty, o
     </Card>
   );
 }
+
+interface ScopeSelectorProps {
+  value: Scope;
+  onChange: (v: Scope) => void;
+  role: string | null;
+  isPlatformAdmin: boolean;
+}
+
+function ScopeSelector({ value, onChange, role, isPlatformAdmin }: ScopeSelectorProps) {
+  const options: { key: Scope; label: string; icon: React.ComponentType<{ className?: string }>; hint: string }[] = [
+    { key: "mine", label: "Mine", icon: User, hint: "Only claims & follow-ups I own" },
+    { key: "team", label: "My team", icon: Users, hint: "Everyone in my organization" },
+    { key: "all", label: "All", icon: Globe2, hint: "Every user, every branch" },
+  ];
+  const defaultKey: Scope = isPlatformAdmin || role === "owner" ? "all" : role === "admin" ? "team" : "mine";
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div
+        role="tablist"
+        aria-label="Worklist scope"
+        className="inline-flex items-center rounded-md border bg-card p-0.5"
+      >
+        {options.map((opt) => {
+          const Icon = opt.icon;
+          const active = value === opt.key;
+          return (
+            <button
+              key={opt.key}
+              role="tab"
+              aria-selected={active}
+              title={opt.hint}
+              onClick={() => onChange(opt.key)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-xs font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="text-[10px] text-muted-foreground">
+        Default for your role: <span className="font-medium">{defaultKey}</span>
+      </span>
+    </div>
+  );
+}
+
