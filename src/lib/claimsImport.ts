@@ -308,6 +308,12 @@ function buildRow(
     "policy_holder_name",
     "employee_code",
     "insurer_comments",
+    "treating_doctor",
+    "ward",
+    "coder_name",
+    "tpa_spoc",
+    "hospital_spoc",
+    "remarks",
   ];
   for (const f of nullableStrFields) {
     if (row[f] === undefined) (row as any)[f] = null;
