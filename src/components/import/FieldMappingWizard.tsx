@@ -387,21 +387,25 @@ export default function FieldMappingWizard({
 }
 
 function HeaderRow({
-  header, cur, match, stats, onChange, onAccept,
+  header, cur, match, stats, excluded, onChange, onAccept, onToggleExclude,
 }: {
   header: string;
   cur: string;
   match: HeaderMatch | undefined;
   stats: { filled: number; total: number } | undefined;
+  excluded: boolean;
   onChange: (h: string, v: string) => void;
   onAccept: () => void;
+  onToggleExclude: () => void;
 }) {
-  const isAmbiguous = !!match && match.confidence > 0 && match.confidence < 0.85 && cur === NONE;
+  const isAmbiguous = !excluded && !!match && match.confidence > 0 && match.confidence < 0.85 && cur === NONE;
   const currentIsMapped = cur !== NONE;
-  const rowTone = isAmbiguous ? "bg-warning/5" : "";
+  const rowTone = excluded ? "bg-muted/40 opacity-60" : isAmbiguous ? "bg-warning/5" : "";
 
   const conf = match?.confidence ?? 0;
-  const confBadge = currentIsMapped && match?.field === cur
+  const confBadge = excluded
+    ? { label: "Skipped", tone: "bg-muted text-muted-foreground border-border" }
+    : currentIsMapped && match?.field === cur
     ? confidenceBadge(conf)
     : cur !== NONE
     ? { label: "Manual", tone: "bg-primary/10 text-primary border-primary/30" }
@@ -416,10 +420,10 @@ function HeaderRow({
     <>
       <tr className={`border-t ${rowTone}`}>
         <td className="px-3 py-1.5 max-w-xs">
-          <div className="truncate" title={header}>{header}</div>
+          <div className={`truncate ${excluded ? "line-through" : ""}`} title={header}>{header}</div>
         </td>
         <td className="px-3 py-1">
-          <Select value={cur} onValueChange={(v) => onChange(header, v)}>
+          <Select value={cur} onValueChange={(v) => onChange(header, v)} disabled={excluded}>
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>— Ignore —</SelectItem>
@@ -445,10 +449,27 @@ function HeaderRow({
             ? <span title={`${pop.filled} of ${pop.total} rows`}>{pop.filled.toLocaleString()}{popPct !== null && ` · ${popPct}%`}</span>
             : <span className="text-muted-foreground">—</span>}
         </td>
+        <td className="px-2 py-1 text-center">
+          <TooltipProvider><Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onToggleExclude}
+                className={`inline-flex items-center justify-center h-6 w-6 rounded border ${excluded ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                aria-label={excluded ? "Include column" : "Exclude column from auto-detection"}
+              >
+                <Ban className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs">
+              {excluded ? "Include this column" : "Skip this column — exclude from auto-detection and mapping"}
+            </TooltipContent>
+          </Tooltip></TooltipProvider>
+        </td>
       </tr>
       {isAmbiguous && match && (
         <tr className="bg-warning/5">
-          <td colSpan={4} className="px-3 pb-2 pt-0">
+          <td colSpan={5} className="px-3 pb-2 pt-0">
             <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
               <AlertCircle className="h-3 w-3 text-warning" />
               <span className="text-muted-foreground">Ambiguous — did you mean:</span>
