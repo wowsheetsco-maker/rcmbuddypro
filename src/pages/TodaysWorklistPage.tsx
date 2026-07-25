@@ -228,13 +228,7 @@ export default function TodaysWorklistPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <Label htmlFor="mine-only" className="text-xs text-muted-foreground cursor-pointer">
-              Show only what's assigned to me
-            </Label>
-            <Switch id="mine-only" checked={mineOnly} onCheckedChange={toggleMineOnly} />
-          </div>
+          <ScopeSelector value={effectiveScope} onChange={updateScope} role={role} isPlatformAdmin={isPlatformAdmin} />
         </div>
 
         <KpiGrid cols={4}>
