@@ -53,13 +53,15 @@ export default function FieldMappingWizard({
 }: Props) {
   const [mapping, setMapping] = useState<Mapping>(initialMapping ?? {});
   const [presetName, setPresetName] = useState<string>("");
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [reportOpen, setReportOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  // Score every header against every candidate field. Recomputed only when
-  // detectedHeaders changes — cheap because scoring is O(headers × fields).
+  // Score headers, ignoring excluded ones so misnamed / duplicate columns
+  // don't create noisy ambiguous matches.
   const scored = useMemo(
-    () => autoDetectMappingScored(detectedHeaders),
-    [detectedHeaders],
+    () => autoDetectMappingScored(detectedHeaders.filter((h) => !excluded.has(h))),
+    [detectedHeaders, excluded],
   );
 
   const readiness = useMemo(() => computeReadiness(mapping), [mapping]);
