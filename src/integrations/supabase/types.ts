@@ -4930,6 +4930,10 @@ export type Database = {
         Args: { _branch_id: string; _org_id: string }
         Returns: boolean
       }
+      can_approve_writeoff: {
+        Args: { _org_id: string; _required: string }
+        Returns: boolean
+      }
       claim_status_bucket_for: {
         Args: { _code: Database["public"]["Enums"]["claim_status_code"] }
         Returns: Database["public"]["Enums"]["claim_status_bucket"]
@@ -4981,6 +4985,10 @@ export type Database = {
         Args: { _raw: string }
         Returns: Database["public"]["Enums"]["claim_status_code"]
       }
+      org_role_rank: {
+        Args: { _role: Database["public"]["Enums"]["org_role"] }
+        Returns: number
+      }
       private_cron_get: { Args: { _key: string }; Returns: string }
       private_cron_set: {
         Args: { _key: string; _value: string }
@@ -4991,6 +4999,7 @@ export type Database = {
         Returns: Json
       }
       refresh_hospital_kpis: { Args: never; Returns: number }
+      required_role_rank: { Args: { _required: string }; Returns: number }
       seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
       seed_submission_checklist: {
         Args: { _submission_id: string }
