@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search, ScanLine } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search, ScanLine, Settings2 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { toast } from "@/hooks/use-toast";
@@ -33,6 +34,11 @@ export default function PaymentAdvicePage() {
   const [utrOverride, setUtrOverride] = useState("");
   const [enableOcr, setEnableOcr] = useState(true);
   const [forceOcr, setForceOcr] = useState(false);
+  const [ocrLang, setOcrLang] = useState("eng");
+  const [ocrScale, setOcrScale] = useState(2);
+  const [ocrRotate, setOcrRotate] = useState<0 | 90 | 180 | 270>(0);
+  const [ocrTableMode, setOcrTableMode] = useState(true);
+  const [showOcrSettings, setShowOcrSettings] = useState(false);
   const [progress, setProgress] = useState<{ msg: string; pct: number } | null>(null);
 
   const onFile = useCallback(async (file: File) => {
@@ -42,6 +48,7 @@ export default function PaymentAdvicePage() {
       const res = await parsePaymentAdvicePdf(file, {
         enableOcr,
         forceOcr,
+        ocr: { language: ocrLang, scale: ocrScale, rotate: ocrRotate, tableMode: ocrTableMode },
         onProgress: (msg, pct) => setProgress({ msg, pct }),
       });
       setAdvice(res);
@@ -56,7 +63,7 @@ export default function PaymentAdvicePage() {
       setParsing(false);
       setProgress(null);
     }
-  }, [enableOcr, forceOcr]);
+  }, [enableOcr, forceOcr, ocrLang, ocrScale, ocrRotate, ocrTableMode]);
 
   const runManual = useCallback(() => {
     if (!manualText.trim()) return;
@@ -133,7 +140,7 @@ export default function PaymentAdvicePage() {
               />
               {parsing && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Working…</span>}
             </div>
-            <div className="flex flex-wrap gap-6 text-xs">
+            <div className="flex flex-wrap gap-6 text-xs items-center">
               <label className="flex items-center gap-2">
                 <Switch checked={enableOcr} onCheckedChange={setEnableOcr} disabled={parsing} />
                 <span className="flex items-center gap-1"><ScanLine className="h-3 w-3" />OCR fallback for scanned PDFs</span>
@@ -142,7 +149,62 @@ export default function PaymentAdvicePage() {
                 <Switch checked={forceOcr} onCheckedChange={setForceOcr} disabled={parsing || !enableOcr} />
                 <span>Force OCR (ignore embedded text)</span>
               </label>
+              <Button
+                size="sm" variant="ghost" className="h-7 text-xs"
+                onClick={() => setShowOcrSettings((v) => !v)}
+                disabled={!enableOcr}
+              >
+                <Settings2 className="h-3 w-3 mr-1" />OCR settings
+              </Button>
             </div>
+            {showOcrSettings && enableOcr && (
+              <div className="rounded-md border bg-muted/30 p-3 grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div>
+                  <Label className="text-[11px]">Language</Label>
+                  <Select value={ocrLang} onValueChange={setOcrLang} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="eng">English</SelectItem>
+                      <SelectItem value="eng+hin">English + Hindi</SelectItem>
+                      <SelectItem value="eng+tam">English + Tamil</SelectItem>
+                      <SelectItem value="eng+tel">English + Telugu</SelectItem>
+                      <SelectItem value="eng+mar">English + Marathi</SelectItem>
+                      <SelectItem value="eng+ben">English + Bengali</SelectItem>
+                      <SelectItem value="eng+guj">English + Gujarati</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px]">DPI / Scale</Label>
+                  <Select value={String(ocrScale)} onValueChange={(v) => setOcrScale(Number(v))} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">72 DPI (fast)</SelectItem>
+                      <SelectItem value="1.5">108 DPI</SelectItem>
+                      <SelectItem value="2">144 DPI (default)</SelectItem>
+                      <SelectItem value="3">216 DPI (accurate)</SelectItem>
+                      <SelectItem value="4">288 DPI (slow)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-[11px]">Rotate / Deskew</Label>
+                  <Select value={String(ocrRotate)} onValueChange={(v) => setOcrRotate(Number(v) as 0 | 90 | 180 | 270)} disabled={parsing}>
+                    <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="0">0° (upright)</SelectItem>
+                      <SelectItem value="90">90° clockwise</SelectItem>
+                      <SelectItem value="180">180° (upside-down)</SelectItem>
+                      <SelectItem value="270">270° clockwise</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <label className="flex items-end gap-2 pb-1">
+                  <Switch checked={ocrTableMode} onCheckedChange={setOcrTableMode} disabled={parsing} />
+                  <span className="text-xs">Table mode<span className="block text-[10px] text-muted-foreground">Preserve column spacing</span></span>
+                </label>
+              </div>
+            )}
             {progress && (
               <div className="space-y-1">
                 <div className="flex justify-between text-[11px] text-muted-foreground">
@@ -255,9 +317,190 @@ export default function PaymentAdvicePage() {
                 </div>
               </CardContent>
             </Card>
+
+            <ReconciliationSummary
+              advice={advice}
+              utr={utrOverride || advice.utr || "—"}
+              matches={result.matches}
+              summary={result.summary}
+            />
           </>
         )}
       </div>
     </AppLayout>
+  );
+}
+
+interface ReconSummaryProps {
+  advice: ParsedPaymentAdvice;
+  utr: string;
+  matches: AdviceLineMatch[];
+  summary: { totalLines: number; matchedLines: number; totalAmount: number; matchedAmount: number; unmatchedAmount: number };
+}
+
+function ReconciliationSummary({ advice, utr, matches, summary }: ReconSummaryProps) {
+  const matched = matches.filter((m) => m.claim);
+  const unmatched = matches.filter((m) => !m.claim);
+  const review = matched.filter((m) => m.confidence < 90);
+  const autoMatched = matched.filter((m) => m.confidence >= 90);
+
+  const byMethod = matched.reduce<Record<string, { count: number; amount: number }>>((acc, m) => {
+    const k = m.method;
+    if (!acc[k]) acc[k] = { count: 0, amount: 0 };
+    acc[k].count += 1;
+    acc[k].amount += m.line.net_paid || 0;
+    return acc;
+  }, {});
+
+  const methodLabel: Record<string, string> = {
+    claim_number: "Exact claim number",
+    initial_claim_number: "Partial claim number",
+    "patient+amount": "Patient name + amount",
+    amount_only: "Unique amount only",
+    none: "No match",
+  };
+
+  const shortPay = matched.filter((m) => m.claim?.approved_amount && Math.abs((m.claim.approved_amount as number) - m.line.net_paid) > Math.max(5, (m.claim.approved_amount as number) * 0.02));
+  const shortPayAmount = shortPay.reduce((s, m) => s + Math.max(0, (m.claim!.approved_amount as number) - m.line.net_paid), 0);
+
+  const exportSummary = () => {
+    const lines: (string | number)[][] = [
+      ["Reconciliation Summary Report"],
+      ["Generated", new Date().toLocaleString()],
+      ["UTR / Ref", utr],
+      ["Payment Date", advice.payment_date || "—"],
+      ["Payer", advice.payer_name || "—"],
+      ["Layout", advice.layout],
+      ["Used OCR", advice.used_ocr ? "Yes" : "No"],
+      [],
+      ["Totals"],
+      ["Advice Total", advice.total_amount],
+      ["Matched Amount", summary.matchedAmount],
+      ["Unmatched Amount", summary.unmatchedAmount],
+      ["Short-pay Gap (matched)", shortPayAmount],
+      [],
+      ["Counts"],
+      ["Lines extracted", summary.totalLines],
+      ["Auto-matched (≥90%)", autoMatched.length],
+      ["Needs review (<90%)", review.length],
+      ["Unmatched", unmatched.length],
+      [],
+      ["Match method breakdown"],
+      ["Method", "Count", "Amount"],
+      ...Object.entries(byMethod).map(([k, v]) => [methodLabel[k] ?? k, v.count, v.amount]),
+      [],
+      ["Unmatched / low-confidence lines"],
+      ["Claim No", "Patient", "Net Paid", "Confidence", "Reason"],
+      ...[...unmatched, ...review].map((m) => [
+        m.line.claim_number ?? "",
+        m.line.patient_name ?? "",
+        m.line.net_paid,
+        m.claim ? `${m.confidence}%` : "Unmatched",
+        m.reasons.join("; "),
+      ]),
+    ];
+    const csv = lines.map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `recon-summary-${utr.replace(/[^A-Z0-9]/gi, "_")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3 flex-row items-center justify-between">
+        <CardTitle className="text-sm flex items-center gap-2"><FileText className="h-4 w-4" />4. Reconciliation summary report</CardTitle>
+        <Button size="sm" variant="outline" onClick={exportSummary}><Download className="h-3 w-3 mr-1" />Export report</Button>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="rounded border p-3">
+            <div className="text-muted-foreground">Auto-matched</div>
+            <div className="text-lg font-semibold text-success">{autoMatched.length}</div>
+            <div className="text-[11px] text-muted-foreground">{formatInrShort(autoMatched.reduce((s, m) => s + m.line.net_paid, 0))}</div>
+          </div>
+          <div className="rounded border p-3">
+            <div className="text-muted-foreground">Needs review</div>
+            <div className="text-lg font-semibold text-warning">{review.length}</div>
+            <div className="text-[11px] text-muted-foreground">Confidence &lt; 90%</div>
+          </div>
+          <div className="rounded border p-3">
+            <div className="text-muted-foreground">Unmatched</div>
+            <div className="text-lg font-semibold text-destructive">{unmatched.length}</div>
+            <div className="text-[11px] text-muted-foreground">{formatInrShort(unmatched.reduce((s, m) => s + m.line.net_paid, 0))}</div>
+          </div>
+          <div className="rounded border p-3">
+            <div className="text-muted-foreground">Short-pay gap</div>
+            <div className="text-lg font-semibold text-destructive">{formatInrShort(shortPayAmount)}</div>
+            <div className="text-[11px] text-muted-foreground">{shortPay.length} claims &gt; 2% short</div>
+          </div>
+        </div>
+
+        <div>
+          <div className="text-xs font-medium mb-2">Match method breakdown</div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-xs">Method</TableHead>
+                <TableHead className="text-xs text-right">Count</TableHead>
+                <TableHead className="text-xs text-right">Amount</TableHead>
+                <TableHead className="text-xs">Confidence tier</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Object.entries(byMethod).map(([k, v]) => (
+                <TableRow key={k}>
+                  <TableCell className="text-xs">{methodLabel[k] ?? k}</TableCell>
+                  <TableCell className="text-xs text-right">{v.count}</TableCell>
+                  <TableCell className="text-xs text-right">{formatInrShort(v.amount)}</TableCell>
+                  <TableCell className="text-xs">
+                    {k === "claim_number" && <Badge className="bg-success text-success-foreground">High (92-100%)</Badge>}
+                    {k === "initial_claim_number" && <Badge className="bg-primary text-primary-foreground">Medium (~80%)</Badge>}
+                    {k === "patient+amount" && <Badge className="bg-primary text-primary-foreground">Medium (~78%)</Badge>}
+                    {k === "amount_only" && <Badge variant="secondary">Low (~55%)</Badge>}
+                  </TableCell>
+                </TableRow>
+              ))}
+              {Object.keys(byMethod).length === 0 && (
+                <TableRow><TableCell colSpan={4} className="text-center text-xs text-muted-foreground py-4">No matches yet.</TableCell></TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {(unmatched.length > 0 || review.length > 0) && (
+          <div>
+            <div className="text-xs font-medium mb-2">Mismatch reasons ({unmatched.length + review.length})</div>
+            <div className="max-h-64 overflow-auto rounded border">
+              <Table>
+                <TableHeader className="sticky top-0 bg-background z-10">
+                  <TableRow>
+                    <TableHead className="text-xs">Claim No (advice)</TableHead>
+                    <TableHead className="text-xs">Patient</TableHead>
+                    <TableHead className="text-xs text-right">Net Paid</TableHead>
+                    <TableHead className="text-xs">Confidence</TableHead>
+                    <TableHead className="text-xs">Reason</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {[...unmatched, ...review].map((m, i) => (
+                    <TableRow key={i} className={!m.claim ? "bg-destructive/5" : "bg-warning/5"}>
+                      <TableCell className="font-mono text-xs">{m.line.claim_number ?? "—"}</TableCell>
+                      <TableCell className="text-xs">{m.line.patient_name ?? "—"}</TableCell>
+                      <TableCell className="text-xs text-right">{formatInrShort(m.line.net_paid)}</TableCell>
+                      <TableCell className="text-xs">{m.claim ? `${m.confidence}%` : "Unmatched"}</TableCell>
+                      <TableCell className="text-xs text-muted-foreground">{m.reasons.join("; ") || "—"}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
