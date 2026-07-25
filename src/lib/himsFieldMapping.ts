@@ -395,3 +395,87 @@ export function computeReadiness(
 export function fieldLabel(field: keyof ClaimUpsertRow): string {
   return MAPPABLE_FIELDS.find((m) => m.field === field)?.label ?? String(field);
 }
+
+// -------- Critical fields for live population preview -----------------------
+
+/** Fields highlighted in the wizard's "live population" preview. These are the
+ *  ones whose emptiness materially degrades analytics — hospitals should see
+ *  how many claims will actually populate them under the current mapping. */
+export const CRITICAL_FIELDS: (keyof ClaimUpsertRow)[] = [
+  "claim_number",
+  "patient_name",
+  "tpa_name",
+  "claim_status",
+  "claim_creation_date",
+  "date_of_admission",
+  "date_of_discharge",
+  "doc_submission_date",
+  "payment_update_date",
+  "claimed_amount",
+  "approved_amount",
+  "settled_amount",
+  "tds_amount",
+  "shortfall_amount",
+  "insurer_comments",
+  "treating_doctor",
+  "ward",
+  "coder_name",
+  "tpa_spoc",
+  "cheque_neft_utr_no",
+];
+
+// -------- Reusable mapping templates (JSON export / import) -----------------
+
+export const TEMPLATE_VERSION = 1;
+
+export interface MappingTemplate {
+  version: number;
+  name: string;
+  hims?: string;
+  createdAt: string;
+  mapping: Record<string, keyof ClaimUpsertRow>;
+  notes?: string;
+}
+
+export function serializeTemplate(
+  t: Omit<MappingTemplate, "version" | "createdAt"> & { createdAt?: string },
+): string {
+  const payload: MappingTemplate = {
+    version: TEMPLATE_VERSION,
+    name: t.name,
+    hims: t.hims,
+    createdAt: t.createdAt ?? new Date().toISOString(),
+    mapping: t.mapping,
+    notes: t.notes,
+  };
+  return JSON.stringify(payload, null, 2);
+}
+
+/** Parse an uploaded template. Filters out unknown fields so templates from
+ *  older builds still load. */
+export function parseTemplate(json: string): MappingTemplate {
+  const raw = JSON.parse(json);
+  if (!raw || typeof raw !== "object") throw new Error("Not a mapping template");
+  if (typeof raw.mapping !== "object" || raw.mapping === null) throw new Error("Template is missing a mapping");
+  const validFields = new Set(MAPPABLE_FIELDS.map((f) => f.field));
+  const filteredMapping: Record<string, keyof ClaimUpsertRow> = {};
+  const dropped: string[] = [];
+  for (const [k, v] of Object.entries(raw.mapping as Record<string, unknown>)) {
+    if (typeof v === "string" && validFields.has(v as keyof ClaimUpsertRow)) {
+      filteredMapping[k] = v as keyof ClaimUpsertRow;
+    } else {
+      dropped.push(k);
+    }
+  }
+  if (dropped.length > 0) {
+    console.warn(`[mapping template] dropped ${dropped.length} unknown fields:`, dropped);
+  }
+  return {
+    version: typeof raw.version === "number" ? raw.version : 0,
+    name: typeof raw.name === "string" ? raw.name : "Imported template",
+    hims: typeof raw.hims === "string" ? raw.hims : undefined,
+    createdAt: typeof raw.createdAt === "string" ? raw.createdAt : new Date().toISOString(),
+    notes: typeof raw.notes === "string" ? raw.notes : undefined,
+    mapping: filteredMapping,
+  };
+}
