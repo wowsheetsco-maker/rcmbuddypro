@@ -46,6 +46,12 @@ export interface ClaimUpsertRow {
   is_irdai_breach: boolean;
   hospital_group_id: string | null;
   hospital_branch_id: string | null;
+  treating_doctor: string | null;
+  ward: string | null;
+  coder_name: string | null;
+  tpa_spoc: string | null;
+  hospital_spoc: string | null;
+  remarks: string | null;
 }
 
 export interface ParseError {
