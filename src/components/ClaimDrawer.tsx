@@ -27,6 +27,7 @@ import {
 import CommunicationLauncher from "@/components/CommunicationLauncher";
 import ClaimEditDialog from "@/components/ClaimEditDialog";
 import { ClaimDocumentsPanel } from "@/components/ClaimDocumentsPanel";
+import ClaimTimeline from "@/components/ClaimTimeline";
 import { useInsurerSpoc } from "@/hooks/useInsurerSpoc";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppComposerDialog from "@/components/WhatsAppComposerDialog";
@@ -403,6 +404,7 @@ export default function ClaimDrawer({ claim, onClose, onUpdated }: Props) {
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">{history.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Timeline</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Documents</TabsTrigger>
           </TabsList>
 
@@ -950,6 +952,10 @@ export default function ClaimDrawer({ claim, onClose, onUpdated }: Props) {
                 </ol>
               )}
             </div>
+          </TabsContent>
+
+          <TabsContent value="timeline" className="mt-0">
+            <ClaimTimeline claim={claim} />
           </TabsContent>
 
           <TabsContent value="documents" className="p-5 mt-0">

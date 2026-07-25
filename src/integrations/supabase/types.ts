@@ -1064,6 +1064,64 @@ export type Database = {
         }
         Relationships: []
       }
+      claim_events: {
+        Row: {
+          actor_id: string | null
+          actor_name: string | null
+          claim_id: string
+          created_at: string
+          details: Json | null
+          event_at: string
+          event_label: string
+          event_type: string
+          id: string
+        }
+        Insert: {
+          actor_id?: string | null
+          actor_name?: string | null
+          claim_id: string
+          created_at?: string
+          details?: Json | null
+          event_at?: string
+          event_label: string
+          event_type: string
+          id?: string
+        }
+        Update: {
+          actor_id?: string | null
+          actor_name?: string | null
+          claim_id?: string
+          created_at?: string
+          details?: Json | null
+          event_at?: string
+          event_label?: string
+          event_type?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "claims"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_claims_priority"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "claim_events_claim_id_fkey"
+            columns: ["claim_id"]
+            isOneToOne: false
+            referencedRelation: "v_discrepancy_rows"
+            referencedColumns: ["claim_id"]
+          },
+        ]
+      }
       claim_status_meta: {
         Row: {
           bucket: Database["public"]["Enums"]["claim_status_bucket"]

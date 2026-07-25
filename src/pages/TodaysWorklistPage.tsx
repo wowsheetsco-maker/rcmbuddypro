@@ -1,19 +1,24 @@
 import React, { useMemo, useState } from "react";
-import { Loader2, ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { Loader2, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
 import { RcmIcons } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, agingVariant } from "@/components/ui/badge";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { ListItemSkeleton } from "@/components/skeletons";
-import { countSlaBreaches, countOpenDenials } from "@/lib/claimMetrics";
 import AppLayout from "@/components/AppLayout";
 import ClaimDrawer from "@/components/ClaimDrawer";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { useFollowUpData } from "@/hooks/useFollowUpData";
+import { useActingUserId } from "@/hooks/useActingUser";
 import { type Claim, formatInr, formatDays } from "@/data/mockClaims";
+import { isDocsToSubmit } from "@/lib/claimStatusBuckets";
 
 const SETTLED = new Set(["settled", "paid", "closed", "claim settled"]);
 const DENIED = /denied|rejected|repudiat/i;
+const QUERY_RX = /query|shortfall|clarification|pending.*info/i;
+const HIGH_VALUE_AR_DAYS = 60;
 
 interface QueueItem {
   claim: Claim;
@@ -25,7 +30,16 @@ interface QueueItem {
 export default function TodaysWorklistPage() {
   const { claims, loading, isMock, refetch } = useLiveClaims();
   const { followUps, loading: fuLoading } = useFollowUpData();
+  const [actingUserId] = useActingUserId();
+  const [mineOnly, setMineOnly] = useState<boolean>(() => {
+    try { return localStorage.getItem("rcm-today-mine-only") === "1"; } catch { return false; }
+  });
   const [selected, setSelected] = useState<Claim | null>(null);
+
+  const toggleMineOnly = (v: boolean) => {
+    setMineOnly(v);
+    try { localStorage.setItem("rcm-today-mine-only", v ? "1" : "0"); } catch { /* noop */ }
+  };
 
   const claimsById = useMemo(() => new Map(claims.map((c) => [c.id, c])), [claims]);
 
@@ -34,7 +48,7 @@ export default function TodaysWorklistPage() {
     today.setHours(23, 59, 59, 999);
     const todayMs = today.getTime();
 
-    // Follow-ups due (overdue or due today) — dedupe to latest per claim
+    // 1) Overdue follow-ups — optionally scoped to acting user (logged_by = me)
     const seenFu = new Set<string>();
     const followUpsDue: QueueItem[] = [];
     const sorted = [...followUps].sort(
@@ -42,6 +56,7 @@ export default function TodaysWorklistPage() {
     );
     for (const fu of sorted) {
       if (seenFu.has(fu.claim_id)) continue;
+      if (mineOnly && actingUserId && fu.logged_by && fu.logged_by !== actingUserId) continue;
       seenFu.add(fu.claim_id);
       const claim = claimsById.get(fu.claim_id);
       if (!claim) continue;
@@ -58,137 +73,186 @@ export default function TodaysWorklistPage() {
       });
     }
 
-    // Denials due — denied/rejected with outstanding > 0
-    const denialsDue: QueueItem[] = [];
+    // 2) Docs-to-submit — approved/discharged claims awaiting document submission
+    const docsToSubmit: QueueItem[] = [];
     for (const c of claims) {
-      const status = (c.claim_status || "").toLowerCase().trim();
-      if (SETTLED.has(status)) continue;
-      if (!DENIED.test(c.claim_status)) continue;
-      if (c.outstanding_amount <= 0) continue;
-      denialsDue.push({
+      if (!isDocsToSubmit(c)) continue;
+      docsToSubmit.push({
         claim: c,
-        reason: c.claim_status,
-        ageLabel: `${formatDays(c.days_since_claim)} since claim`,
-        amount: c.outstanding_amount,
+        reason: c.claim_status || "Approved",
+        ageLabel: c.date_of_discharge
+          ? `${formatDays(Math.max(0, Math.floor((Date.now() - new Date(c.date_of_discharge).getTime()) / 86_400_000)))} since discharge`
+          : `${formatDays(c.days_since_claim)} old`,
+        amount: c.approved_amount || c.claimed_amount || 0,
       });
     }
 
-    // SLA breaches in 48h — already breaching OR within 2 days of 15-day TAT
-    const irdai48: QueueItem[] = [];
+    // 3) New denials & queries to action
+    const denialsQueries: QueueItem[] = [];
     for (const c of claims) {
       const status = (c.claim_status || "").toLowerCase().trim();
       if (SETTLED.has(status)) continue;
-      const days = c.days_since_claim;
-      const breach = c.is_irdai_breach;
-      const closeToBreach = !breach && days >= 13 && days <= 15;
-      if (!breach && !closeToBreach) continue;
-      irdai48.push({
+      const isDenial = DENIED.test(c.claim_status);
+      const isQuery = QUERY_RX.test(c.claim_status);
+      if (!isDenial && !isQuery) continue;
+      if (c.outstanding_amount <= 0 && !isQuery) continue;
+      denialsQueries.push({
         claim: c,
-        reason: breach ? `Breached · ${formatDays(days)}` : `Breaches in ${formatDays(Math.max(0, 15 - days))}`,
-        ageLabel: `${formatDays(days)} / 15 d TAT`,
+        reason: c.claim_status,
+        ageLabel: `${formatDays(c.days_since_claim)} old`,
+        amount: c.outstanding_amount || c.approved_amount || 0,
+      });
+    }
+
+    // 4) High-value AR at risk — outstanding > 0 and > 60 days
+    const highValueAr: QueueItem[] = [];
+    for (const c of claims) {
+      const status = (c.claim_status || "").toLowerCase().trim();
+      if (SETTLED.has(status)) continue;
+      if (c.outstanding_amount <= 0) continue;
+      if (c.days_since_claim < HIGH_VALUE_AR_DAYS) continue;
+      highValueAr.push({
+        claim: c,
+        reason: `${formatDays(c.days_since_claim)} old`,
+        ageLabel: c.tpa_name || "—",
         amount: c.outstanding_amount,
       });
     }
 
     const byAmount = (a: QueueItem, b: QueueItem) => b.amount - a.amount;
     followUpsDue.sort(byAmount);
-    denialsDue.sort(byAmount);
-    irdai48.sort(byAmount);
-    return { followUpsDue, denialsDue, irdai48 };
-  }, [claims, followUps, claimsById]);
+    docsToSubmit.sort(byAmount);
+    denialsQueries.sort(byAmount);
+    highValueAr.sort(byAmount);
+    return { followUpsDue, docsToSubmit, denialsQueries, highValueAr };
+  }, [claims, followUps, claimsById, mineOnly, actingUserId]);
 
   const isLoading = loading || fuLoading;
-  const totalItems =
-    buckets.followUpsDue.length + buckets.denialsDue.length + buckets.irdai48.length;
-  const totalAtRisk =
-    [...buckets.followUpsDue, ...buckets.denialsDue, ...buckets.irdai48].reduce(
-      (s, i) => s + i.amount,
-      0,
-    );
+  const allItems = [
+    ...buckets.followUpsDue,
+    ...buckets.docsToSubmit,
+    ...buckets.denialsQueries,
+    ...buckets.highValueAr,
+  ];
+  const totalItems = allItems.length;
+  const totalAtRisk = allItems.reduce((s, i) => s + i.amount, 0);
 
-  const slaBreaches = useMemo(() => countSlaBreaches(claims), [claims]);
-  const openDenials = useMemo(() => countOpenDenials(claims), [claims]);
+  const greeting = (() => {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning";
+    if (h < 17) return "Good afternoon";
+    return "Good evening";
+  })();
 
   return (
     <AppLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-display text-foreground">Today's Worklist</h1>
-          <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
-            {isLoading ? "Loading your queue…" : "Items needing action right now"}
-            {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
-            {isMock && !isLoading && (
-              <Badge variant="outline" className="text-[9px] py-0">Sample data</Badge>
-            )}
-          </p>
+        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-display text-foreground">{greeting} — here's your day</h1>
+            <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-2">
+              {isLoading ? "Loading your queue…" : "Four things need your attention right now"}
+              {isLoading && <Loader2 className="h-3 w-3 animate-spin" />}
+              {isMock && !isLoading && (
+                <Badge variant="outline" className="text-[9px] py-0">Sample data</Badge>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5">
+            <User className="h-3.5 w-3.5 text-muted-foreground" />
+            <Label htmlFor="mine-only" className="text-xs text-muted-foreground cursor-pointer">
+              Show only what's assigned to me
+            </Label>
+            <Switch id="mine-only" checked={mineOnly} onCheckedChange={toggleMineOnly} />
+          </div>
         </div>
 
         <KpiGrid cols={4}>
           <KpiCard
-            label="Items in queue"
-            value={totalItems.toLocaleString("en-IN")}
+            label="Follow-ups due"
+            value={buckets.followUpsDue.length.toLocaleString("en-IN")}
             loading={isLoading}
-            empty={!isLoading && totalItems === 0}
-            icon={<RcmIcons.worklist className="h-3.5 w-3.5 text-primary" />}
-            caption="Follow-ups + denials + SLA"
+            empty={!isLoading && buckets.followUpsDue.length === 0}
+            icon={<RcmIcons.followUp className="h-3.5 w-3.5 text-primary" />}
+            caption={mineOnly ? "Assigned to me" : "Across team"}
           />
           <KpiCard
-            label="At risk"
+            label="Docs to submit"
+            value={buckets.docsToSubmit.length.toLocaleString("en-IN")}
+            loading={isLoading}
+            empty={!isLoading && buckets.docsToSubmit.length === 0}
+            icon={<RcmIcons.worklist className="h-3.5 w-3.5 text-primary" />}
+            caption="Post-discharge / approved"
+          />
+          <KpiCard
+            label="Denials & queries"
+            value={buckets.denialsQueries.length.toLocaleString("en-IN")}
+            tone="denial"
+            loading={isLoading}
+            empty={!isLoading && buckets.denialsQueries.length === 0}
+            icon={<RcmIcons.denial className="h-3.5 w-3.5 text-denial" />}
+            caption="Awaiting response"
+          />
+          <KpiCard
+            label="AR at risk (>60 d)"
             value={formatInr(totalAtRisk)}
             tone="denial"
             loading={isLoading}
-            empty={!isLoading && totalAtRisk === 0}
+            empty={!isLoading && buckets.highValueAr.length === 0}
             icon={<RcmIcons.amount className="h-3.5 w-3.5 text-denial" />}
-            caption="Outstanding across queue"
-          />
-          <KpiCard
-            label="SLA breaches"
-            value={slaBreaches}
-            tone="denial"
-            loading={isLoading}
-            empty={!isLoading && slaBreaches === 0}
-            icon={<RcmIcons.irdaiBreach className="h-3.5 w-3.5 text-denial" />}
-            caption=">15 day TAT"
-          />
-          <KpiCard
-            label="Open denials"
-            value={openDenials}
-            loading={isLoading}
-            empty={!isLoading && openDenials === 0}
-            icon={<RcmIcons.denial className="h-3.5 w-3.5 text-destructive" />}
-            caption="With outstanding > 0"
+            caption={`${buckets.highValueAr.length} claims`}
           />
         </KpiGrid>
 
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <QueueCard
             title="Follow-ups due"
+            subtitle={mineOnly ? "Assigned to me" : "Overdue or due today"}
             icon={RcmIcons.followUp}
             tone="text-primary"
             items={buckets.followUpsDue}
             loading={isLoading}
             onOpen={setSelected}
-            empty="No follow-ups overdue. Nice work."
+            empty="No follow-ups pending. Nice work."
           />
           <QueueCard
-            title="Denials to action"
+            title="Docs to submit"
+            subtitle="Approved / post-discharge claims awaiting docs"
+            icon={RcmIcons.worklist}
+            tone="text-primary"
+            items={buckets.docsToSubmit}
+            loading={isLoading}
+            onOpen={setSelected}
+            empty="No pending document submissions."
+          />
+          <QueueCard
+            title="New denials & queries"
+            subtitle="Payer wants a response"
             icon={RcmIcons.denial}
             tone="text-denial"
-            items={buckets.denialsDue}
+            items={buckets.denialsQueries}
             loading={isLoading}
             onOpen={setSelected}
-            empty="No open denials right now."
+            empty="No open denials or queries."
           />
           <QueueCard
-            title="SLA breach in 48h"
-            icon={RcmIcons.irdaiBreach}
+            title="High-value AR at risk"
+            subtitle=">60 days old with outstanding"
+            icon={RcmIcons.amount}
             tone="text-denial"
-            items={buckets.irdai48}
+            items={buckets.highValueAr}
             loading={isLoading}
             onOpen={setSelected}
-            empty="No claims approaching the 15-day TAT."
+            empty="No aged AR beyond 60 days."
           />
+        </div>
+
+        <div className="text-[11px] text-muted-foreground text-center">
+          {totalItems} items · {formatInr(totalAtRisk)} at stake ·
+          {" "}
+          <span className="underline decoration-dotted" title="This is your landing page. Detailed dashboards live under Analytics.">
+            Full dashboards →
+          </span>
         </div>
       </div>
 
@@ -208,6 +272,7 @@ export default function TodaysWorklistPage() {
 
 interface QueueCardProps {
   title: string;
+  subtitle?: string;
   icon: React.ComponentType<{ className?: string }>;
   tone: string;
   items: QueueItem[];
@@ -216,18 +281,23 @@ interface QueueCardProps {
   onOpen: (c: Claim) => void;
 }
 
-function QueueCard({ title, icon: Icon, tone, items, loading, empty, onOpen }: QueueCardProps) {
+function QueueCard({ title, subtitle, icon: Icon, tone, items, loading, empty, onOpen }: QueueCardProps) {
   const visible = items.slice(0, 8);
   const more = items.length - visible.length;
   const isDenialQueue =
-    title.toLowerCase().includes("denial") || title.toLowerCase().includes("irdai");
+    title.toLowerCase().includes("denial") || title.toLowerCase().includes("ar at risk");
   return (
     <Card variant={isDenialQueue && items.length > 0 ? "denial" : "default"} className="flex flex-col">
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2">
-          <Icon className={`h-4 w-4 ${tone}`} />
-          {title}
-        </CardTitle>
+        <div className="min-w-0">
+          <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Icon className={`h-4 w-4 ${tone}`} />
+            {title}
+          </CardTitle>
+          {subtitle && (
+            <div className="text-[10.5px] text-muted-foreground mt-0.5 ml-6">{subtitle}</div>
+          )}
+        </div>
         <Badge variant={isDenialQueue && items.length > 0 ? "denial" : "secondary"} className="tabular-nums">
           {loading ? "—" : items.length}
         </Badge>
@@ -265,7 +335,7 @@ function QueueCard({ title, icon: Icon, tone, items, loading, empty, onOpen }: Q
                         <Clock className="h-2.5 w-2.5 mr-0.5" /> {it.reason}
                       </Badge>
                       <span className="text-[10px] text-muted-foreground truncate">
-                        {it.claim.tpa_name}
+                        {it.ageLabel}
                       </span>
                     </div>
                   </div>
@@ -273,7 +343,7 @@ function QueueCard({ title, icon: Icon, tone, items, loading, empty, onOpen }: Q
                     <div className="text-sm font-semibold tabular-nums">
                       {formatInr(it.amount)}
                     </div>
-                    <div className="text-[10px] text-muted-foreground">{it.ageLabel}</div>
+                    <div className="text-[10px] text-muted-foreground">{it.claim.tpa_name}</div>
                   </div>
                   <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
                 </button>

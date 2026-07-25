@@ -142,7 +142,7 @@ function MobileRedirect() {
 type RouteEntry = ComponentType | (() => ReactElement);
 
 const ROUTES: Record<string, RouteEntry> = {
-  "/": ExecutiveDashboard,
+  "/": TodaysWorklistPage,
   "/launch": LaunchPage,
   "/m": MobileHomePage,
   "/my-tasks": MyTasksPage,
