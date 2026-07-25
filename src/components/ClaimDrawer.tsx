@@ -403,6 +403,7 @@ export default function ClaimDrawer({ claim, onClose, onUpdated }: Props) {
                 <Badge variant="secondary" className="h-4 px-1.5 text-[9px]">{history.length}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="timeline" className="text-xs data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Timeline</TabsTrigger>
             <TabsTrigger value="documents" className="text-xs data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none">Documents</TabsTrigger>
           </TabsList>
 
