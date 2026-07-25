@@ -66,6 +66,10 @@ export interface ParseResult {
   totalRows: number;
   detectedHeaders: string[];
   unmappedHeaders: string[];
+  /** Non-empty-value counts per detected header. Used by the mapping wizard's
+   *  live population preview so users see "1,834 / 2,000 populated" for each
+   *  candidate mapping before committing. */
+  headerStats: Record<string, { filled: number; total: number }>;
 }
 
 // --- Header mapping (template → DB column) -----------------------------------
