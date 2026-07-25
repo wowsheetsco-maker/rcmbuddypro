@@ -8,6 +8,7 @@ import AppLayout from "@/components/AppLayout";
 import OnboardingChecklistModal from "@/components/OnboardingChecklistModal";
 import AgingBucketsCard from "@/components/AgingBucketsCard";
 import DenialAnalyticsCard from "@/components/DenialAnalyticsCard";
+import HomePreferenceToggle from "@/components/HomePreferenceToggle";
 import { supabase } from "@/integrations/supabase/client";
 import { formatInrShort as formatInr } from "@/data/mockClaims";
 import { useGlobalFilter } from "@/components/global-filter-context";
@@ -159,8 +160,10 @@ export default function Dashboard() {
               Revenue cycle overview · {stats.total.toLocaleString("en-IN")} claims · {formatInr(stats.totalClaimed)} claimed
             </p>
           </div>
-          {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
-        </div>
+          <div className="flex items-center gap-2">
+            <HomePreferenceToggle />
+            {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+          </div>
 
         {/* Aging Buckets — CFO's first question, always */}
         <AgingBucketsCard />
