@@ -10,12 +10,25 @@
  * If the PDF has no selectable text (scanned image), we fall back to
  * client-side OCR via tesseract.js (lazy-loaded).
  */
-import * as pdfjsLib from "pdfjs-dist";
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore
-import PdfWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-
-(pdfjsLib as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = PdfWorker;
+// pdfjs-dist references DOMMatrix at module load, which does not exist in the
+// SSR runtime. Load it lazily and only in the browser.
+type PdfjsModule = typeof import("pdfjs-dist");
+let _pdfjsPromise: Promise<PdfjsModule> | undefined;
+async function getPdfjs(): Promise<PdfjsModule> {
+  if (typeof window === "undefined") {
+    throw new Error("PDF parsing is only available in the browser");
+  }
+  if (!_pdfjsPromise) {
+    _pdfjsPromise = (async () => {
+      const mod = await import("pdfjs-dist");
+      // @ts-expect-error - vite ?url import, resolved at build time
+      const workerUrl = (await import("pdfjs-dist/build/pdf.worker.min.mjs?url")).default;
+      (mod as unknown as { GlobalWorkerOptions: { workerSrc: string } }).GlobalWorkerOptions.workerSrc = workerUrl;
+      return mod;
+    })();
+  }
+  return _pdfjsPromise;
+}
 
 export interface PaymentAdviceLine {
   claim_number: string | null;
