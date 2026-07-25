@@ -146,8 +146,10 @@ const ROUTES: Record<string, RouteEntry> = {
   "/": TodaysWorklistPage,
   "/launch": LaunchPage,
   "/m": MobileHomePage,
-  "/my-tasks": MyTasksPage,
+  "/my-tasks": TodaysWorklistPage,
+  "/tasks": MyTasksPage,
   "/today": TodaysWorklistPage,
+  "/dashboard": Dashboard,
   "/dashboard/executive": ExecutiveDashboard,
   "/claims": ClaimsPage,
 
