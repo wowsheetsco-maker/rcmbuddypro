@@ -164,6 +164,9 @@ export default function Dashboard() {
             <HomePreferenceToggle />
             {loading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
           </div>
+        </div>
+
+
 
         {/* Aging Buckets — CFO's first question, always */}
         <AgingBucketsCard />
