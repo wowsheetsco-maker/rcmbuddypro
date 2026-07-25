@@ -93,6 +93,7 @@ export async function extractPdfText(
   opts: ExtractOptions = {},
 ): Promise<{ text: string; used_ocr: boolean }> {
   const data = file instanceof ArrayBuffer ? file : await file.arrayBuffer();
+  const pdfjsLib = await getPdfjs();
   const doc = await pdfjsLib.getDocument({ data }).promise;
   const pageTexts: string[] = [];
   let totalChars = 0;
