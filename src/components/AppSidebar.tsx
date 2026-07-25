@@ -99,8 +99,9 @@ const ROLE_META: Record<Role, { label: string; icon: LucideIcon; tagline: string
  * Each entry deep-links to the first tab of its hub.
  */
 const NAV_GROUPS: NavGroup[] = [
+  { label: "Home",       icon: Home,            path: "/" },
   { label: "My Tasks",   icon: ListChecks,      path: "/my-tasks" },
-  { label: "Dashboard",  icon: LayoutDashboard, path: "/", roles: ["cfo", "admin", "billing"] },
+  { label: "Dashboard",  icon: LayoutDashboard, path: "/dashboard", roles: ["cfo", "admin", "billing"] },
   { label: "Submission", icon: Search,          path: "/claims/payers" },
   { label: "Recovery",   icon: Flame,           path: "/claims/outstanding" },
   { label: "Recon",      icon: Network,         path: "/claims/discrepancy" },
@@ -281,21 +282,24 @@ function SidebarBody({ collapsed, onNavigate }: { collapsed: boolean; onNavigate
     // Section-aware active state: each top-level link "owns" a URL prefix
     // so the right item highlights even on sub-tab routes.
     const sectionPrefixes: Record<string, string[]> = {
-      "My Tasks":   ["/my-tasks"],
-      "Dashboard":  ["/"],
+      "Home":       ["/"],
+      "My Tasks":   ["/my-tasks", "/today", "/tasks"],
+      "Dashboard":  ["/dashboard"],
       "Submission": ["/claims", "/claims/payers", "/claims/docs-to-submit", "/claims/submission", "/claims/query"],
       "Recovery":   ["/claims/outstanding", "/claims/follow-up", "/claims/priority", "/claims/ar", "/claims/denials", "/claims/denials-workflow", "/claims/appeals"],
       "Recon":      ["/claims/discrepancy", "/claims/reconciliation", "/claims/recon-alerts"],
       "Follow-Ups": ["/communications"],
-      "Analytics":  ["/analytics", "/dashboard/executive"],
+      "Analytics":  ["/analytics"],
       "Admin Console": ["/settings", "/providers"],
     };
     const prefixes = sectionPrefixes[g.label] ?? [g.path!];
     const path = location.pathname;
     const isActive =
-      g.label === "Dashboard"
+      g.label === "Home"
         ? path === "/"
-        : prefixes.some((p) => path === p || path.startsWith(p + "/"));
+        : g.label === "Dashboard"
+        ? path === "/dashboard" || path.startsWith("/dashboard/")
+        : prefixes.some((p) => path === p || (p !== "/" && path.startsWith(p + "/")));
     const Icon = g.icon;
     const badge = badgeByPath[g.path!];
     const link = (
