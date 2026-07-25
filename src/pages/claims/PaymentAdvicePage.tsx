@@ -317,6 +317,13 @@ export default function PaymentAdvicePage() {
                 </div>
               </CardContent>
             </Card>
+
+            <ReconciliationSummary
+              advice={advice}
+              utr={utrOverride || advice.utr || "—"}
+              matches={result.matches}
+              summary={result.summary}
+            />
           </>
         )}
       </div>
