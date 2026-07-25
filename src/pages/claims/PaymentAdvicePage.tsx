@@ -1,18 +1,20 @@
 import { useCallback, useMemo, useState } from "react";
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search, ScanLine } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { toast } from "@/hooks/use-toast";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { formatInrShort } from "@/data/mockClaims";
 import {
-  parsePaymentAdvicePdf, parsePaymentAdviceText, matchAdviceLines,
+  parsePaymentAdvicePdf, parsePaymentAdviceText, matchAdviceLines, LAYOUT_LABELS,
   type ParsedPaymentAdvice, type AdviceLineMatch,
 } from "@/lib/paymentAdviceParser";
 
@@ -29,27 +31,39 @@ export default function PaymentAdvicePage() {
   const [parsing, setParsing] = useState(false);
   const [manualText, setManualText] = useState("");
   const [utrOverride, setUtrOverride] = useState("");
+  const [enableOcr, setEnableOcr] = useState(true);
+  const [forceOcr, setForceOcr] = useState(false);
+  const [progress, setProgress] = useState<{ msg: string; pct: number } | null>(null);
 
   const onFile = useCallback(async (file: File) => {
     setParsing(true);
+    setProgress({ msg: "Loading PDF…", pct: 5 });
     try {
-      const res = await parsePaymentAdvicePdf(file);
+      const res = await parsePaymentAdvicePdf(file, {
+        enableOcr,
+        forceOcr,
+        onProgress: (msg, pct) => setProgress({ msg, pct }),
+      });
       setAdvice(res);
       setUtrOverride(res.utr ?? "");
-      toast({ title: "Payment advice parsed", description: `${res.lines.length} claim rows extracted from ${file.name}` });
+      toast({
+        title: res.used_ocr ? "Parsed via OCR" : "Payment advice parsed",
+        description: `${res.lines.length} rows · Layout: ${LAYOUT_LABELS[res.layout]}${res.used_ocr ? " · OCR used" : ""}`,
+      });
     } catch (e) {
       toast({ title: "Could not parse PDF", description: (e as Error).message, variant: "destructive" });
     } finally {
       setParsing(false);
+      setProgress(null);
     }
-  }, []);
+  }, [enableOcr, forceOcr]);
 
   const runManual = useCallback(() => {
     if (!manualText.trim()) return;
     const res = parsePaymentAdviceText(manualText);
     setAdvice(res);
     setUtrOverride(res.utr ?? "");
-    toast({ title: "Text parsed", description: `${res.lines.length} claim rows extracted` });
+    toast({ title: "Text parsed", description: `${res.lines.length} rows · Layout: ${LAYOUT_LABELS[res.layout]}` });
   }, [manualText]);
 
   const matchable = useMemo(() => claims.map((c) => ({
