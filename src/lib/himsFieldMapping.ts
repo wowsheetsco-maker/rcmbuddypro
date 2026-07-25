@@ -216,18 +216,83 @@ export function guessField(header: string): keyof ClaimUpsertRow | null {
   return null;
 }
 
-/** Given detected HIMS headers, produce a header→field map. */
-export function autoDetectMapping(headers: string[]): Record<string, keyof ClaimUpsertRow> {
-  const out: Record<string, keyof ClaimUpsertRow> = {};
-  const used = new Set<keyof ClaimUpsertRow>();
+// -------- Confidence-scored auto-detection ----------------------------------
+
+export interface HeaderMatch {
+  /** Best-guess target field, or null if no match. */
+  field: keyof ClaimUpsertRow | null;
+  /** 0-1. 1.0 = exact HEADER_MAP hit, 0.85 = first token pattern,
+   *  0.60 = later token / partial, 0.0 = no match. */
+  confidence: number;
+  /** Ranked alternatives (top-3, excluding the best guess). Shown as
+   *  "did you mean…" chips in the wizard for ambiguous columns. */
+  alternates: { field: keyof ClaimUpsertRow; confidence: number }[];
+  /** Human-readable reason: "exact match", "regex: /doctor/i", etc. */
+  reason: string;
+}
+
+/** Score every detected header against every candidate field. Returns per-header
+ *  match info (best guess, confidence, alternates) plus an initial mapping that
+ *  picks the highest-confidence non-colliding field per header. */
+export function autoDetectMappingScored(
+  headers: string[],
+): { mapping: Record<string, keyof ClaimUpsertRow>; matches: Record<string, HeaderMatch> } {
+  const matches: Record<string, HeaderMatch> = {};
   for (const h of headers) {
-    const g = guessField(h);
-    if (g && !used.has(g)) {
-      out[h] = g;
-      used.add(g);
+    const norm = h.trim().toLowerCase().replace(/[._\-\/\\|#*&+,;:()\[\]{}"'`~?!@$%^=<>]+/g, " ").replace(/\s+/g, " ").trim();
+    const scored: { field: keyof ClaimUpsertRow; confidence: number; reason: string }[] = [];
+    // Exact HEADER_MAP hit → 1.0
+    const exact = HEADER_MAP[norm];
+    if (exact && exact !== "_skip") scored.push({ field: exact, confidence: 1.0, reason: "exact HEADER_MAP hit" });
+    // Regex tokens → 0.85 for first pattern, 0.7 for later
+    for (const [field, patterns] of Object.entries(FIELD_TOKENS)) {
+      patterns.forEach((rx, idx) => {
+        if (rx.test(norm)) {
+          const conf = idx === 0 ? 0.85 : 0.7;
+          scored.push({ field: field as keyof ClaimUpsertRow, confidence: conf, reason: `regex ${rx}` });
+        }
+      });
+    }
+    // Substring bonus for exact field-label word overlap (helps ambiguous cases)
+    for (const m of MAPPABLE_FIELDS) {
+      const label = m.label.toLowerCase();
+      const words = label.split(/\s+/).filter((w) => w.length >= 4);
+      const hits = words.filter((w) => norm.includes(w)).length;
+      if (hits > 0) scored.push({ field: m.field, confidence: 0.5 + 0.1 * hits, reason: `label overlap (${hits})` });
+    }
+    // De-dupe by field, keeping max confidence
+    const byField = new Map<keyof ClaimUpsertRow, { field: keyof ClaimUpsertRow; confidence: number; reason: string }>();
+    for (const s of scored) {
+      const cur = byField.get(s.field);
+      if (!cur || s.confidence > cur.confidence) byField.set(s.field, s);
+    }
+    const ranked = Array.from(byField.values()).sort((a, b) => b.confidence - a.confidence);
+    const best = ranked[0];
+    matches[h] = {
+      field: best?.field ?? null,
+      confidence: best?.confidence ?? 0,
+      reason: best?.reason ?? "no match",
+      alternates: ranked.slice(1, 4).map(({ field, confidence }) => ({ field, confidence })),
+    };
+  }
+  // Build mapping: assign each field to the header with the highest confidence
+  const mapping: Record<string, keyof ClaimUpsertRow> = {};
+  const claimedBy = new Map<keyof ClaimUpsertRow, { header: string; confidence: number }>();
+  for (const [h, m] of Object.entries(matches)) {
+    if (!m.field || m.confidence < 0.5) continue;
+    const prev = claimedBy.get(m.field);
+    if (!prev || m.confidence > prev.confidence) {
+      if (prev) delete mapping[prev.header];
+      mapping[h] = m.field;
+      claimedBy.set(m.field, { header: h, confidence: m.confidence });
     }
   }
-  return out;
+  return { mapping, matches };
+}
+
+/** Backwards-compatible wrapper — kept so existing callers still work. */
+export function autoDetectMapping(headers: string[]): Record<string, keyof ClaimUpsertRow> {
+  return autoDetectMappingScored(headers).mapping;
 }
 
 /** Apply a HIMS preset against the detected headers (case-insensitive lookup). */
