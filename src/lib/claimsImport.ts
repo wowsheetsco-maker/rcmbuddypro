@@ -69,7 +69,7 @@ export interface ParseResult {
 }
 
 // --- Header mapping (template → DB column) -----------------------------------
-const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
+export const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
   "ihx ref id": "ihx_ref_id",
   "hospital name": "hospital_name",
   "rohiniid": "_skip",
