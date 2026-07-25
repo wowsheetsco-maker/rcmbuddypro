@@ -131,10 +131,28 @@ export default function PaymentAdvicePage() {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) onFile(f); }}
                 className="max-w-md"
               />
-              {parsing && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Extracting…</span>}
+              {parsing && <span className="text-xs text-muted-foreground flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" />Working…</span>}
             </div>
+            <div className="flex flex-wrap gap-6 text-xs">
+              <label className="flex items-center gap-2">
+                <Switch checked={enableOcr} onCheckedChange={setEnableOcr} disabled={parsing} />
+                <span className="flex items-center gap-1"><ScanLine className="h-3 w-3" />OCR fallback for scanned PDFs</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <Switch checked={forceOcr} onCheckedChange={setForceOcr} disabled={parsing || !enableOcr} />
+                <span>Force OCR (ignore embedded text)</span>
+              </label>
+            </div>
+            {progress && (
+              <div className="space-y-1">
+                <div className="flex justify-between text-[11px] text-muted-foreground">
+                  <span>{progress.msg}</span><span>{Math.round(progress.pct)}%</span>
+                </div>
+                <Progress value={progress.pct} className="h-1.5" />
+              </div>
+            )}
             <details className="text-xs">
-              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Or paste text manually (if PDF is a scan)</summary>
+              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">Or paste text manually</summary>
               <div className="mt-2 space-y-2">
                 <textarea
                   value={manualText}
@@ -147,6 +165,14 @@ export default function PaymentAdvicePage() {
             </details>
           </CardContent>
         </Card>
+
+        {advice && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            <Badge variant="outline">Layout: {LAYOUT_LABELS[advice.layout]}</Badge>
+            {advice.used_ocr && <Badge className="bg-primary/10 text-primary border-primary/30"><ScanLine className="h-3 w-3 mr-1" />OCR</Badge>}
+            {advice.payer_name && <Badge variant="secondary">Payer: {advice.payer_name}</Badge>}
+          </div>
+        )}
 
         {advice && result && (
           <>
