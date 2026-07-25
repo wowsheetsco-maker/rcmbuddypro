@@ -386,9 +386,19 @@ export async function parseClaimsFile(
 
   const errors: ParseError[] = [];
   const rows: ClaimUpsertRow[] = [];
+  // Track per-header population so the wizard can show live "populated / total"
+  // counts before the user commits a mapping change.
+  const headerStats: Record<string, { filled: number; total: number }> = {};
+  for (const h of detectedHeaders) headerStats[h] = { filled: 0, total: 0 };
   raw.forEach((r, i) => {
     // Skip completely empty rows
     if (Object.values(r).every((v) => v === null || v === "")) return;
+    for (const h of detectedHeaders) {
+      const v = r[h];
+      const filled = v !== null && v !== undefined && String(v).trim() !== "";
+      headerStats[h].total += 1;
+      if (filled) headerStats[h].filled += 1;
+    }
     const built = buildRow(r, headerToField, i + 1, errors);
     if (built) rows.push(built);
   });
@@ -399,6 +409,7 @@ export async function parseClaimsFile(
     totalRows: raw.length,
     detectedHeaders,
     unmappedHeaders,
+    headerStats,
   };
 }
 
