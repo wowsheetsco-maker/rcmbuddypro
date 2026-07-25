@@ -953,6 +953,10 @@ export default function ClaimDrawer({ claim, onClose, onUpdated }: Props) {
             </div>
           </TabsContent>
 
+          <TabsContent value="timeline" className="mt-0">
+            <ClaimTimeline claim={claim} />
+          </TabsContent>
+
           <TabsContent value="documents" className="p-5 mt-0">
             <ClaimDocumentsPanel claimId={claim.id} />
           </TabsContent>
