@@ -271,7 +271,7 @@ export default function TodaysWorklistPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <QueueCard
             title="Follow-ups due"
-            subtitle={mineOnly ? "Assigned to me" : "Overdue or due today"}
+            subtitle={effectiveScope === "mine" ? "Assigned to me" : effectiveScope === "team" ? "My team's overdue or due today" : "Overdue or due today"}
             icon={RcmIcons.followUp}
             tone="text-primary"
             items={buckets.followUpsDue}
