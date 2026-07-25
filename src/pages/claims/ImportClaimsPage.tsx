@@ -179,7 +179,7 @@ export default function ImportClaimsPage() {
 
 
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, opts?: { override?: Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null }) => {
     setParsing(true);
     setParseResult(null);
     setStructuralBlock(null);
@@ -187,23 +187,27 @@ export default function ImportClaimsPage() {
     setDuplicateBlock(null);
     setQc(null);
     setFileName(file.name);
+    setLastFile(file);
+    const activeOverride = opts?.override !== undefined ? opts.override : overrideMap;
     try {
-      const result = await parseClaimsFile(file);
+      const result = await parseClaimsFile(file, activeOverride ?? undefined);
       setQc(classifyAll(result.rows));
 
-      // 🔵 LAYER 1 — structural gate: reject the entire file if mandatory
-      // headers are missing or duplicated
-      const struct = validateStructure(result.detectedHeaders);
-      if (!struct.ok) {
-        setStructuralBlock({
-          missing: struct.missing,
-          duplicates: struct.duplicateHeaders,
-        });
-        setParseResult(result);
-        toast.error(
-          `File rejected — ${struct.missing.length > 0 ? `missing column(s): ${struct.missing.join(", ")}` : `duplicate header(s): ${struct.duplicateHeaders.join(", ")}`}`,
-        );
-        return;
+      // 🔵 LAYER 1 — structural gate. When the user has an override mapping,
+      // skip this rigid check (the wizard already enforces required fields).
+      if (!activeOverride) {
+        const struct = validateStructure(result.detectedHeaders);
+        if (!struct.ok) {
+          setStructuralBlock({
+            missing: struct.missing,
+            duplicates: struct.duplicateHeaders,
+          });
+          setParseResult(result);
+          toast.error(
+            `File rejected — ${struct.missing.length > 0 ? `missing column(s): ${struct.missing.join(", ")}` : `duplicate header(s): ${struct.duplicateHeaders.join(", ")}`}. Try the Field Mapping Wizard.`,
+          );
+          return;
+        }
       }
 
       // 🟡 LAYER 1.5 — duplicate claim_number detection (informational only)
