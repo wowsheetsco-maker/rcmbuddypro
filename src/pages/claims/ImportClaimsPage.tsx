@@ -80,6 +80,12 @@ export default function ImportClaimsPage() {
   } | null>(null);
   const [qc, setQc] = useState<QualityClassification | null>(null);
   const [skipQc, setSkipQc] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [overrideMap, setOverrideMap] = useState<Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { const raw = localStorage.getItem("rcm.himsMapping"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  const [wizardOpen, setWizardOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { rules: dqRules } = useDqRules();
 
