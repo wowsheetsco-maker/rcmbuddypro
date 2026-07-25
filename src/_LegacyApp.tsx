@@ -7,6 +7,7 @@ import { useViewMode } from "./hooks/useViewMode";
 
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
 import Dashboard from "./pages/Dashboard";
+import HomeGate from "./components/HomeGate";
 import ClaimsPage from "./pages/ClaimsPage";
 import NotFound from "./pages/NotFound.tsx";
 // Analytics
@@ -143,14 +144,17 @@ function MobileRedirect() {
 type RouteEntry = ComponentType | (() => ReactElement);
 
 const ROUTES: Record<string, RouteEntry> = {
-  "/": TodaysWorklistPage,
+  "/": HomeGate,
+  "/home": () => <Navigate to="/" replace />,
   "/launch": LaunchPage,
   "/m": MobileHomePage,
   "/my-tasks": TodaysWorklistPage,
   "/tasks": MyTasksPage,
   "/today": TodaysWorklistPage,
   "/dashboard": Dashboard,
+  "/dashboard/classic": () => <Navigate to="/dashboard" replace />,
   "/dashboard/executive": ExecutiveDashboard,
+  "/executive-dashboard": () => <Navigate to="/dashboard/executive" replace />,
   "/claims": ClaimsPage,
 
   // Hub landing redirects

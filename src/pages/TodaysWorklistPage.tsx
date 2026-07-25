@@ -6,6 +6,7 @@ import { Badge, agingVariant } from "@/components/ui/badge";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { ListItemSkeleton } from "@/components/skeletons";
 import AppLayout from "@/components/AppLayout";
+import HomePreferenceToggle from "@/components/HomePreferenceToggle";
 import ClaimDrawer from "@/components/ClaimDrawer";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { useFollowUpData } from "@/hooks/useFollowUpData";
@@ -228,7 +229,10 @@ export default function TodaysWorklistPage() {
               )}
             </p>
           </div>
-          <ScopeSelector value={effectiveScope} onChange={updateScope} role={role} isPlatformAdmin={isPlatformAdmin} />
+          <div className="flex flex-wrap items-center gap-2">
+            <HomePreferenceToggle />
+            <ScopeSelector value={effectiveScope} onChange={updateScope} role={role} isPlatformAdmin={isPlatformAdmin} />
+          </div>
         </div>
 
         <KpiGrid cols={4}>
