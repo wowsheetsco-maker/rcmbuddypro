@@ -562,8 +562,11 @@ export default function ImportClaimsPage() {
                   <span className="font-mono">{structuralBlock.duplicates.join(", ")}</span>
                 </div>
               )}
-              <div className="pt-1">Fix the file headers and re-upload. Layer 1 does not allow partial structural failures.</div>
-              <div className="pt-2">
+              <div className="pt-1">Fix the file headers and re-upload, or open the Field Mapping Wizard to map columns manually.</div>
+              <div className="pt-2 flex gap-2">
+                <Button size="sm" variant="default" onClick={() => setWizardOpen(true)} disabled={!lastFile}>
+                  <Wand2 className="h-3.5 w-3.5 mr-1" /> Open mapping wizard
+                </Button>
                 <Button size="sm" variant="outline" onClick={reset}>
                   <X className="h-3.5 w-3.5" /> Clear
                 </Button>
