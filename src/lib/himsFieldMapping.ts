@@ -396,6 +396,110 @@ export function fieldLabel(field: keyof ClaimUpsertRow): string {
   return MAPPABLE_FIELDS.find((m) => m.field === field)?.label ?? String(field);
 }
 
+// -------- Pre-import validation report --------------------------------------
+
+export interface ValidationReport {
+  unmappedRequired: (keyof ClaimUpsertRow)[];
+  unmappedCritical: (keyof ClaimUpsertRow)[];
+  ambiguous: {
+    header: string;
+    currentField: keyof ClaimUpsertRow | null;
+    best: keyof ClaimUpsertRow | null;
+    confidence: number;
+    alternates: { field: keyof ClaimUpsertRow; confidence: number }[];
+  }[];
+  duplicates: { field: keyof ClaimUpsertRow; headers: string[] }[];
+  currentReadiness: number;
+  projectedReadiness: number;
+  readinessDelta: number;
+  featureImpact: {
+    key: string;
+    name: string;
+    currentScore: number;
+    projectedScore: number;
+    unlocks: (keyof ClaimUpsertRow)[];
+  }[];
+  excludedCount: number;
+}
+
+/** Build a pre-finalize validation report. Headers in `excluded` are treated
+ *  as absent (no auto-detect, no ambiguous flag). */
+export function buildValidationReport(
+  detectedHeaders: string[],
+  mapping: Record<string, keyof ClaimUpsertRow>,
+  matches: Record<string, HeaderMatch>,
+  excluded: Set<string> = new Set(),
+): ValidationReport {
+  const activeHeaders = detectedHeaders.filter((h) => !excluded.has(h));
+  const mappedFields = new Set(Object.values(mapping));
+
+  const requiredFields = MAPPABLE_FIELDS.filter((f) => f.required).map((f) => f.field);
+  const unmappedRequired = requiredFields.filter((f) => !mappedFields.has(f));
+  const unmappedCritical = CRITICAL_FIELDS.filter((f) => !mappedFields.has(f));
+
+  const ambiguous: ValidationReport["ambiguous"] = [];
+  for (const h of activeHeaders) {
+    const m = matches[h];
+    if (!m) continue;
+    const cur = mapping[h] ?? null;
+    const conf = m.confidence;
+    if (conf > 0 && conf < 0.95) {
+      if (cur && cur !== m.field) continue;
+      ambiguous.push({
+        header: h,
+        currentField: cur,
+        best: m.field,
+        confidence: conf,
+        alternates: m.alternates,
+      });
+    }
+  }
+
+  const byField = new Map<keyof ClaimUpsertRow, string[]>();
+  for (const [h, f] of Object.entries(mapping)) {
+    if (excluded.has(h)) continue;
+    const arr = byField.get(f) ?? [];
+    arr.push(h);
+    byField.set(f, arr);
+  }
+  const duplicates = Array.from(byField.entries())
+    .filter(([, hs]) => hs.length > 1)
+    .map(([field, headers]) => ({ field, headers }));
+
+  const cur = computeReadiness(mapping);
+  const projectedMap = { ...mapping };
+  for (const a of ambiguous) {
+    if (a.best && !Object.values(projectedMap).includes(a.best)) {
+      projectedMap[a.header] = a.best;
+    }
+  }
+  const proj = computeReadiness(projectedMap);
+
+  const featureImpact = proj.features.map((pf, i) => {
+    const c = cur.features[i];
+    const unlocks = pf.mapped.filter((f) => !c.mapped.includes(f));
+    return {
+      key: pf.feature.key,
+      name: pf.feature.name,
+      currentScore: c.score,
+      projectedScore: pf.score,
+      unlocks,
+    };
+  });
+
+  return {
+    unmappedRequired,
+    unmappedCritical,
+    ambiguous,
+    duplicates,
+    currentReadiness: cur.overall,
+    projectedReadiness: proj.overall,
+    readinessDelta: proj.overall - cur.overall,
+    featureImpact,
+    excludedCount: excluded.size,
+  };
+}
+
 // -------- Critical fields for live population preview -----------------------
 
 /** Fields highlighted in the wizard's "live population" preview. These are the
