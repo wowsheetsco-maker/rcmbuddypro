@@ -46,6 +46,12 @@ export interface ClaimUpsertRow {
   is_irdai_breach: boolean;
   hospital_group_id: string | null;
   hospital_branch_id: string | null;
+  treating_doctor: string | null;
+  ward: string | null;
+  coder_name: string | null;
+  tpa_spoc: string | null;
+  hospital_spoc: string | null;
+  remarks: string | null;
 }
 
 export interface ParseError {
@@ -63,7 +69,7 @@ export interface ParseResult {
 }
 
 // --- Header mapping (template → DB column) -----------------------------------
-const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
+export const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
   "ihx ref id": "ihx_ref_id",
   "hospital name": "hospital_name",
   "rohiniid": "_skip",
@@ -104,6 +110,22 @@ const HEADER_MAP: Record<string, keyof ClaimUpsertRow | "_skip"> = {
   "employee code": "employee_code",
   "insurercomments": "insurer_comments",
   "insurer comments": "insurer_comments",
+  "treating doctor": "treating_doctor",
+  "doctor name": "treating_doctor",
+  "consultant": "treating_doctor",
+  "ward": "ward",
+  "ward name": "ward",
+  "room type": "ward",
+  "coder": "coder_name",
+  "coder name": "coder_name",
+  "medical coder": "coder_name",
+  "tpa spoc": "tpa_spoc",
+  "tpa contact": "tpa_spoc",
+  "tpa email": "tpa_spoc",
+  "hospital spoc": "hospital_spoc",
+  "insurance coordinator": "hospital_spoc",
+  "remarks": "remarks",
+  "notes": "remarks",
   // The remaining columns (UHID, InvoiceNumber, Courier *) are not stored —
   // intentionally absent from the map so we report them as "ignored".
 };
@@ -286,6 +308,12 @@ function buildRow(
     "policy_holder_name",
     "employee_code",
     "insurer_comments",
+    "treating_doctor",
+    "ward",
+    "coder_name",
+    "tpa_spoc",
+    "hospital_spoc",
+    "remarks",
   ];
   for (const f of nullableStrFields) {
     if (row[f] === undefined) (row as any)[f] = null;
@@ -309,7 +337,10 @@ function buildRow(
   return row as ClaimUpsertRow;
 }
 
-export async function parseClaimsFile(file: File): Promise<ParseResult> {
+export async function parseClaimsFile(
+  file: File,
+  overrideMap?: Record<string, keyof ClaimUpsertRow | "_skip">,
+): Promise<ParseResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: false });
   const firstSheet = wb.SheetNames[0];
@@ -331,9 +362,16 @@ export async function parseClaimsFile(file: File): Promise<ParseResult> {
   const detectedHeaders = raw.length > 0 ? Object.keys(raw[0]) : [];
   const headerToField = new Map<string, keyof ClaimUpsertRow>();
   const unmappedHeaders: string[] = [];
+  // Build merged map: overrides (keyed by original header text, normalised) take precedence
+  const overrideNorm: Record<string, keyof ClaimUpsertRow | "_skip"> = {};
+  if (overrideMap) {
+    for (const [k, v] of Object.entries(overrideMap)) {
+      overrideNorm[normaliseHeader(k)] = v;
+    }
+  }
   for (const h of detectedHeaders) {
     const norm = normaliseHeader(h);
-    const target = HEADER_MAP[norm];
+    const target = overrideNorm[norm] ?? HEADER_MAP[norm];
     if (target && target !== "_skip") {
       headerToField.set(norm, target);
     } else if (target !== "_skip") {

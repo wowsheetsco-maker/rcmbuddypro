@@ -36,6 +36,9 @@ import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
 import { classifyAll, BUCKET_LABELS, type QualityClassification } from "@/lib/claimQualityRules";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import FieldMappingWizard, { ReadinessBadge } from "@/components/import/FieldMappingWizard";
+import { effectiveMapping } from "@/lib/himsFieldMapping";
+import { Wand2 } from "lucide-react";
 
 interface ImportSnapshot {
   inserted_claim_numbers: string[];
@@ -77,6 +80,12 @@ export default function ImportClaimsPage() {
   } | null>(null);
   const [qc, setQc] = useState<QualityClassification | null>(null);
   const [skipQc, setSkipQc] = useState(false);
+  const [lastFile, setLastFile] = useState<File | null>(null);
+  const [overrideMap, setOverrideMap] = useState<Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null>(() => {
+    if (typeof window === "undefined") return null;
+    try { const raw = localStorage.getItem("rcm.himsMapping"); return raw ? JSON.parse(raw) : null; } catch { return null; }
+  });
+  const [wizardOpen, setWizardOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const { rules: dqRules } = useDqRules();
 
@@ -170,7 +179,7 @@ export default function ImportClaimsPage() {
 
 
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, opts?: { override?: Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null }) => {
     setParsing(true);
     setParseResult(null);
     setStructuralBlock(null);
@@ -178,23 +187,27 @@ export default function ImportClaimsPage() {
     setDuplicateBlock(null);
     setQc(null);
     setFileName(file.name);
+    setLastFile(file);
+    const activeOverride = opts?.override !== undefined ? opts.override : overrideMap;
     try {
-      const result = await parseClaimsFile(file);
+      const result = await parseClaimsFile(file, activeOverride ?? undefined);
       setQc(classifyAll(result.rows));
 
-      // 🔵 LAYER 1 — structural gate: reject the entire file if mandatory
-      // headers are missing or duplicated
-      const struct = validateStructure(result.detectedHeaders);
-      if (!struct.ok) {
-        setStructuralBlock({
-          missing: struct.missing,
-          duplicates: struct.duplicateHeaders,
-        });
-        setParseResult(result);
-        toast.error(
-          `File rejected — ${struct.missing.length > 0 ? `missing column(s): ${struct.missing.join(", ")}` : `duplicate header(s): ${struct.duplicateHeaders.join(", ")}`}`,
-        );
-        return;
+      // 🔵 LAYER 1 — structural gate. When the user has an override mapping,
+      // skip this rigid check (the wizard already enforces required fields).
+      if (!activeOverride) {
+        const struct = validateStructure(result.detectedHeaders);
+        if (!struct.ok) {
+          setStructuralBlock({
+            missing: struct.missing,
+            duplicates: struct.duplicateHeaders,
+          });
+          setParseResult(result);
+          toast.error(
+            `File rejected — ${struct.missing.length > 0 ? `missing column(s): ${struct.missing.join(", ")}` : `duplicate header(s): ${struct.duplicateHeaders.join(", ")}`}. Try the Field Mapping Wizard.`,
+          );
+          return;
+        }
       }
 
       // 🟡 LAYER 1.5 — duplicate claim_number detection (informational only)
@@ -549,8 +562,11 @@ export default function ImportClaimsPage() {
                   <span className="font-mono">{structuralBlock.duplicates.join(", ")}</span>
                 </div>
               )}
-              <div className="pt-1">Fix the file headers and re-upload. Layer 1 does not allow partial structural failures.</div>
-              <div className="pt-2">
+              <div className="pt-1">Fix the file headers and re-upload, or open the Field Mapping Wizard to map columns manually.</div>
+              <div className="pt-2 flex gap-2">
+                <Button size="sm" variant="default" onClick={() => setWizardOpen(true)} disabled={!lastFile}>
+                  <Wand2 className="h-3.5 w-3.5 mr-1" /> Open mapping wizard
+                </Button>
                 <Button size="sm" variant="outline" onClick={reset}>
                   <X className="h-3.5 w-3.5" /> Clear
                 </Button>
@@ -581,14 +597,28 @@ export default function ImportClaimsPage() {
                   Review the preview below, then confirm to import.
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={reset}
-                disabled={importing}
-              >
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-2">
+                {parseResult.detectedHeaders.length > 0 && (
+                  <ReadinessBadge mapping={effectiveMapping(parseResult.detectedHeaders, overrideMap ?? undefined)} />
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setWizardOpen(true)}
+                  disabled={importing || parseResult.detectedHeaders.length === 0}
+                >
+                  <Wand2 className="h-3.5 w-3.5 mr-1" />
+                  Field mapping
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={reset}
+                  disabled={importing}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Stats */}
@@ -898,6 +928,23 @@ export default function ImportClaimsPage() {
           </div>
         </Card>
       </div>
+
+      {parseResult && (
+        <FieldMappingWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          detectedHeaders={parseResult.detectedHeaders}
+          initialMapping={effectiveMapping(parseResult.detectedHeaders, overrideMap ?? undefined)}
+          onSave={(m) => {
+            setOverrideMap(m);
+            try { localStorage.setItem("rcm.himsMapping", JSON.stringify(m)); } catch { /* ignore */ }
+            if (lastFile) {
+              handleFile(lastFile, { override: m });
+              toast.success("Mapping saved — file re-parsed");
+            }
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
