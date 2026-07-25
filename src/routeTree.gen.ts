@@ -32,6 +32,7 @@ import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_aut
 import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
 import { Route as AuthenticatedClaimsReconAlertsRouteImport } from './routes/_authenticated.claims.recon-alerts'
 import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
+import { Route as AuthenticatedClaimsPaymentAdviceRouteImport } from './routes/_authenticated.claims.payment-advice'
 import { Route as AuthenticatedClaimsPayersRouteImport } from './routes/_authenticated.claims.payers'
 import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
 import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
@@ -176,6 +177,12 @@ const AuthenticatedClaimsPriorityRoute =
   AuthenticatedClaimsPriorityRouteImport.update({
     id: '/priority',
     path: '/priority',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsPaymentAdviceRoute =
+  AuthenticatedClaimsPaymentAdviceRouteImport.update({
+    id: '/payment-advice',
+    path: '/payment-advice',
     getParentRoute: () => AuthenticatedClaimsRoute,
   } as any)
 const AuthenticatedClaimsPayersRoute =
@@ -332,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/payers': typeof AuthenticatedClaimsPayersRoute
+  '/claims/payment-advice': typeof AuthenticatedClaimsPaymentAdviceRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
@@ -375,6 +383,7 @@ export interface FileRoutesByTo {
   '/claims/import': typeof AuthenticatedClaimsImportRoute
   '/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/claims/payers': typeof AuthenticatedClaimsPayersRoute
+  '/claims/payment-advice': typeof AuthenticatedClaimsPaymentAdviceRoute
   '/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
@@ -422,6 +431,7 @@ export interface FileRoutesById {
   '/_authenticated/claims/import': typeof AuthenticatedClaimsImportRoute
   '/_authenticated/claims/outstanding': typeof AuthenticatedClaimsOutstandingRoute
   '/_authenticated/claims/payers': typeof AuthenticatedClaimsPayersRoute
+  '/_authenticated/claims/payment-advice': typeof AuthenticatedClaimsPaymentAdviceRoute
   '/_authenticated/claims/priority': typeof AuthenticatedClaimsPriorityRoute
   '/_authenticated/claims/recon-alerts': typeof AuthenticatedClaimsReconAlertsRoute
   '/_authenticated/claims/reconciliation': typeof AuthenticatedClaimsReconciliationRoute
@@ -469,6 +479,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/payers'
+    | '/claims/payment-advice'
     | '/claims/priority'
     | '/claims/recon-alerts'
     | '/claims/reconciliation'
@@ -512,6 +523,7 @@ export interface FileRouteTypes {
     | '/claims/import'
     | '/claims/outstanding'
     | '/claims/payers'
+    | '/claims/payment-advice'
     | '/claims/priority'
     | '/claims/recon-alerts'
     | '/claims/reconciliation'
@@ -558,6 +570,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims/import'
     | '/_authenticated/claims/outstanding'
     | '/_authenticated/claims/payers'
+    | '/_authenticated/claims/payment-advice'
     | '/_authenticated/claims/priority'
     | '/_authenticated/claims/recon-alerts'
     | '/_authenticated/claims/reconciliation'
@@ -753,6 +766,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsPriorityRouteImport
       parentRoute: typeof AuthenticatedClaimsRoute
     }
+    '/_authenticated/claims/payment-advice': {
+      id: '/_authenticated/claims/payment-advice'
+      path: '/payment-advice'
+      fullPath: '/claims/payment-advice'
+      preLoaderRoute: typeof AuthenticatedClaimsPaymentAdviceRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
     '/_authenticated/claims/payers': {
       id: '/_authenticated/claims/payers'
       path: '/payers'
@@ -943,6 +963,7 @@ interface AuthenticatedClaimsRouteChildren {
   AuthenticatedClaimsImportRoute: typeof AuthenticatedClaimsImportRoute
   AuthenticatedClaimsOutstandingRoute: typeof AuthenticatedClaimsOutstandingRoute
   AuthenticatedClaimsPayersRoute: typeof AuthenticatedClaimsPayersRoute
+  AuthenticatedClaimsPaymentAdviceRoute: typeof AuthenticatedClaimsPaymentAdviceRoute
   AuthenticatedClaimsPriorityRoute: typeof AuthenticatedClaimsPriorityRoute
   AuthenticatedClaimsReconAlertsRoute: typeof AuthenticatedClaimsReconAlertsRoute
   AuthenticatedClaimsReconciliationRoute: typeof AuthenticatedClaimsReconciliationRoute
@@ -963,6 +984,7 @@ const AuthenticatedClaimsRouteChildren: AuthenticatedClaimsRouteChildren = {
   AuthenticatedClaimsImportRoute: AuthenticatedClaimsImportRoute,
   AuthenticatedClaimsOutstandingRoute: AuthenticatedClaimsOutstandingRoute,
   AuthenticatedClaimsPayersRoute: AuthenticatedClaimsPayersRoute,
+  AuthenticatedClaimsPaymentAdviceRoute: AuthenticatedClaimsPaymentAdviceRoute,
   AuthenticatedClaimsPriorityRoute: AuthenticatedClaimsPriorityRoute,
   AuthenticatedClaimsReconAlertsRoute: AuthenticatedClaimsReconAlertsRoute,
   AuthenticatedClaimsReconciliationRoute:
@@ -1048,13 +1070,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -55,7 +55,8 @@ const RECOVERY_TABS: HubTab[] = [
 
 const RECON_TABS: HubTab[] = [
   { label: "Discrepancy",     path: "/claims/discrepancy" },
-  { label: "Reconciliation",  path: "/claims/reconciliation" },
+  { label: "Bank Reconciliation", path: "/claims/reconciliation" },
+  { label: "Payment Advice",  path: "/claims/payment-advice" },
   { label: "Recon Alerts",    path: "/claims/recon-alerts" },
   { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
 ];
