@@ -162,11 +162,39 @@ const REQUIRED_FIELDS: (keyof ClaimUpsertRow)[] = [
   "claim_creation_date",
 ];
 
+/** Header normalisation: case-insensitive, punctuation-agnostic, and expands
+ *  common HIMS abbreviations (amt→amount, no→number, dt→date, ins→insurance,
+ *  pt→patient, hosp→hospital, adm→admission, dis→discharge, dept→department,
+ *  ref→reference). This lets the same HEADER_MAP entry match "Claim No.",
+ *  "CLAIM_NUMBER", "claim-no", and "claim  #" without extra entries. */
 function normaliseHeader(h: unknown): string {
-  return String(h ?? "")
+  const raw = String(h ?? "")
     .trim()
     .toLowerCase()
-    .replace(/\s+/g, " ");
+    // Collapse punctuation and symbols to spaces so "claim-no." == "claim no"
+    .replace(/[._\-\/\\|#*&+,;:()\[\]{}"'`~?!@$%^=<>]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Word-level synonym expansion — only applied when the whole token matches
+  // so we don't rewrite "amount" back to itself accidentally.
+  const SYN: Record<string, string> = {
+    amt: "amount", amnt: "amount", val: "amount",
+    no: "number", num: "number", nbr: "number", "#": "number",
+    dt: "date", dtd: "date",
+    ins: "insurance", insr: "insurance", insco: "insurance company",
+    pt: "patient", pat: "patient",
+    hosp: "hospital", hospt: "hospital",
+    adm: "admission", disch: "discharge", dis: "discharge",
+    dept: "department", dr: "doctor",
+    ref: "reference", refno: "reference number",
+    utr: "utr", neft: "neft", // keep short codes intact
+  };
+  return raw
+    .split(" ")
+    .map((tok) => SYN[tok] ?? tok)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function parseExcelDate(value: unknown): string | null {
