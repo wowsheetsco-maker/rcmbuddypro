@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from "react";
-import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search, ScanLine } from "lucide-react";
+import { Upload, FileText, CheckCircle2, AlertCircle, Loader2, Download, Search, ScanLine, Settings2 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { toast } from "@/hooks/use-toast";
