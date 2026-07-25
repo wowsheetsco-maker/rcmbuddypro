@@ -27,6 +27,7 @@ import {
 import CommunicationLauncher from "@/components/CommunicationLauncher";
 import ClaimEditDialog from "@/components/ClaimEditDialog";
 import { ClaimDocumentsPanel } from "@/components/ClaimDocumentsPanel";
+import ClaimTimeline from "@/components/ClaimTimeline";
 import { useInsurerSpoc } from "@/hooks/useInsurerSpoc";
 import { normalizeWhatsAppNumber } from "@/lib/whatsapp";
 import WhatsAppComposerDialog from "@/components/WhatsAppComposerDialog";
