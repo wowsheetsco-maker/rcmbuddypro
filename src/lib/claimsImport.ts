@@ -337,7 +337,10 @@ function buildRow(
   return row as ClaimUpsertRow;
 }
 
-export async function parseClaimsFile(file: File): Promise<ParseResult> {
+export async function parseClaimsFile(
+  file: File,
+  overrideMap?: Record<string, keyof ClaimUpsertRow | "_skip">,
+): Promise<ParseResult> {
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array", cellDates: false });
   const firstSheet = wb.SheetNames[0];
@@ -359,9 +362,16 @@ export async function parseClaimsFile(file: File): Promise<ParseResult> {
   const detectedHeaders = raw.length > 0 ? Object.keys(raw[0]) : [];
   const headerToField = new Map<string, keyof ClaimUpsertRow>();
   const unmappedHeaders: string[] = [];
+  // Build merged map: overrides (keyed by original header text, normalised) take precedence
+  const overrideNorm: Record<string, keyof ClaimUpsertRow | "_skip"> = {};
+  if (overrideMap) {
+    for (const [k, v] of Object.entries(overrideMap)) {
+      overrideNorm[normaliseHeader(k)] = v;
+    }
+  }
   for (const h of detectedHeaders) {
     const norm = normaliseHeader(h);
-    const target = HEADER_MAP[norm];
+    const target = overrideNorm[norm] ?? HEADER_MAP[norm];
     if (target && target !== "_skip") {
       headerToField.set(norm, target);
     } else if (target !== "_skip") {
