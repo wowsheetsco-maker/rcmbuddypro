@@ -9,69 +9,55 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
-import { Route as SplatRouteImport } from './routes/$'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
-import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
-import { Route as AuthenticatedMyTasksRouteImport } from './routes/_authenticated.my-tasks'
-import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
-import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated.claims'
+import { Route as SplatRouteImport } from './routes/$'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated.analytics'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
-import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated.claims.index'
-import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated.settings.users'
-import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
-import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
-import { Route as AuthenticatedClaimsZeroCancelledRouteImport } from './routes/_authenticated.claims.zero-cancelled'
-import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
-import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
-import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
-import { Route as AuthenticatedClaimsReconAlertsRouteImport } from './routes/_authenticated.claims.recon-alerts'
-import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
-import { Route as AuthenticatedClaimsPaymentAdviceRouteImport } from './routes/_authenticated.claims.payment-advice'
-import { Route as AuthenticatedClaimsPayersRouteImport } from './routes/_authenticated.claims.payers'
-import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
-import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
-import { Route as AuthenticatedClaimsDocsToSubmitRouteImport } from './routes/_authenticated.claims.docs-to-submit'
-import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
-import { Route as AuthenticatedClaimsDenialsWorkflowRouteImport } from './routes/_authenticated.claims.denials-workflow'
-import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
-import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
-import { Route as AuthenticatedClaimsAppealsRouteImport } from './routes/_authenticated.claims.appeals'
-import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
-import { Route as AuthenticatedAnalyticsSubmissionTatRouteImport } from './routes/_authenticated.analytics.submission-tat'
-import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
-import { Route as AuthenticatedAnalyticsLeakageRouteImport } from './routes/_authenticated.analytics.leakage'
-import { Route as AuthenticatedAnalyticsExceptionsRouteImport } from './routes/_authenticated.analytics.exceptions'
-import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
+import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated.claims'
+import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
+import { Route as AuthenticatedMyTasksRouteImport } from './routes/_authenticated.my-tasks'
+import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
+import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
 import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
-import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
-import { Route as ApiPublicHooksWellnessMonthlyInvoicesRouteImport } from './routes/api/public/hooks/wellness-monthly-invoices'
-import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
-import { Route as ApiPublicHooksOpdAppointmentRemindersRouteImport } from './routes/api/public/hooks/opd-appointment-reminders'
+import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
+import { Route as AuthenticatedAnalyticsExceptionsRouteImport } from './routes/_authenticated.analytics.exceptions'
+import { Route as AuthenticatedAnalyticsLeakageRouteImport } from './routes/_authenticated.analytics.leakage'
+import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
+import { Route as AuthenticatedAnalyticsSubmissionTatRouteImport } from './routes/_authenticated.analytics.submission-tat'
+import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
+import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated.claims.index'
+import { Route as AuthenticatedClaimsAppealsRouteImport } from './routes/_authenticated.claims.appeals'
+import { Route as AuthenticatedClaimsArRouteImport } from './routes/_authenticated.claims.ar'
+import { Route as AuthenticatedClaimsDenialsRouteImport } from './routes/_authenticated.claims.denials'
+import { Route as AuthenticatedClaimsDenialsWorkflowRouteImport } from './routes/_authenticated.claims.denials-workflow'
+import { Route as AuthenticatedClaimsDiscrepancyRouteImport } from './routes/_authenticated.claims.discrepancy'
+import { Route as AuthenticatedClaimsDocsToSubmitRouteImport } from './routes/_authenticated.claims.docs-to-submit'
+import { Route as AuthenticatedClaimsImportRouteImport } from './routes/_authenticated.claims.import'
+import { Route as AuthenticatedClaimsOutstandingRouteImport } from './routes/_authenticated.claims.outstanding'
+import { Route as AuthenticatedClaimsPayersRouteImport } from './routes/_authenticated.claims.payers'
+import { Route as AuthenticatedClaimsPaymentAdviceRouteImport } from './routes/_authenticated.claims.payment-advice'
+import { Route as AuthenticatedClaimsPriorityRouteImport } from './routes/_authenticated.claims.priority'
+import { Route as AuthenticatedClaimsReconAlertsRouteImport } from './routes/_authenticated.claims.recon-alerts'
+import { Route as AuthenticatedClaimsReconciliationRouteImport } from './routes/_authenticated.claims.reconciliation'
+import { Route as AuthenticatedClaimsSubmissionRouteImport } from './routes/_authenticated.claims.submission'
+import { Route as AuthenticatedClaimsTdsRouteImport } from './routes/_authenticated.claims.tds'
+import { Route as AuthenticatedClaimsZeroCancelledRouteImport } from './routes/_authenticated.claims.zero-cancelled'
+import { Route as AuthenticatedDashboardExecutiveRouteImport } from './routes/_authenticated.dashboard.executive'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated.settings.index'
+import { Route as AuthenticatedSettingsPermissionsRouteImport } from './routes/_authenticated.settings.permissions'
+import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated.settings.users'
 import { Route as ApiPublicHooksDispatchNotificationsRouteImport } from './routes/api/public/hooks/dispatch-notifications'
+import { Route as ApiPublicHooksOpdAppointmentRemindersRouteImport } from './routes/api/public/hooks/opd-appointment-reminders'
+import { Route as ApiPublicHooksTeamDigestsRouteImport } from './routes/api/public/hooks/team-digests'
+import { Route as ApiPublicHooksWellnessMonthlyInvoicesRouteImport } from './routes/api/public/hooks/wellness-monthly-invoices'
+import { Route as ApiPublicHooksWhatsappDeliveryRouteImport } from './routes/api/public/hooks/whatsapp-delivery'
 
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
-  id: '/forgot-password',
-  path: '/forgot-password',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthenticatedRoute = AuthenticatedRouteImport.update({
-  id: '/_authenticated',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SplatRoute = SplatRouteImport.update({
@@ -79,29 +65,28 @@ const SplatRoute = SplatRouteImport.update({
   path: '/$',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const AuthenticatedRoute = AuthenticatedRouteImport.update({
+  id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
-  id: '/today',
-  path: '/today',
-  getParentRoute: () => AuthenticatedRoute,
+const ForgotPasswordRoute = ForgotPasswordRouteImport.update({
+  id: '/forgot-password',
+  path: '/forgot-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
-  id: '/settings',
-  path: '/settings',
-  getParentRoute: () => AuthenticatedRoute,
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedMyTasksRoute = AuthenticatedMyTasksRouteImport.update({
-  id: '/my-tasks',
-  path: '/my-tasks',
-  getParentRoute: () => AuthenticatedRoute,
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
 } as any)
-const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
+const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
@@ -109,163 +94,30 @@ const AuthenticatedClaimsRoute = AuthenticatedClaimsRouteImport.update({
   path: '/claims',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedAnalyticsRoute = AuthenticatedAnalyticsRouteImport.update({
-  id: '/analytics',
-  path: '/analytics',
+const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedClaimsIndexRoute =
-  AuthenticatedClaimsIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedSettingsUsersRoute =
-  AuthenticatedSettingsUsersRouteImport.update({
-    id: '/users',
-    path: '/users',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedSettingsPermissionsRoute =
-  AuthenticatedSettingsPermissionsRouteImport.update({
-    id: '/permissions',
-    path: '/permissions',
-    getParentRoute: () => AuthenticatedSettingsRoute,
-  } as any)
-const AuthenticatedDashboardExecutiveRoute =
-  AuthenticatedDashboardExecutiveRouteImport.update({
-    id: '/executive',
-    path: '/executive',
-    getParentRoute: () => AuthenticatedDashboardRoute,
-  } as any)
-const AuthenticatedClaimsZeroCancelledRoute =
-  AuthenticatedClaimsZeroCancelledRouteImport.update({
-    id: '/zero-cancelled',
-    path: '/zero-cancelled',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsTdsRoute = AuthenticatedClaimsTdsRouteImport.update({
-  id: '/tds',
-  path: '/tds',
-  getParentRoute: () => AuthenticatedClaimsRoute,
+const AuthenticatedMyTasksRoute = AuthenticatedMyTasksRouteImport.update({
+  id: '/my-tasks',
+  path: '/my-tasks',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedClaimsSubmissionRoute =
-  AuthenticatedClaimsSubmissionRouteImport.update({
-    id: '/submission',
-    path: '/submission',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsReconciliationRoute =
-  AuthenticatedClaimsReconciliationRouteImport.update({
-    id: '/reconciliation',
-    path: '/reconciliation',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsReconAlertsRoute =
-  AuthenticatedClaimsReconAlertsRouteImport.update({
-    id: '/recon-alerts',
-    path: '/recon-alerts',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsPriorityRoute =
-  AuthenticatedClaimsPriorityRouteImport.update({
-    id: '/priority',
-    path: '/priority',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsPaymentAdviceRoute =
-  AuthenticatedClaimsPaymentAdviceRouteImport.update({
-    id: '/payment-advice',
-    path: '/payment-advice',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsPayersRoute =
-  AuthenticatedClaimsPayersRouteImport.update({
-    id: '/payers',
-    path: '/payers',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsOutstandingRoute =
-  AuthenticatedClaimsOutstandingRouteImport.update({
-    id: '/outstanding',
-    path: '/outstanding',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsImportRoute =
-  AuthenticatedClaimsImportRouteImport.update({
-    id: '/import',
-    path: '/import',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsDocsToSubmitRoute =
-  AuthenticatedClaimsDocsToSubmitRouteImport.update({
-    id: '/docs-to-submit',
-    path: '/docs-to-submit',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsDiscrepancyRoute =
-  AuthenticatedClaimsDiscrepancyRouteImport.update({
-    id: '/discrepancy',
-    path: '/discrepancy',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsDenialsWorkflowRoute =
-  AuthenticatedClaimsDenialsWorkflowRouteImport.update({
-    id: '/denials-workflow',
-    path: '/denials-workflow',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsDenialsRoute =
-  AuthenticatedClaimsDenialsRouteImport.update({
-    id: '/denials',
-    path: '/denials',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedClaimsArRoute = AuthenticatedClaimsArRouteImport.update({
-  id: '/ar',
-  path: '/ar',
-  getParentRoute: () => AuthenticatedClaimsRoute,
+const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedClaimsAppealsRoute =
-  AuthenticatedClaimsAppealsRouteImport.update({
-    id: '/appeals',
-    path: '/appeals',
-    getParentRoute: () => AuthenticatedClaimsRoute,
-  } as any)
-const AuthenticatedAnalyticsTpaReportRoute =
-  AuthenticatedAnalyticsTpaReportRouteImport.update({
-    id: '/tpa-report',
-    path: '/tpa-report',
-    getParentRoute: () => AuthenticatedAnalyticsRoute,
-  } as any)
-const AuthenticatedAnalyticsSubmissionTatRoute =
-  AuthenticatedAnalyticsSubmissionTatRouteImport.update({
-    id: '/submission-tat',
-    path: '/submission-tat',
-    getParentRoute: () => AuthenticatedAnalyticsRoute,
-  } as any)
-const AuthenticatedAnalyticsPayerScorecardRoute =
-  AuthenticatedAnalyticsPayerScorecardRouteImport.update({
-    id: '/payer-scorecard',
-    path: '/payer-scorecard',
-    getParentRoute: () => AuthenticatedAnalyticsRoute,
-  } as any)
-const AuthenticatedAnalyticsLeakageRoute =
-  AuthenticatedAnalyticsLeakageRouteImport.update({
-    id: '/leakage',
-    path: '/leakage',
-    getParentRoute: () => AuthenticatedAnalyticsRoute,
-  } as any)
-const AuthenticatedAnalyticsExceptionsRoute =
-  AuthenticatedAnalyticsExceptionsRouteImport.update({
-    id: '/exceptions',
-    path: '/exceptions',
+const AuthenticatedTodayRoute = AuthenticatedTodayRouteImport.update({
+  id: '/today',
+  path: '/today',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedAnalyticsBenchmarksRoute =
+  AuthenticatedAnalyticsBenchmarksRouteImport.update({
+    id: '/benchmarks',
+    path: '/benchmarks',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
 const AuthenticatedAnalyticsCashFlowRoute =
@@ -274,28 +126,164 @@ const AuthenticatedAnalyticsCashFlowRoute =
     path: '/cash-flow',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
-const AuthenticatedAnalyticsBenchmarksRoute =
-  AuthenticatedAnalyticsBenchmarksRouteImport.update({
-    id: '/benchmarks',
-    path: '/benchmarks',
+const AuthenticatedAnalyticsExceptionsRoute =
+  AuthenticatedAnalyticsExceptionsRouteImport.update({
+    id: '/exceptions',
+    path: '/exceptions',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
-const ApiPublicHooksWhatsappDeliveryRoute =
-  ApiPublicHooksWhatsappDeliveryRouteImport.update({
-    id: '/api/public/hooks/whatsapp-delivery',
-    path: '/api/public/hooks/whatsapp-delivery',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAnalyticsLeakageRoute =
+  AuthenticatedAnalyticsLeakageRouteImport.update({
+    id: '/leakage',
+    path: '/leakage',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
-const ApiPublicHooksWellnessMonthlyInvoicesRoute =
-  ApiPublicHooksWellnessMonthlyInvoicesRouteImport.update({
-    id: '/api/public/hooks/wellness-monthly-invoices',
-    path: '/api/public/hooks/wellness-monthly-invoices',
-    getParentRoute: () => rootRouteImport,
+const AuthenticatedAnalyticsPayerScorecardRoute =
+  AuthenticatedAnalyticsPayerScorecardRouteImport.update({
+    id: '/payer-scorecard',
+    path: '/payer-scorecard',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
-const ApiPublicHooksTeamDigestsRoute =
-  ApiPublicHooksTeamDigestsRouteImport.update({
-    id: '/api/public/hooks/team-digests',
-    path: '/api/public/hooks/team-digests',
+const AuthenticatedAnalyticsSubmissionTatRoute =
+  AuthenticatedAnalyticsSubmissionTatRouteImport.update({
+    id: '/submission-tat',
+    path: '/submission-tat',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
+const AuthenticatedAnalyticsTpaReportRoute =
+  AuthenticatedAnalyticsTpaReportRouteImport.update({
+    id: '/tpa-report',
+    path: '/tpa-report',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
+const AuthenticatedClaimsIndexRoute =
+  AuthenticatedClaimsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsAppealsRoute =
+  AuthenticatedClaimsAppealsRouteImport.update({
+    id: '/appeals',
+    path: '/appeals',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsArRoute = AuthenticatedClaimsArRouteImport.update({
+  id: '/ar',
+  path: '/ar',
+  getParentRoute: () => AuthenticatedClaimsRoute,
+} as any)
+const AuthenticatedClaimsDenialsRoute =
+  AuthenticatedClaimsDenialsRouteImport.update({
+    id: '/denials',
+    path: '/denials',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsDenialsWorkflowRoute =
+  AuthenticatedClaimsDenialsWorkflowRouteImport.update({
+    id: '/denials-workflow',
+    path: '/denials-workflow',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsDiscrepancyRoute =
+  AuthenticatedClaimsDiscrepancyRouteImport.update({
+    id: '/discrepancy',
+    path: '/discrepancy',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsDocsToSubmitRoute =
+  AuthenticatedClaimsDocsToSubmitRouteImport.update({
+    id: '/docs-to-submit',
+    path: '/docs-to-submit',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsImportRoute =
+  AuthenticatedClaimsImportRouteImport.update({
+    id: '/import',
+    path: '/import',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsOutstandingRoute =
+  AuthenticatedClaimsOutstandingRouteImport.update({
+    id: '/outstanding',
+    path: '/outstanding',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsPayersRoute =
+  AuthenticatedClaimsPayersRouteImport.update({
+    id: '/payers',
+    path: '/payers',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsPaymentAdviceRoute =
+  AuthenticatedClaimsPaymentAdviceRouteImport.update({
+    id: '/payment-advice',
+    path: '/payment-advice',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsPriorityRoute =
+  AuthenticatedClaimsPriorityRouteImport.update({
+    id: '/priority',
+    path: '/priority',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsReconAlertsRoute =
+  AuthenticatedClaimsReconAlertsRouteImport.update({
+    id: '/recon-alerts',
+    path: '/recon-alerts',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsReconciliationRoute =
+  AuthenticatedClaimsReconciliationRouteImport.update({
+    id: '/reconciliation',
+    path: '/reconciliation',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsSubmissionRoute =
+  AuthenticatedClaimsSubmissionRouteImport.update({
+    id: '/submission',
+    path: '/submission',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedClaimsTdsRoute = AuthenticatedClaimsTdsRouteImport.update({
+  id: '/tds',
+  path: '/tds',
+  getParentRoute: () => AuthenticatedClaimsRoute,
+} as any)
+const AuthenticatedClaimsZeroCancelledRoute =
+  AuthenticatedClaimsZeroCancelledRouteImport.update({
+    id: '/zero-cancelled',
+    path: '/zero-cancelled',
+    getParentRoute: () => AuthenticatedClaimsRoute,
+  } as any)
+const AuthenticatedDashboardExecutiveRoute =
+  AuthenticatedDashboardExecutiveRouteImport.update({
+    id: '/executive',
+    path: '/executive',
+    getParentRoute: () => AuthenticatedDashboardRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsPermissionsRoute =
+  AuthenticatedSettingsPermissionsRouteImport.update({
+    id: '/permissions',
+    path: '/permissions',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const AuthenticatedSettingsUsersRoute =
+  AuthenticatedSettingsUsersRouteImport.update({
+    id: '/users',
+    path: '/users',
+    getParentRoute: () => AuthenticatedSettingsRoute,
+  } as any)
+const ApiPublicHooksDispatchNotificationsRoute =
+  ApiPublicHooksDispatchNotificationsRouteImport.update({
+    id: '/api/public/hooks/dispatch-notifications',
+    path: '/api/public/hooks/dispatch-notifications',
     getParentRoute: () => rootRouteImport,
   } as any)
 const ApiPublicHooksOpdAppointmentRemindersRoute =
@@ -304,10 +292,22 @@ const ApiPublicHooksOpdAppointmentRemindersRoute =
     path: '/api/public/hooks/opd-appointment-reminders',
     getParentRoute: () => rootRouteImport,
   } as any)
-const ApiPublicHooksDispatchNotificationsRoute =
-  ApiPublicHooksDispatchNotificationsRouteImport.update({
-    id: '/api/public/hooks/dispatch-notifications',
-    path: '/api/public/hooks/dispatch-notifications',
+const ApiPublicHooksTeamDigestsRoute =
+  ApiPublicHooksTeamDigestsRouteImport.update({
+    id: '/api/public/hooks/team-digests',
+    path: '/api/public/hooks/team-digests',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWellnessMonthlyInvoicesRoute =
+  ApiPublicHooksWellnessMonthlyInvoicesRouteImport.update({
+    id: '/api/public/hooks/wellness-monthly-invoices',
+    path: '/api/public/hooks/wellness-monthly-invoices',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiPublicHooksWhatsappDeliveryRoute =
+  ApiPublicHooksWhatsappDeliveryRouteImport.update({
+    id: '/api/public/hooks/whatsapp-delivery',
+    path: '/api/public/hooks/whatsapp-delivery',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -605,32 +605,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/forgot-password': {
-      id: '/forgot-password'
-      path: '/forgot-password'
-      fullPath: '/forgot-password'
-      preLoaderRoute: typeof ForgotPasswordRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_authenticated': {
-      id: '/_authenticated'
-      path: ''
+    '/': {
+      id: '/'
+      path: '/'
       fullPath: '/'
-      preLoaderRoute: typeof AuthenticatedRouteImport
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/$': {
@@ -640,39 +619,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SplatRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
       fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+      preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/today': {
-      id: '/_authenticated/today'
-      path: '/today'
-      fullPath: '/today'
-      preLoaderRoute: typeof AuthenticatedTodayRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/forgot-password': {
+      id: '/forgot-password'
+      path: '/forgot-password'
+      fullPath: '/forgot-password'
+      preLoaderRoute: typeof ForgotPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/settings': {
-      id: '/_authenticated/settings'
-      path: '/settings'
-      fullPath: '/settings'
-      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/my-tasks': {
-      id: '/_authenticated/my-tasks'
-      path: '/my-tasks'
-      fullPath: '/my-tasks'
-      preLoaderRoute: typeof AuthenticatedMyTasksRouteImport
-      parentRoute: typeof AuthenticatedRoute
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/dashboard': {
-      id: '/_authenticated/dashboard'
-      path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+    '/_authenticated/analytics': {
+      id: '/_authenticated/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/claims': {
@@ -682,193 +661,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedClaimsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/analytics': {
-      id: '/_authenticated/analytics'
-      path: '/analytics'
-      fullPath: '/analytics'
-      preLoaderRoute: typeof AuthenticatedAnalyticsRouteImport
+    '/_authenticated/dashboard': {
+      id: '/_authenticated/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+    '/_authenticated/my-tasks': {
+      id: '/_authenticated/my-tasks'
+      path: '/my-tasks'
+      fullPath: '/my-tasks'
+      preLoaderRoute: typeof AuthenticatedMyTasksRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/claims/': {
-      id: '/_authenticated/claims/'
-      path: '/'
-      fullPath: '/claims/'
-      preLoaderRoute: typeof AuthenticatedClaimsIndexRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
+    '/_authenticated/settings': {
+      id: '/_authenticated/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof AuthenticatedSettingsRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/users': {
-      id: '/_authenticated/settings/users'
-      path: '/users'
-      fullPath: '/settings/users'
-      preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
+    '/_authenticated/today': {
+      id: '/_authenticated/today'
+      path: '/today'
+      fullPath: '/today'
+      preLoaderRoute: typeof AuthenticatedTodayRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/permissions': {
-      id: '/_authenticated/settings/permissions'
-      path: '/permissions'
-      fullPath: '/settings/permissions'
-      preLoaderRoute: typeof AuthenticatedSettingsPermissionsRouteImport
-      parentRoute: typeof AuthenticatedSettingsRoute
-    }
-    '/_authenticated/dashboard/executive': {
-      id: '/_authenticated/dashboard/executive'
-      path: '/executive'
-      fullPath: '/dashboard/executive'
-      preLoaderRoute: typeof AuthenticatedDashboardExecutiveRouteImport
-      parentRoute: typeof AuthenticatedDashboardRoute
-    }
-    '/_authenticated/claims/zero-cancelled': {
-      id: '/_authenticated/claims/zero-cancelled'
-      path: '/zero-cancelled'
-      fullPath: '/claims/zero-cancelled'
-      preLoaderRoute: typeof AuthenticatedClaimsZeroCancelledRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/tds': {
-      id: '/_authenticated/claims/tds'
-      path: '/tds'
-      fullPath: '/claims/tds'
-      preLoaderRoute: typeof AuthenticatedClaimsTdsRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/submission': {
-      id: '/_authenticated/claims/submission'
-      path: '/submission'
-      fullPath: '/claims/submission'
-      preLoaderRoute: typeof AuthenticatedClaimsSubmissionRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/reconciliation': {
-      id: '/_authenticated/claims/reconciliation'
-      path: '/reconciliation'
-      fullPath: '/claims/reconciliation'
-      preLoaderRoute: typeof AuthenticatedClaimsReconciliationRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/recon-alerts': {
-      id: '/_authenticated/claims/recon-alerts'
-      path: '/recon-alerts'
-      fullPath: '/claims/recon-alerts'
-      preLoaderRoute: typeof AuthenticatedClaimsReconAlertsRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/priority': {
-      id: '/_authenticated/claims/priority'
-      path: '/priority'
-      fullPath: '/claims/priority'
-      preLoaderRoute: typeof AuthenticatedClaimsPriorityRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/payment-advice': {
-      id: '/_authenticated/claims/payment-advice'
-      path: '/payment-advice'
-      fullPath: '/claims/payment-advice'
-      preLoaderRoute: typeof AuthenticatedClaimsPaymentAdviceRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/payers': {
-      id: '/_authenticated/claims/payers'
-      path: '/payers'
-      fullPath: '/claims/payers'
-      preLoaderRoute: typeof AuthenticatedClaimsPayersRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/outstanding': {
-      id: '/_authenticated/claims/outstanding'
-      path: '/outstanding'
-      fullPath: '/claims/outstanding'
-      preLoaderRoute: typeof AuthenticatedClaimsOutstandingRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/import': {
-      id: '/_authenticated/claims/import'
-      path: '/import'
-      fullPath: '/claims/import'
-      preLoaderRoute: typeof AuthenticatedClaimsImportRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/docs-to-submit': {
-      id: '/_authenticated/claims/docs-to-submit'
-      path: '/docs-to-submit'
-      fullPath: '/claims/docs-to-submit'
-      preLoaderRoute: typeof AuthenticatedClaimsDocsToSubmitRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/discrepancy': {
-      id: '/_authenticated/claims/discrepancy'
-      path: '/discrepancy'
-      fullPath: '/claims/discrepancy'
-      preLoaderRoute: typeof AuthenticatedClaimsDiscrepancyRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/denials-workflow': {
-      id: '/_authenticated/claims/denials-workflow'
-      path: '/denials-workflow'
-      fullPath: '/claims/denials-workflow'
-      preLoaderRoute: typeof AuthenticatedClaimsDenialsWorkflowRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/denials': {
-      id: '/_authenticated/claims/denials'
-      path: '/denials'
-      fullPath: '/claims/denials'
-      preLoaderRoute: typeof AuthenticatedClaimsDenialsRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/ar': {
-      id: '/_authenticated/claims/ar'
-      path: '/ar'
-      fullPath: '/claims/ar'
-      preLoaderRoute: typeof AuthenticatedClaimsArRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/claims/appeals': {
-      id: '/_authenticated/claims/appeals'
-      path: '/appeals'
-      fullPath: '/claims/appeals'
-      preLoaderRoute: typeof AuthenticatedClaimsAppealsRouteImport
-      parentRoute: typeof AuthenticatedClaimsRoute
-    }
-    '/_authenticated/analytics/tpa-report': {
-      id: '/_authenticated/analytics/tpa-report'
-      path: '/tpa-report'
-      fullPath: '/analytics/tpa-report'
-      preLoaderRoute: typeof AuthenticatedAnalyticsTpaReportRouteImport
-      parentRoute: typeof AuthenticatedAnalyticsRoute
-    }
-    '/_authenticated/analytics/submission-tat': {
-      id: '/_authenticated/analytics/submission-tat'
-      path: '/submission-tat'
-      fullPath: '/analytics/submission-tat'
-      preLoaderRoute: typeof AuthenticatedAnalyticsSubmissionTatRouteImport
-      parentRoute: typeof AuthenticatedAnalyticsRoute
-    }
-    '/_authenticated/analytics/payer-scorecard': {
-      id: '/_authenticated/analytics/payer-scorecard'
-      path: '/payer-scorecard'
-      fullPath: '/analytics/payer-scorecard'
-      preLoaderRoute: typeof AuthenticatedAnalyticsPayerScorecardRouteImport
-      parentRoute: typeof AuthenticatedAnalyticsRoute
-    }
-    '/_authenticated/analytics/leakage': {
-      id: '/_authenticated/analytics/leakage'
-      path: '/leakage'
-      fullPath: '/analytics/leakage'
-      preLoaderRoute: typeof AuthenticatedAnalyticsLeakageRouteImport
-      parentRoute: typeof AuthenticatedAnalyticsRoute
-    }
-    '/_authenticated/analytics/exceptions': {
-      id: '/_authenticated/analytics/exceptions'
-      path: '/exceptions'
-      fullPath: '/analytics/exceptions'
-      preLoaderRoute: typeof AuthenticatedAnalyticsExceptionsRouteImport
+    '/_authenticated/analytics/benchmarks': {
+      id: '/_authenticated/analytics/benchmarks'
+      path: '/benchmarks'
+      fullPath: '/analytics/benchmarks'
+      preLoaderRoute: typeof AuthenticatedAnalyticsBenchmarksRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
     '/_authenticated/analytics/cash-flow': {
@@ -878,32 +703,193 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsCashFlowRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
-    '/_authenticated/analytics/benchmarks': {
-      id: '/_authenticated/analytics/benchmarks'
-      path: '/benchmarks'
-      fullPath: '/analytics/benchmarks'
-      preLoaderRoute: typeof AuthenticatedAnalyticsBenchmarksRouteImport
+    '/_authenticated/analytics/exceptions': {
+      id: '/_authenticated/analytics/exceptions'
+      path: '/exceptions'
+      fullPath: '/analytics/exceptions'
+      preLoaderRoute: typeof AuthenticatedAnalyticsExceptionsRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
-    '/api/public/hooks/whatsapp-delivery': {
-      id: '/api/public/hooks/whatsapp-delivery'
-      path: '/api/public/hooks/whatsapp-delivery'
-      fullPath: '/api/public/hooks/whatsapp-delivery'
-      preLoaderRoute: typeof ApiPublicHooksWhatsappDeliveryRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/analytics/leakage': {
+      id: '/_authenticated/analytics/leakage'
+      path: '/leakage'
+      fullPath: '/analytics/leakage'
+      preLoaderRoute: typeof AuthenticatedAnalyticsLeakageRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
     }
-    '/api/public/hooks/wellness-monthly-invoices': {
-      id: '/api/public/hooks/wellness-monthly-invoices'
-      path: '/api/public/hooks/wellness-monthly-invoices'
-      fullPath: '/api/public/hooks/wellness-monthly-invoices'
-      preLoaderRoute: typeof ApiPublicHooksWellnessMonthlyInvoicesRouteImport
-      parentRoute: typeof rootRouteImport
+    '/_authenticated/analytics/payer-scorecard': {
+      id: '/_authenticated/analytics/payer-scorecard'
+      path: '/payer-scorecard'
+      fullPath: '/analytics/payer-scorecard'
+      preLoaderRoute: typeof AuthenticatedAnalyticsPayerScorecardRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
     }
-    '/api/public/hooks/team-digests': {
-      id: '/api/public/hooks/team-digests'
-      path: '/api/public/hooks/team-digests'
-      fullPath: '/api/public/hooks/team-digests'
-      preLoaderRoute: typeof ApiPublicHooksTeamDigestsRouteImport
+    '/_authenticated/analytics/submission-tat': {
+      id: '/_authenticated/analytics/submission-tat'
+      path: '/submission-tat'
+      fullPath: '/analytics/submission-tat'
+      preLoaderRoute: typeof AuthenticatedAnalyticsSubmissionTatRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
+    '/_authenticated/analytics/tpa-report': {
+      id: '/_authenticated/analytics/tpa-report'
+      path: '/tpa-report'
+      fullPath: '/analytics/tpa-report'
+      preLoaderRoute: typeof AuthenticatedAnalyticsTpaReportRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
+    '/_authenticated/claims/': {
+      id: '/_authenticated/claims/'
+      path: '/'
+      fullPath: '/claims/'
+      preLoaderRoute: typeof AuthenticatedClaimsIndexRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/appeals': {
+      id: '/_authenticated/claims/appeals'
+      path: '/appeals'
+      fullPath: '/claims/appeals'
+      preLoaderRoute: typeof AuthenticatedClaimsAppealsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/ar': {
+      id: '/_authenticated/claims/ar'
+      path: '/ar'
+      fullPath: '/claims/ar'
+      preLoaderRoute: typeof AuthenticatedClaimsArRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/denials': {
+      id: '/_authenticated/claims/denials'
+      path: '/denials'
+      fullPath: '/claims/denials'
+      preLoaderRoute: typeof AuthenticatedClaimsDenialsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/denials-workflow': {
+      id: '/_authenticated/claims/denials-workflow'
+      path: '/denials-workflow'
+      fullPath: '/claims/denials-workflow'
+      preLoaderRoute: typeof AuthenticatedClaimsDenialsWorkflowRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/discrepancy': {
+      id: '/_authenticated/claims/discrepancy'
+      path: '/discrepancy'
+      fullPath: '/claims/discrepancy'
+      preLoaderRoute: typeof AuthenticatedClaimsDiscrepancyRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/docs-to-submit': {
+      id: '/_authenticated/claims/docs-to-submit'
+      path: '/docs-to-submit'
+      fullPath: '/claims/docs-to-submit'
+      preLoaderRoute: typeof AuthenticatedClaimsDocsToSubmitRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/import': {
+      id: '/_authenticated/claims/import'
+      path: '/import'
+      fullPath: '/claims/import'
+      preLoaderRoute: typeof AuthenticatedClaimsImportRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/outstanding': {
+      id: '/_authenticated/claims/outstanding'
+      path: '/outstanding'
+      fullPath: '/claims/outstanding'
+      preLoaderRoute: typeof AuthenticatedClaimsOutstandingRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/payers': {
+      id: '/_authenticated/claims/payers'
+      path: '/payers'
+      fullPath: '/claims/payers'
+      preLoaderRoute: typeof AuthenticatedClaimsPayersRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/payment-advice': {
+      id: '/_authenticated/claims/payment-advice'
+      path: '/payment-advice'
+      fullPath: '/claims/payment-advice'
+      preLoaderRoute: typeof AuthenticatedClaimsPaymentAdviceRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/priority': {
+      id: '/_authenticated/claims/priority'
+      path: '/priority'
+      fullPath: '/claims/priority'
+      preLoaderRoute: typeof AuthenticatedClaimsPriorityRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/recon-alerts': {
+      id: '/_authenticated/claims/recon-alerts'
+      path: '/recon-alerts'
+      fullPath: '/claims/recon-alerts'
+      preLoaderRoute: typeof AuthenticatedClaimsReconAlertsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/reconciliation': {
+      id: '/_authenticated/claims/reconciliation'
+      path: '/reconciliation'
+      fullPath: '/claims/reconciliation'
+      preLoaderRoute: typeof AuthenticatedClaimsReconciliationRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/submission': {
+      id: '/_authenticated/claims/submission'
+      path: '/submission'
+      fullPath: '/claims/submission'
+      preLoaderRoute: typeof AuthenticatedClaimsSubmissionRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/tds': {
+      id: '/_authenticated/claims/tds'
+      path: '/tds'
+      fullPath: '/claims/tds'
+      preLoaderRoute: typeof AuthenticatedClaimsTdsRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/claims/zero-cancelled': {
+      id: '/_authenticated/claims/zero-cancelled'
+      path: '/zero-cancelled'
+      fullPath: '/claims/zero-cancelled'
+      preLoaderRoute: typeof AuthenticatedClaimsZeroCancelledRouteImport
+      parentRoute: typeof AuthenticatedClaimsRoute
+    }
+    '/_authenticated/dashboard/executive': {
+      id: '/_authenticated/dashboard/executive'
+      path: '/executive'
+      fullPath: '/dashboard/executive'
+      preLoaderRoute: typeof AuthenticatedDashboardExecutiveRouteImport
+      parentRoute: typeof AuthenticatedDashboardRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/permissions': {
+      id: '/_authenticated/settings/permissions'
+      path: '/permissions'
+      fullPath: '/settings/permissions'
+      preLoaderRoute: typeof AuthenticatedSettingsPermissionsRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/_authenticated/settings/users': {
+      id: '/_authenticated/settings/users'
+      path: '/users'
+      fullPath: '/settings/users'
+      preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
+      parentRoute: typeof AuthenticatedSettingsRoute
+    }
+    '/api/public/hooks/dispatch-notifications': {
+      id: '/api/public/hooks/dispatch-notifications'
+      path: '/api/public/hooks/dispatch-notifications'
+      fullPath: '/api/public/hooks/dispatch-notifications'
+      preLoaderRoute: typeof ApiPublicHooksDispatchNotificationsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/opd-appointment-reminders': {
@@ -913,11 +899,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksOpdAppointmentRemindersRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/api/public/hooks/dispatch-notifications': {
-      id: '/api/public/hooks/dispatch-notifications'
-      path: '/api/public/hooks/dispatch-notifications'
-      fullPath: '/api/public/hooks/dispatch-notifications'
-      preLoaderRoute: typeof ApiPublicHooksDispatchNotificationsRouteImport
+    '/api/public/hooks/team-digests': {
+      id: '/api/public/hooks/team-digests'
+      path: '/api/public/hooks/team-digests'
+      fullPath: '/api/public/hooks/team-digests'
+      preLoaderRoute: typeof ApiPublicHooksTeamDigestsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/wellness-monthly-invoices': {
+      id: '/api/public/hooks/wellness-monthly-invoices'
+      path: '/api/public/hooks/wellness-monthly-invoices'
+      fullPath: '/api/public/hooks/wellness-monthly-invoices'
+      preLoaderRoute: typeof ApiPublicHooksWellnessMonthlyInvoicesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/hooks/whatsapp-delivery': {
+      id: '/api/public/hooks/whatsapp-delivery'
+      path: '/api/public/hooks/whatsapp-delivery'
+      fullPath: '/api/public/hooks/whatsapp-delivery'
+      preLoaderRoute: typeof ApiPublicHooksWhatsappDeliveryRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
