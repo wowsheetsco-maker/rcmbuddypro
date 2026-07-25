@@ -238,7 +238,7 @@ export default function TodaysWorklistPage() {
             loading={isLoading}
             empty={!isLoading && buckets.followUpsDue.length === 0}
             icon={<RcmIcons.followUp className="h-3.5 w-3.5 text-primary" />}
-            caption={mineOnly ? "Assigned to me" : "Across team"}
+            caption={effectiveScope === "mine" ? "Assigned to me" : effectiveScope === "team" ? "My team" : "Across all users"}
           />
           <KpiCard
             label="Docs to submit"
