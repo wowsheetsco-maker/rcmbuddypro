@@ -1,24 +1,29 @@
-import React, { useMemo, useState } from "react";
-import { Loader2, ArrowRight, CheckCircle2, Clock, User } from "lucide-react";
+import React, { useEffect, useMemo, useState } from "react";
+import { Loader2, ArrowRight, CheckCircle2, Clock, User, Users, Globe2 } from "lucide-react";
 import { RcmIcons } from "@/lib/icons";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge, agingVariant } from "@/components/ui/badge";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { ListItemSkeleton } from "@/components/skeletons";
 import AppLayout from "@/components/AppLayout";
 import ClaimDrawer from "@/components/ClaimDrawer";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { useFollowUpData } from "@/hooks/useFollowUpData";
 import { useActingUserId } from "@/hooks/useActingUser";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsPlatformAdmin } from "@/hooks/useIsPlatformAdmin";
+import { useTeamMembers } from "@/hooks/useTeamMembers";
 import { type Claim, formatInr, formatDays } from "@/data/mockClaims";
 import { isDocsToSubmit } from "@/lib/claimStatusBuckets";
+import { cn } from "@/lib/utils";
 
 const SETTLED = new Set(["settled", "paid", "closed", "claim settled"]);
 const DENIED = /denied|rejected|repudiat/i;
 const QUERY_RX = /query|shortfall|clarification|pending.*info/i;
 const HIGH_VALUE_AR_DAYS = 60;
+
+type Scope = "mine" | "team" | "all";
+const SCOPE_KEY = "rcm-today-scope";
 
 interface QueueItem {
   claim: Claim;
@@ -27,28 +32,77 @@ interface QueueItem {
   amount: number;
 }
 
+/** Role-based default: junior executives → Mine; managers/admins → Team; owners/platform admins → All. */
+function defaultScope(role: string | null, isPlatformAdmin: boolean): Scope {
+  if (isPlatformAdmin || role === "owner") return "all";
+  if (role === "admin") return "team";
+  return "mine";
+}
+
 export default function TodaysWorklistPage() {
   const { claims, loading, isMock, refetch } = useLiveClaims();
   const { followUps, loading: fuLoading } = useFollowUpData();
   const [actingUserId] = useActingUserId();
-  const [mineOnly, setMineOnly] = useState<boolean>(() => {
-    try { return localStorage.getItem("rcm-today-mine-only") === "1"; } catch { return false; }
-  });
+  const { role, isLoading: roleLoading } = useAuth();
+  const { isAdmin: isPlatformAdmin, loading: paLoading } = useIsPlatformAdmin();
+  const { teamIds } = useTeamMembers();
   const [selected, setSelected] = useState<Claim | null>(null);
 
-  const toggleMineOnly = (v: boolean) => {
-    setMineOnly(v);
-    try { localStorage.setItem("rcm-today-mine-only", v ? "1" : "0"); } catch { /* noop */ }
+  const [scope, setScope] = useState<Scope | null>(() => {
+    try {
+      const v = localStorage.getItem(SCOPE_KEY);
+      if (v === "mine" || v === "team" || v === "all") return v;
+      // Migrate legacy "mine only" switch.
+      if (localStorage.getItem("rcm-today-mine-only") === "1") return "mine";
+    } catch { /* noop */ }
+    return null;
+  });
+
+  // Apply role-based default once auth resolves, if the user hasn't chosen yet.
+  useEffect(() => {
+    if (scope !== null) return;
+    if (roleLoading || paLoading) return;
+    setScope(defaultScope(role, isPlatformAdmin));
+  }, [scope, role, isPlatformAdmin, roleLoading, paLoading]);
+
+  const effectiveScope: Scope = scope ?? "mine";
+
+  const updateScope = (v: Scope) => {
+    setScope(v);
+    try { localStorage.setItem(SCOPE_KEY, v); } catch { /* noop */ }
   };
 
   const claimsById = useMemo(() => new Map(claims.map((c) => [c.id, c])), [claims]);
+
+  // Set of app_user ids that satisfy the current scope. `null` means "no filter".
+  const ownerSet: Set<string> | null = useMemo(() => {
+    if (effectiveScope === "all") return null;
+    if (effectiveScope === "mine") {
+      return new Set(actingUserId ? [actingUserId] : []);
+    }
+    // team
+    const s = new Set<string>(teamIds);
+    if (actingUserId) s.add(actingUserId);
+    return s;
+  }, [effectiveScope, actingUserId, teamIds]);
+
+  // Claims that someone in the current scope has personally touched (via follow-ups).
+  // Used to filter claim-only buckets (docs/denials/AR) where there is no owner column.
+  const touchedClaimIds: Set<string> | null = useMemo(() => {
+    if (!ownerSet) return null;
+    const s = new Set<string>();
+    for (const fu of followUps) {
+      if (fu.logged_by && ownerSet.has(fu.logged_by)) s.add(fu.claim_id);
+    }
+    return s;
+  }, [followUps, ownerSet]);
 
   const buckets = useMemo(() => {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     const todayMs = today.getTime();
 
-    // 1) Overdue follow-ups — optionally scoped to acting user (logged_by = me)
+    // 1) Overdue follow-ups — scoped by logged_by ∈ ownerSet.
     const seenFu = new Set<string>();
     const followUpsDue: QueueItem[] = [];
     const sorted = [...followUps].sort(
@@ -56,7 +110,8 @@ export default function TodaysWorklistPage() {
     );
     for (const fu of sorted) {
       if (seenFu.has(fu.claim_id)) continue;
-      if (mineOnly && actingUserId && fu.logged_by && fu.logged_by !== actingUserId) continue;
+      if (ownerSet && fu.logged_by && !ownerSet.has(fu.logged_by)) continue;
+      if (ownerSet && !fu.logged_by && effectiveScope === "mine") continue;
       seenFu.add(fu.claim_id);
       const claim = claimsById.get(fu.claim_id);
       if (!claim) continue;
@@ -73,10 +128,22 @@ export default function TodaysWorklistPage() {
       });
     }
 
+    // For claim-only buckets: in "mine" mode we hide claims the acting user hasn't touched.
+    // In "team" mode we surface claims teammates have touched PLUS untouched claims (new work).
+    // In "all" mode no filter.
+    const claimAllowed = (claimId: string) => {
+      if (!touchedClaimIds) return true;
+      if (effectiveScope === "mine") return touchedClaimIds.has(claimId);
+      // team: touched by teammate OR untouched (no follow-ups at all)
+      if (touchedClaimIds.has(claimId)) return true;
+      return !followUps.some((f) => f.claim_id === claimId);
+    };
+
     // 2) Docs-to-submit — approved/discharged claims awaiting document submission
     const docsToSubmit: QueueItem[] = [];
     for (const c of claims) {
       if (!isDocsToSubmit(c)) continue;
+      if (!claimAllowed(c.id)) continue;
       docsToSubmit.push({
         claim: c,
         reason: c.claim_status || "Approved",
@@ -96,6 +163,7 @@ export default function TodaysWorklistPage() {
       const isQuery = QUERY_RX.test(c.claim_status);
       if (!isDenial && !isQuery) continue;
       if (c.outstanding_amount <= 0 && !isQuery) continue;
+      if (!claimAllowed(c.id)) continue;
       denialsQueries.push({
         claim: c,
         reason: c.claim_status,
@@ -111,6 +179,7 @@ export default function TodaysWorklistPage() {
       if (SETTLED.has(status)) continue;
       if (c.outstanding_amount <= 0) continue;
       if (c.days_since_claim < HIGH_VALUE_AR_DAYS) continue;
+      if (!claimAllowed(c.id)) continue;
       highValueAr.push({
         claim: c,
         reason: `${formatDays(c.days_since_claim)} old`,
@@ -125,7 +194,8 @@ export default function TodaysWorklistPage() {
     denialsQueries.sort(byAmount);
     highValueAr.sort(byAmount);
     return { followUpsDue, docsToSubmit, denialsQueries, highValueAr };
-  }, [claims, followUps, claimsById, mineOnly, actingUserId]);
+  }, [claims, followUps, claimsById, ownerSet, touchedClaimIds, effectiveScope]);
+
 
   const isLoading = loading || fuLoading;
   const allItems = [
@@ -158,13 +228,7 @@ export default function TodaysWorklistPage() {
               )}
             </p>
           </div>
-          <div className="flex items-center gap-2 rounded-md border bg-card px-3 py-1.5">
-            <User className="h-3.5 w-3.5 text-muted-foreground" />
-            <Label htmlFor="mine-only" className="text-xs text-muted-foreground cursor-pointer">
-              Show only what's assigned to me
-            </Label>
-            <Switch id="mine-only" checked={mineOnly} onCheckedChange={toggleMineOnly} />
-          </div>
+          <ScopeSelector value={effectiveScope} onChange={updateScope} role={role} isPlatformAdmin={isPlatformAdmin} />
         </div>
 
         <KpiGrid cols={4}>
@@ -174,7 +238,7 @@ export default function TodaysWorklistPage() {
             loading={isLoading}
             empty={!isLoading && buckets.followUpsDue.length === 0}
             icon={<RcmIcons.followUp className="h-3.5 w-3.5 text-primary" />}
-            caption={mineOnly ? "Assigned to me" : "Across team"}
+            caption={effectiveScope === "mine" ? "Assigned to me" : effectiveScope === "team" ? "My team" : "Across all users"}
           />
           <KpiCard
             label="Docs to submit"
@@ -207,7 +271,7 @@ export default function TodaysWorklistPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <QueueCard
             title="Follow-ups due"
-            subtitle={mineOnly ? "Assigned to me" : "Overdue or due today"}
+            subtitle={effectiveScope === "mine" ? "Assigned to me" : effectiveScope === "team" ? "My team's overdue or due today" : "Overdue or due today"}
             icon={RcmIcons.followUp}
             tone="text-primary"
             items={buckets.followUpsDue}
@@ -360,3 +424,55 @@ function QueueCard({ title, subtitle, icon: Icon, tone, items, loading, empty, o
     </Card>
   );
 }
+
+interface ScopeSelectorProps {
+  value: Scope;
+  onChange: (v: Scope) => void;
+  role: string | null;
+  isPlatformAdmin: boolean;
+}
+
+function ScopeSelector({ value, onChange, role, isPlatformAdmin }: ScopeSelectorProps) {
+  const options: { key: Scope; label: string; icon: React.ComponentType<{ className?: string }>; hint: string }[] = [
+    { key: "mine", label: "Mine", icon: User, hint: "Only claims & follow-ups I own" },
+    { key: "team", label: "My team", icon: Users, hint: "Everyone in my organization" },
+    { key: "all", label: "All", icon: Globe2, hint: "Every user, every branch" },
+  ];
+  const defaultKey: Scope = isPlatformAdmin || role === "owner" ? "all" : role === "admin" ? "team" : "mine";
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <div
+        role="tablist"
+        aria-label="Worklist scope"
+        className="inline-flex items-center rounded-md border bg-card p-0.5"
+      >
+        {options.map((opt) => {
+          const Icon = opt.icon;
+          const active = value === opt.key;
+          return (
+            <button
+              key={opt.key}
+              role="tab"
+              aria-selected={active}
+              title={opt.hint}
+              onClick={() => onChange(opt.key)}
+              className={cn(
+                "flex items-center gap-1.5 rounded-[5px] px-2.5 py-1 text-xs font-medium transition-colors",
+                active
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+              )}
+            >
+              <Icon className="h-3.5 w-3.5" />
+              {opt.label}
+            </button>
+          );
+        })}
+      </div>
+      <span className="text-[10px] text-muted-foreground">
+        Default for your role: <span className="font-medium">{defaultKey}</span>
+      </span>
+    </div>
+  );
+}
+
