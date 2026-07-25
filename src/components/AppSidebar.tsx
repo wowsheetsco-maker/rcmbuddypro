@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import {
-  LayoutDashboard, Search, ListChecks,
+  LayoutDashboard, Search, ListChecks, Home,
   ShieldAlert, Calendar as CalendarIcon, Bot,
   Users, Landmark, ChevronDown,
   UserCog, Wallet, Briefcase, ShieldCheck,
