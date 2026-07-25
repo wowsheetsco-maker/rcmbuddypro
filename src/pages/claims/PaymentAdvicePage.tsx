@@ -34,6 +34,11 @@ export default function PaymentAdvicePage() {
   const [utrOverride, setUtrOverride] = useState("");
   const [enableOcr, setEnableOcr] = useState(true);
   const [forceOcr, setForceOcr] = useState(false);
+  const [ocrLang, setOcrLang] = useState("eng");
+  const [ocrScale, setOcrScale] = useState(2);
+  const [ocrRotate, setOcrRotate] = useState<0 | 90 | 180 | 270>(0);
+  const [ocrTableMode, setOcrTableMode] = useState(true);
+  const [showOcrSettings, setShowOcrSettings] = useState(false);
   const [progress, setProgress] = useState<{ msg: string; pct: number } | null>(null);
 
   const onFile = useCallback(async (file: File) => {
