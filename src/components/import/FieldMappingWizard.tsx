@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { CheckCircle2, AlertCircle, Sparkles, Download, Upload, HelpCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, Sparkles, Download, Upload, HelpCircle, Ban, ClipboardCheck, TrendingUp, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import type { ClaimUpsertRow } from "@/lib/claimsImport";
 import {
@@ -19,7 +19,9 @@ import {
   CRITICAL_FIELDS,
   serializeTemplate,
   parseTemplate,
+  buildValidationReport,
   type HeaderMatch,
+  type ValidationReport,
 } from "@/lib/himsFieldMapping";
 
 type Mapping = Record<string, keyof ClaimUpsertRow>;
@@ -51,13 +53,15 @@ export default function FieldMappingWizard({
 }: Props) {
   const [mapping, setMapping] = useState<Mapping>(initialMapping ?? {});
   const [presetName, setPresetName] = useState<string>("");
+  const [excluded, setExcluded] = useState<Set<string>>(new Set());
+  const [reportOpen, setReportOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
-  // Score every header against every candidate field. Recomputed only when
-  // detectedHeaders changes — cheap because scoring is O(headers × fields).
+  // Score headers, ignoring excluded ones so misnamed / duplicate columns
+  // don't create noisy ambiguous matches.
   const scored = useMemo(
-    () => autoDetectMappingScored(detectedHeaders),
-    [detectedHeaders],
+    () => autoDetectMappingScored(detectedHeaders.filter((h) => !excluded.has(h))),
+    [detectedHeaders, excluded],
   );
 
   const readiness = useMemo(() => computeReadiness(mapping), [mapping]);
@@ -108,10 +112,34 @@ export default function FieldMappingWizard({
     });
   };
 
+  const toggleExcluded = (header: string) => {
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (next.has(header)) {
+        next.delete(header);
+      } else {
+        next.add(header);
+        // Excluding a header must also drop any mapping it currently has,
+        // otherwise the exclusion doesn't affect readiness or the report.
+        setMapping((m) => {
+          if (!(header in m)) return m;
+          const { [header]: _drop, ...rest } = m;
+          return rest;
+        });
+      }
+      return next;
+    });
+  };
+
   const acceptGuess = (header: string) => {
     const m = scored.matches[header];
     if (m?.field) setHeaderMap(header, m.field);
   };
+
+  const report = useMemo(
+    () => buildValidationReport(detectedHeaders, mapping, scored.matches, excluded),
+    [detectedHeaders, mapping, scored.matches, excluded],
+  );
 
   const exportTemplate = () => {
     const name = typeof window !== "undefined"
@@ -234,6 +262,7 @@ export default function FieldMappingWizard({
                     <th className="text-left px-3 py-2 font-medium w-56">Maps to</th>
                     <th className="text-left px-2 py-2 font-medium w-36">Confidence</th>
                     <th className="text-right px-3 py-2 font-medium w-24">Populated</th>
+                    <th className="text-center px-2 py-2 font-medium w-12">Skip</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -244,8 +273,10 @@ export default function FieldMappingWizard({
                       cur={mapping[h] ?? NONE}
                       match={scored.matches[h]}
                       stats={headerStats?.[h]}
+                      excluded={excluded.has(h)}
                       onChange={setHeaderMap}
                       onAccept={() => acceptGuess(h)}
+                      onToggleExclude={() => toggleExcluded(h)}
                     />
                   ))}
                 </tbody>
@@ -337,12 +368,20 @@ export default function FieldMappingWizard({
         </div>
 
         <DialogFooter className="pt-3 border-t">
-          <div className="text-xs text-muted-foreground mr-auto">
+          <div className="text-xs text-muted-foreground mr-auto flex items-center gap-2">
             {missingRequired.length > 0
               ? <span className="text-destructive">Map all required fields to continue.</span>
-              : <span>Ready. Save to re-parse the file with this mapping.</span>}
+              : <span>Ready. Review the pre-import report or save to re-parse.</span>}
+            {excluded.size > 0 && (
+              <Badge variant="outline" className="text-[10px] font-normal">
+                {excluded.size} skipped
+              </Badge>
+            )}
           </div>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button variant="outline" onClick={() => setReportOpen(true)}>
+            <ClipboardCheck className="h-3 w-3 mr-1" /> Review before save
+          </Button>
           <Button
             disabled={missingRequired.length > 0}
             onClick={() => { onSave(mapping); onOpenChange(false); }}
@@ -350,27 +389,301 @@ export default function FieldMappingWizard({
             Save mapping & re-parse
           </Button>
         </DialogFooter>
+
+        <ValidationReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          report={report}
+          onAcceptAllAmbiguous={() => {
+            setMapping((prev) => {
+              const next = { ...prev };
+              const claimed = new Set(Object.values(next));
+              for (const a of report.ambiguous) {
+                if (a.best && !claimed.has(a.best)) {
+                  next[a.header] = a.best;
+                  claimed.add(a.best);
+                }
+              }
+              return next;
+            });
+            toast.success(`Accepted ${report.ambiguous.length} suggested match${report.ambiguous.length === 1 ? "" : "es"}`);
+          }}
+          onSave={() => {
+            setReportOpen(false);
+            onSave(mapping);
+            onOpenChange(false);
+          }}
+          canSave={missingRequired.length === 0}
+        />
       </DialogContent>
     </Dialog>
   );
 }
 
+function ValidationReportDialog({
+  open, onOpenChange, report, onAcceptAllAmbiguous, onSave, canSave,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  report: ValidationReport;
+  onAcceptAllAmbiguous: () => void;
+  onSave: () => void;
+  canSave: boolean;
+}) {
+  const curPct = Math.round(report.currentReadiness * 100);
+  const projPct = Math.round(report.projectedReadiness * 100);
+  const deltaPct = projPct - curPct;
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ClipboardCheck className="h-4 w-4 text-primary" /> Pre-import validation report
+          </DialogTitle>
+          <DialogDescription>
+            Review what's unmapped, ambiguous, and how readiness will change before you finalise the import.
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 -mx-6 px-6">
+          <div className="space-y-4 py-2">
+            <div className="border rounded-md p-3">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <div className="text-xs text-muted-foreground">Readiness impact</div>
+                  <div className="text-[11px] text-muted-foreground mt-0.5">
+                    Current mapping vs projected if all suggested matches are accepted.
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 text-sm tabular-nums">
+                  <div className="text-right">
+                    <div className="text-[10px] text-muted-foreground">Now</div>
+                    <div className="font-display text-lg">{curPct}%</div>
+                  </div>
+                  <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                  <div className="text-right">
+                    <div className="text-[10px] text-muted-foreground">Projected</div>
+                    <div className="font-display text-lg">{projPct}%</div>
+                  </div>
+                  <Badge
+                    variant="outline"
+                    className={
+                      deltaPct > 0
+                        ? "bg-success/10 text-success border-success/30"
+                        : deltaPct < 0
+                        ? "bg-destructive/10 text-destructive border-destructive/30"
+                        : "bg-muted text-muted-foreground border-border"
+                    }
+                  >
+                    {deltaPct > 0 ? "+" : ""}{deltaPct} pts
+                  </Badge>
+                </div>
+              </div>
+              {report.featureImpact.some((f) => f.projectedScore > f.currentScore) && (
+                <div className="mt-3 space-y-1.5">
+                  {report.featureImpact
+                    .filter((f) => f.projectedScore > f.currentScore)
+                    .map((f) => (
+                      <div key={f.key} className="text-[11px] grid grid-cols-[1fr_auto] gap-2">
+                        <div>
+                          <span className="font-medium">{f.name}</span>{" "}
+                          <span className="text-muted-foreground">
+                            unlocks {f.unlocks.map(fieldLabel).join(", ")}
+                          </span>
+                        </div>
+                        <span className="tabular-nums text-muted-foreground">
+                          {Math.round(f.currentScore * 100)}% → {Math.round(f.projectedScore * 100)}%
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
+            </div>
+
+            <ReportSection
+              tone={report.unmappedRequired.length > 0 ? "destructive" : "success"}
+              icon={report.unmappedRequired.length > 0 ? XCircle : CheckCircle2}
+              title={`Required fields ${report.unmappedRequired.length > 0 ? "missing" : "complete"}`}
+              subtitle={
+                report.unmappedRequired.length > 0
+                  ? "You cannot save until every required field is mapped."
+                  : "All required fields are mapped."
+              }
+              body={
+                report.unmappedRequired.length > 0 ? (
+                  <div className="flex flex-wrap gap-1">
+                    {report.unmappedRequired.map((f) => (
+                      <Badge key={f} variant="outline" className="bg-destructive/10 text-destructive border-destructive/30 text-[10px]">
+                        {fieldLabel(f)}
+                      </Badge>
+                    ))}
+                  </div>
+                ) : null
+              }
+            />
+
+            {report.unmappedCritical.length > 0 && (
+              <ReportSection
+                tone="warning"
+                icon={AlertCircle}
+                title={`${report.unmappedCritical.length} critical field${report.unmappedCritical.length === 1 ? "" : "s"} unmapped`}
+                subtitle="Analytics that depend on these will show partial or empty data."
+                body={
+                  <div className="flex flex-wrap gap-1">
+                    {report.unmappedCritical.map((f) => (
+                      <Badge key={f} variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
+                        {fieldLabel(f)}
+                      </Badge>
+                    ))}
+                  </div>
+                }
+              />
+            )}
+
+            {report.ambiguous.length > 0 && (
+              <ReportSection
+                tone="warning"
+                icon={AlertCircle}
+                title={`${report.ambiguous.length} ambiguous column${report.ambiguous.length === 1 ? "" : "s"}`}
+                subtitle="Low or medium confidence. Accept to project the readiness gain, or resolve one-by-one in the table."
+                action={
+                  <Button size="sm" variant="outline" onClick={onAcceptAllAmbiguous}>
+                    Accept all suggestions
+                  </Button>
+                }
+                body={
+                  <div className="border rounded-md overflow-hidden">
+                    <table className="w-full text-[11px]">
+                      <thead className="bg-muted/50">
+                        <tr>
+                          <th className="text-left px-2 py-1 font-medium">Column</th>
+                          <th className="text-left px-2 py-1 font-medium">Suggested field</th>
+                          <th className="text-right px-2 py-1 font-medium w-16">Conf.</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {report.ambiguous.map((a) => (
+                          <tr key={a.header} className="border-t">
+                            <td className="px-2 py-1 truncate max-w-[220px]" title={a.header}>{a.header}</td>
+                            <td className="px-2 py-1">
+                              {a.best ? fieldLabel(a.best) : <span className="text-muted-foreground">no guess</span>}
+                              {a.alternates.length > 0 && (
+                                <span className="text-muted-foreground">
+                                  {" "}· or {a.alternates.slice(0, 2).map((x) => fieldLabel(x.field)).join(", ")}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-2 py-1 text-right tabular-nums">{Math.round(a.confidence * 100)}%</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                }
+              />
+            )}
+
+            {report.duplicates.length > 0 && (
+              <ReportSection
+                tone="destructive"
+                icon={AlertCircle}
+                title={`${report.duplicates.length} field${report.duplicates.length === 1 ? "" : "s"} mapped from multiple columns`}
+                subtitle="Only one value will survive per claim. Skip the extras or remap them."
+                body={
+                  <div className="space-y-1 text-[11px]">
+                    {report.duplicates.map((d) => (
+                      <div key={d.field}>
+                        <span className="font-medium">{fieldLabel(d.field)}</span>{" "}
+                        <span className="text-muted-foreground">← {d.headers.join("  ·  ")}</span>
+                      </div>
+                    ))}
+                  </div>
+                }
+              />
+            )}
+
+            {report.excludedCount > 0 && (
+              <div className="text-[11px] text-muted-foreground">
+                {report.excludedCount} column{report.excludedCount === 1 ? "" : "s"} excluded from auto-detection.
+              </div>
+            )}
+
+            {report.unmappedRequired.length === 0
+              && report.ambiguous.length === 0
+              && report.duplicates.length === 0
+              && report.unmappedCritical.length === 0 && (
+              <div className="border rounded-md p-4 bg-success/5 flex items-center gap-2 text-sm">
+                <CheckCircle2 className="h-4 w-4 text-success" />
+                Mapping looks clean — nothing flagged. Safe to import.
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="pt-3 border-t">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Back to mapping</Button>
+          <Button disabled={!canSave} onClick={onSave}>Save mapping & re-parse</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function ReportSection({
+  tone, icon: Icon, title, subtitle, body, action,
+}: {
+  tone: "destructive" | "warning" | "success";
+  icon: typeof AlertCircle;
+  title: string;
+  subtitle?: string;
+  body?: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  const toneClass =
+    tone === "destructive" ? "border-destructive/30 bg-destructive/5"
+    : tone === "warning" ? "border-warning/30 bg-warning/5"
+    : "border-success/30 bg-success/5";
+  const iconClass =
+    tone === "destructive" ? "text-destructive"
+    : tone === "warning" ? "text-warning"
+    : "text-success";
+  return (
+    <div className={`border rounded-md p-3 ${toneClass}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-start gap-2 min-w-0">
+          <Icon className={`h-4 w-4 mt-0.5 shrink-0 ${iconClass}`} />
+          <div className="min-w-0">
+            <div className="text-xs font-medium">{title}</div>
+            {subtitle && <div className="text-[11px] text-muted-foreground mt-0.5">{subtitle}</div>}
+          </div>
+        </div>
+        {action}
+      </div>
+      {body && <div className="mt-2">{body}</div>}
+    </div>
+  );
+}
+
 function HeaderRow({
-  header, cur, match, stats, onChange, onAccept,
+  header, cur, match, stats, excluded, onChange, onAccept, onToggleExclude,
 }: {
   header: string;
   cur: string;
   match: HeaderMatch | undefined;
   stats: { filled: number; total: number } | undefined;
+  excluded: boolean;
   onChange: (h: string, v: string) => void;
   onAccept: () => void;
+  onToggleExclude: () => void;
 }) {
-  const isAmbiguous = !!match && match.confidence > 0 && match.confidence < 0.85 && cur === NONE;
+  const isAmbiguous = !excluded && !!match && match.confidence > 0 && match.confidence < 0.85 && cur === NONE;
   const currentIsMapped = cur !== NONE;
-  const rowTone = isAmbiguous ? "bg-warning/5" : "";
+  const rowTone = excluded ? "bg-muted/40 opacity-60" : isAmbiguous ? "bg-warning/5" : "";
 
   const conf = match?.confidence ?? 0;
-  const confBadge = currentIsMapped && match?.field === cur
+  const confBadge = excluded
+    ? { label: "Skipped", tone: "bg-muted text-muted-foreground border-border" }
+    : currentIsMapped && match?.field === cur
     ? confidenceBadge(conf)
     : cur !== NONE
     ? { label: "Manual", tone: "bg-primary/10 text-primary border-primary/30" }
@@ -385,10 +698,10 @@ function HeaderRow({
     <>
       <tr className={`border-t ${rowTone}`}>
         <td className="px-3 py-1.5 max-w-xs">
-          <div className="truncate" title={header}>{header}</div>
+          <div className={`truncate ${excluded ? "line-through" : ""}`} title={header}>{header}</div>
         </td>
         <td className="px-3 py-1">
-          <Select value={cur} onValueChange={(v) => onChange(header, v)}>
+          <Select value={cur} onValueChange={(v) => onChange(header, v)} disabled={excluded}>
             <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={NONE}>— Ignore —</SelectItem>
@@ -414,10 +727,27 @@ function HeaderRow({
             ? <span title={`${pop.filled} of ${pop.total} rows`}>{pop.filled.toLocaleString()}{popPct !== null && ` · ${popPct}%`}</span>
             : <span className="text-muted-foreground">—</span>}
         </td>
+        <td className="px-2 py-1 text-center">
+          <TooltipProvider><Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                onClick={onToggleExclude}
+                className={`inline-flex items-center justify-center h-6 w-6 rounded border ${excluded ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:bg-muted"}`}
+                aria-label={excluded ? "Include column" : "Exclude column from auto-detection"}
+              >
+                <Ban className="h-3 w-3" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="left" className="text-xs">
+              {excluded ? "Include this column" : "Skip this column — exclude from auto-detection and mapping"}
+            </TooltipContent>
+          </Tooltip></TooltipProvider>
+        </td>
       </tr>
       {isAmbiguous && match && (
         <tr className="bg-warning/5">
-          <td colSpan={4} className="px-3 pb-2 pt-0">
+          <td colSpan={5} className="px-3 pb-2 pt-0">
             <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
               <AlertCircle className="h-3 w-3 text-warning" />
               <span className="text-muted-foreground">Ambiguous — did you mean:</span>
