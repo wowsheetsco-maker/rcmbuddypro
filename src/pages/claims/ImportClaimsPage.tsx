@@ -36,6 +36,9 @@ import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
 import { classifyAll, BUCKET_LABELS, type QualityClassification } from "@/lib/claimQualityRules";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import FieldMappingWizard, { ReadinessBadge } from "@/components/import/FieldMappingWizard";
+import { effectiveMapping } from "@/lib/himsFieldMapping";
+import { Wand2 } from "lucide-react";
 
 interface ImportSnapshot {
   inserted_claim_numbers: string[];
