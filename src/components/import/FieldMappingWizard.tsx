@@ -262,6 +262,7 @@ export default function FieldMappingWizard({
                     <th className="text-left px-3 py-2 font-medium w-56">Maps to</th>
                     <th className="text-left px-2 py-2 font-medium w-36">Confidence</th>
                     <th className="text-right px-3 py-2 font-medium w-24">Populated</th>
+                    <th className="text-center px-2 py-2 font-medium w-12">Skip</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -272,8 +273,10 @@ export default function FieldMappingWizard({
                       cur={mapping[h] ?? NONE}
                       match={scored.matches[h]}
                       stats={headerStats?.[h]}
+                      excluded={excluded.has(h)}
                       onChange={setHeaderMap}
                       onAccept={() => acceptGuess(h)}
+                      onToggleExclude={() => toggleExcluded(h)}
                     />
                   ))}
                 </tbody>
