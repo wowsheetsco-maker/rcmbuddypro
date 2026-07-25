@@ -22,6 +22,30 @@ export const Route = createFileRoute("/api/public/hooks/wellness-monthly-invoice
   server: {
     handlers: {
       POST: async ({ request }) => {
+        // Shared-secret gate. Fail closed: reject every request when the
+        // secret isn't configured on the deployment.
+        const expected = process.env.DISPATCH_WEBHOOK_SECRET;
+        if (!expected) {
+          return new Response(
+            JSON.stringify({ error: "Webhook secret not configured" }),
+            { status: 503, headers: { "Content-Type": "application/json" } },
+          );
+        }
+        const provided =
+          request.headers.get("x-webhook-secret") ??
+          new URL(request.url).searchParams.get("secret") ??
+          "";
+        const a = new TextEncoder().encode(provided);
+        const b = new TextEncoder().encode(expected);
+        let same = a.length === b.length;
+        const len = Math.max(a.length, b.length);
+        for (let i = 0; i < len; i++) same = same && (a[i] ?? 0) === (b[i] ?? 0);
+        if (!same) {
+          return new Response(JSON.stringify({ error: "Unauthorized" }), {
+            status: 401,
+            headers: { "Content-Type": "application/json" },
+          });
+        }
         const url = new URL(request.url);
         const monthParam = url.searchParams.get("month"); // YYYY-MM
         const now = new Date();
