@@ -928,6 +928,23 @@ export default function ImportClaimsPage() {
           </div>
         </Card>
       </div>
+
+      {parseResult && (
+        <FieldMappingWizard
+          open={wizardOpen}
+          onOpenChange={setWizardOpen}
+          detectedHeaders={parseResult.detectedHeaders}
+          initialMapping={effectiveMapping(parseResult.detectedHeaders, overrideMap ?? undefined)}
+          onSave={(m) => {
+            setOverrideMap(m);
+            try { localStorage.setItem("rcm.himsMapping", JSON.stringify(m)); } catch { /* ignore */ }
+            if (lastFile) {
+              handleFile(lastFile, { override: m });
+              toast.success("Mapping saved — file re-parsed");
+            }
+          }}
+        />
+      )}
     </AppLayout>
   );
 }
