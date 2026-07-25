@@ -74,12 +74,35 @@ export default function TodaysWorklistPage() {
 
   const claimsById = useMemo(() => new Map(claims.map((c) => [c.id, c])), [claims]);
 
+  // Set of app_user ids that satisfy the current scope. `null` means "no filter".
+  const ownerSet: Set<string> | null = useMemo(() => {
+    if (effectiveScope === "all") return null;
+    if (effectiveScope === "mine") {
+      return new Set(actingUserId ? [actingUserId] : []);
+    }
+    // team
+    const s = new Set<string>(teamIds);
+    if (actingUserId) s.add(actingUserId);
+    return s;
+  }, [effectiveScope, actingUserId, teamIds]);
+
+  // Claims that someone in the current scope has personally touched (via follow-ups).
+  // Used to filter claim-only buckets (docs/denials/AR) where there is no owner column.
+  const touchedClaimIds: Set<string> | null = useMemo(() => {
+    if (!ownerSet) return null;
+    const s = new Set<string>();
+    for (const fu of followUps) {
+      if (fu.logged_by && ownerSet.has(fu.logged_by)) s.add(fu.claim_id);
+    }
+    return s;
+  }, [followUps, ownerSet]);
+
   const buckets = useMemo(() => {
     const today = new Date();
     today.setHours(23, 59, 59, 999);
     const todayMs = today.getTime();
 
-    // 1) Overdue follow-ups — optionally scoped to acting user (logged_by = me)
+    // 1) Overdue follow-ups — scoped by logged_by ∈ ownerSet.
     const seenFu = new Set<string>();
     const followUpsDue: QueueItem[] = [];
     const sorted = [...followUps].sort(
@@ -87,7 +110,8 @@ export default function TodaysWorklistPage() {
     );
     for (const fu of sorted) {
       if (seenFu.has(fu.claim_id)) continue;
-      if (mineOnly && actingUserId && fu.logged_by && fu.logged_by !== actingUserId) continue;
+      if (ownerSet && fu.logged_by && !ownerSet.has(fu.logged_by)) continue;
+      if (ownerSet && !fu.logged_by && effectiveScope === "mine") continue;
       seenFu.add(fu.claim_id);
       const claim = claimsById.get(fu.claim_id);
       if (!claim) continue;
@@ -104,10 +128,22 @@ export default function TodaysWorklistPage() {
       });
     }
 
+    // For claim-only buckets: in "mine" mode we hide claims the acting user hasn't touched.
+    // In "team" mode we surface claims teammates have touched PLUS untouched claims (new work).
+    // In "all" mode no filter.
+    const claimAllowed = (claimId: string) => {
+      if (!touchedClaimIds) return true;
+      if (effectiveScope === "mine") return touchedClaimIds.has(claimId);
+      // team: touched by teammate OR untouched (no follow-ups at all)
+      if (touchedClaimIds.has(claimId)) return true;
+      return !followUps.some((f) => f.claim_id === claimId);
+    };
+
     // 2) Docs-to-submit — approved/discharged claims awaiting document submission
     const docsToSubmit: QueueItem[] = [];
     for (const c of claims) {
       if (!isDocsToSubmit(c)) continue;
+      if (!claimAllowed(c.id)) continue;
       docsToSubmit.push({
         claim: c,
         reason: c.claim_status || "Approved",
@@ -127,6 +163,7 @@ export default function TodaysWorklistPage() {
       const isQuery = QUERY_RX.test(c.claim_status);
       if (!isDenial && !isQuery) continue;
       if (c.outstanding_amount <= 0 && !isQuery) continue;
+      if (!claimAllowed(c.id)) continue;
       denialsQueries.push({
         claim: c,
         reason: c.claim_status,
@@ -142,6 +179,7 @@ export default function TodaysWorklistPage() {
       if (SETTLED.has(status)) continue;
       if (c.outstanding_amount <= 0) continue;
       if (c.days_since_claim < HIGH_VALUE_AR_DAYS) continue;
+      if (!claimAllowed(c.id)) continue;
       highValueAr.push({
         claim: c,
         reason: `${formatDays(c.days_since_claim)} old`,
@@ -156,7 +194,8 @@ export default function TodaysWorklistPage() {
     denialsQueries.sort(byAmount);
     highValueAr.sort(byAmount);
     return { followUpsDue, docsToSubmit, denialsQueries, highValueAr };
-  }, [claims, followUps, claimsById, mineOnly, actingUserId]);
+  }, [claims, followUps, claimsById, ownerSet, touchedClaimIds, effectiveScope]);
+
 
   const isLoading = loading || fuLoading;
   const allItems = [
