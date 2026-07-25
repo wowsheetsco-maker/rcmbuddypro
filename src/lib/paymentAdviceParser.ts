@@ -51,11 +51,24 @@ export interface ParsedPaymentAdvice {
   used_ocr: boolean;
 }
 
+export interface OcrSettings {
+  /** Tesseract language(s), e.g. "eng", "eng+hin" */
+  language?: string;
+  /** Render scale for pdf.js canvas — higher = better OCR, slower. Effective DPI ≈ 72 × scale */
+  scale?: number;
+  /** Rotate rendered page before OCR: 0 | 90 | 180 | 270 */
+  rotate?: 0 | 90 | 180 | 270;
+  /** Preserve interword spacing / column layout — helps table extraction */
+  tableMode?: boolean;
+}
+
 export interface ExtractOptions {
   /** allow OCR fallback when the PDF has little/no embedded text */
   enableOcr?: boolean;
   /** force OCR even when text is available */
   forceOcr?: boolean;
+  /** OCR tuning knobs */
+  ocr?: OcrSettings;
   onProgress?: (msg: string, pct: number) => void;
 }
 
