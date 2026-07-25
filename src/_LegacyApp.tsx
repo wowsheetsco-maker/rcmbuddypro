@@ -6,6 +6,7 @@ import { useLocation, useNavigate, Navigate } from "@/lib/router-compat";
 import { useViewMode } from "./hooks/useViewMode";
 
 import ExecutiveDashboard from "./pages/ExecutiveDashboard";
+import Dashboard from "./pages/Dashboard";
 import ClaimsPage from "./pages/ClaimsPage";
 import NotFound from "./pages/NotFound.tsx";
 // Analytics
@@ -145,8 +146,10 @@ const ROUTES: Record<string, RouteEntry> = {
   "/": TodaysWorklistPage,
   "/launch": LaunchPage,
   "/m": MobileHomePage,
-  "/my-tasks": MyTasksPage,
+  "/my-tasks": TodaysWorklistPage,
+  "/tasks": MyTasksPage,
   "/today": TodaysWorklistPage,
+  "/dashboard": Dashboard,
   "/dashboard/executive": ExecutiveDashboard,
   "/claims": ClaimsPage,
 
