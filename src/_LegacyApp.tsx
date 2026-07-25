@@ -27,6 +27,7 @@ import ImportClaimsPage from "./pages/claims/ImportClaimsPage";
 import DataQualityPage from "./pages/claims/DataQualityPage";
 import DiscrepancyTrackerPage from "./pages/claims/DiscrepancyTrackerPage";
 import BankReconciliationPage from "./pages/claims/BankReconciliationPage";
+import PaymentAdvicePage from "./pages/claims/PaymentAdvicePage";
 import DocsToSubmitPage from "./pages/claims/DocsToSubmitPage";
 import ReconciliationAlertsPage from "./pages/claims/ReconciliationAlertsPage";
 import AppealsTrackerPage from "./pages/claims/AppealsTrackerPage";
