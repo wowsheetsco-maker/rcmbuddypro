@@ -36,7 +36,7 @@ export default function MyEmailPage() {
       smtp_host: me.smtp_host ?? "",
       smtp_port: me.smtp_port ?? 587,
       smtp_username: me.smtp_username ?? me.email,
-      smtp_password: me.smtp_password ?? "",
+      smtp_password: "",
       smtp_use_tls: me.smtp_use_tls ?? true,
       smtp_from_name: me.smtp_from_name ?? me.name,
       smtp_from_email: me.smtp_from_email ?? me.email,
@@ -46,18 +46,23 @@ export default function MyEmailPage() {
 
   const handleSave = async () => {
     if (!me) return;
-    const ok = await updateUser(me.id, {
+    // Password input is never prefilled (security), so an empty field means
+    // "keep the existing password" — otherwise every save would wipe it.
+    const typedPassword = (draft.smtp_password as string) ?? "";
+    const patch: Record<string, unknown> = {
       smtp_host: (draft.smtp_host as string) || null,
       smtp_port: draft.smtp_port ? Number(draft.smtp_port) : null,
       smtp_username: (draft.smtp_username as string) || null,
-      smtp_password: (draft.smtp_password as string) || null,
       smtp_use_tls: draft.smtp_use_tls ?? true,
       smtp_from_name: (draft.smtp_from_name as string) || null,
       smtp_from_email: (draft.smtp_from_email as string) || null,
       smtp_reply_to: (draft.smtp_reply_to as string) || null,
-      // Reset verification when creds change
-      smtp_verified_at: null,
-    });
+    };
+    if (typedPassword.length > 0) {
+      patch.smtp_password = typedPassword;
+      patch.smtp_verified_at = null; // creds changed → require re-verify
+    }
+    const ok = await updateUser(me.id, patch);
     if (ok) {
       toast({ title: "SMTP saved", description: "Run 'Test connection' to verify before sending." });
     }
@@ -199,7 +204,7 @@ export default function MyEmailPage() {
                   <Label>Password / App password</Label>
                   <Input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={me.smtp_password ? "•••••••• (saved — leave blank to keep)" : "App password"}
                     value={draft.smtp_password ?? ""}
                     onChange={(e) => setDraft({ ...draft, smtp_password: e.target.value })}
                   />
