@@ -28,6 +28,8 @@ import {
   type OrgRoleKey,
   type ScenarioKey,
 } from "@/lib/orgPermissionMatrix";
+import RoleAccessPreview from "@/components/access/RoleAccessPreview";
+import { logAccessChange } from "@/lib/accessAudit";
 
 type CellKey = `${UserRole}::${Resource}::${string}`; // role::resource::col
 
@@ -87,7 +89,22 @@ export default function PermissionsPage() {
     let okCount = 0;
     for (const [id, patch] of byRow) {
       const ok = await updateRow(id, patch);
-      if (ok) okCount += 1;
+      if (ok) {
+        okCount += 1;
+        const row = rows.find((r) => r.id === id);
+        if (row) {
+          const changes = Object.entries(patch)
+            .map(([col, val]) => `${col.replace("can_", "")}=${val ? "on" : "off"}`)
+            .join(", ");
+          await logAccessChange({
+            entity: "role_permission",
+            action: "updated",
+            summary: `${row.role} → ${row.resource}: ${changes}`,
+            before: Object.fromEntries(Object.keys(patch).map((c) => [c, (row as unknown as Record<string, unknown>)[c]])),
+            after: patch,
+          });
+        }
+      }
     }
     setSaving(false);
     if (okCount > 0) setPending({});
