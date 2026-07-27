@@ -237,6 +237,11 @@ export default function PermissionsPage() {
           </AlertDescription>
         </Alert>
 
+        {/* Live "who gets this access" preview for the role being edited */}
+        <RoleAccessPreview role={activeRole} cellValue={cellValue} />
+
+
+
         {/* Interactive Org-role × Scenario explorer */}
         <Card className="shadow-sm border-primary/20">
           <CardContent className="p-5 space-y-4">
