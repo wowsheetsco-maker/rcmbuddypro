@@ -36,7 +36,7 @@ export default function MyEmailPage() {
       smtp_host: me.smtp_host ?? "",
       smtp_port: me.smtp_port ?? 587,
       smtp_username: me.smtp_username ?? me.email,
-      smtp_password: me.smtp_password ?? "",
+      smtp_password: "",
       smtp_use_tls: me.smtp_use_tls ?? true,
       smtp_from_name: me.smtp_from_name ?? me.name,
       smtp_from_email: me.smtp_from_email ?? me.email,
