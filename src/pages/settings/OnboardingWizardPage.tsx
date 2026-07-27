@@ -157,7 +157,7 @@ export default function OnboardingWizardPage() {
         branch_scope: scopeMode === "restricted" ? scopeBranchIds : [],
       })
       .eq("org_id", getCurrentOrgId())
-      .eq("user_id", selectedUser.id);
+      .eq("user_id", authUserId);
     if (error) {
       toast({ title: "Could not save scope", description: error.message, variant: "destructive" });
       return;
