@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import AppLayout from "@/components/AppLayout";
 import UserFormDialog from "@/components/UserFormDialog";
 import { useAppUsers, ROLES, type AppUser, type UserRole, type UserStatus } from "@/hooks/useAppUsers";
+import DataScopePreview from "@/components/access/DataScopePreview";
 
 const roleStyle: Record<UserRole, string> = {
   "Super Admin":        "bg-destructive/15 text-destructive border border-destructive/30",
@@ -111,6 +112,9 @@ export default function UsersPage() {
             </Card>
           ))}
         </div>
+
+        {/* Data scope preview — what a role will actually see */}
+        <DataScopePreview className="shadow-sm" />
 
         {/* Filters */}
         <Card className="shadow-sm">

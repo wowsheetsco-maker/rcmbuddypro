@@ -103,19 +103,44 @@ export function useAppUsers() {
       const emailLower = input.email.toLowerCase();
       await supabase.from("app_users").update(extra).eq("email", emailLower);
     }
+    const { logAccessChange } = await import("@/lib/accessAudit");
+    await logAccessChange({
+      entity: "invite",
+      action: "invited",
+      summary: `${input.name} invited as ${input.role}`,
+      targetEmail: input.email.toLowerCase(),
+      after: { role: input.role },
+      orgId,
+    });
     toast({ title: "Invite sent", description: `${input.name} will receive a sign-in email.` });
     return true;
   }, []);
 
   const updateUser = useCallback(async (id: string, patch: Partial<AppUser>) => {
+    const before = users.find((u) => u.id === id) ?? null;
     const { error } = await supabase.from("app_users").update(patch).eq("id", id);
     if (error) {
       toast({ title: "Could not update user", description: error.message, variant: "destructive" });
       return false;
     }
+    // Access-relevant changes are appended to the compliance audit trail.
+    if (before && (("role" in patch && patch.role !== before.role) || ("status" in patch && patch.status !== before.status))) {
+      const { logAccessChange } = await import("@/lib/accessAudit");
+      const roleChanged = "role" in patch && patch.role !== before.role;
+      await logAccessChange({
+        entity: roleChanged ? "user_role" : "app_user",
+        action: "updated",
+        summary: roleChanged
+          ? `${before.name}: role changed from ${before.role} to ${patch.role}`
+          : `${before.name}: status changed from ${before.status} to ${patch.status}`,
+        targetEmail: before.email,
+        before: roleChanged ? before.role : before.status,
+        after: roleChanged ? patch.role : patch.status,
+      });
+    }
     toast({ title: "User updated" });
     return true;
-  }, []);
+  }, [users]);
 
   const deleteUser = useCallback(async (id: string, name: string) => {
     const { error } = await supabase.from("app_users").delete().eq("id", id);
@@ -123,6 +148,13 @@ export function useAppUsers() {
       toast({ title: "Could not delete user", description: error.message, variant: "destructive" });
       return false;
     }
+    const { logAccessChange } = await import("@/lib/accessAudit");
+    await logAccessChange({
+      entity: "app_user",
+      action: "removed",
+      summary: `${name} removed from the workspace`,
+      before: { name },
+    });
     toast({ title: "User removed", description: `${name} has been removed.` });
     return true;
   }, []);

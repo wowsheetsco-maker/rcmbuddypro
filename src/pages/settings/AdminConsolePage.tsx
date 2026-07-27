@@ -3,7 +3,7 @@ import { Link } from "@/lib/router-compat";
 import {
   Users, ShieldCheck, Hospital, Landmark, Bot, Mail, MessageSquare,
   FileText, Bell, Zap, BarChart3, Sparkles, Database, ArrowRight,
-  Activity, Clock, type LucideIcon,
+  Activity, Clock, BookOpen, Rocket, History, type LucideIcon,
 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,11 @@ const SECTIONS: Section[] = [
     requiredSubroles: ["super_admin", "org_owner", "org_admin", "billing_admin"] },
   { label: "Permissions",          path: "/settings/permissions",        icon: ShieldCheck,   desc: "Fine-tune what each role can see and do.",
     requiredSubroles: ["super_admin", "org_owner"] },
+  { label: "Access & Roles Guide", path: "/settings/access-guide",       icon: BookOpen,      desc: "Who can do what — with examples." },
+  { label: "Onboarding Wizard",    path: "/settings/onboarding",         icon: Rocket,        desc: "Branches → staff → roles → scope.",
+    requiredSubroles: ["super_admin", "org_owner", "org_admin"] },
+  { label: "Access Audit Log",     path: "/settings/access-audit",       icon: History,       desc: "Every role & permission change, logged.",
+    requiredSubroles: ["super_admin", "org_owner", "org_admin", "compliance_admin"] },
   { label: "Hospital Branches",    path: "/settings/hospital-branches",  icon: Hospital,      desc: "Manage groups, branches & merges.",
     requiredSubroles: ["super_admin", "org_owner", "org_admin"] },
   { label: "TPA / Insurers",       path: "/providers",                   icon: Landmark,      desc: "Master list of payers, contacts & SPOCs." },

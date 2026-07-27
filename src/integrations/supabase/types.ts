@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_user_id: string | null
+          after_value: Json | null
+          before_value: Json | null
+          branch_id: string | null
+          created_at: string
+          entity: string
+          id: string
+          org_id: string
+          summary: string
+          target_email: string | null
+          target_user_id: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          branch_id?: string | null
+          created_at?: string
+          entity: string
+          id?: string
+          org_id: string
+          summary: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_user_id?: string | null
+          after_value?: Json | null
+          before_value?: Json | null
+          branch_id?: string | null
+          created_at?: string
+          entity?: string
+          id?: string
+          org_id?: string
+          summary?: string
+          target_email?: string | null
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       admin_role_assignments: {
         Row: {
           granted_at: string
