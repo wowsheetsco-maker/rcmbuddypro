@@ -15,7 +15,7 @@ interface ClaimPreviewRow {
   tpa_name: string;
   insurance_company_name: string | null;
   claim_status: string;
-  claim_amount: number | null;
+  claimed_amount: number | null;
   hospital_branch_id: string | null;
 }
 
@@ -71,7 +71,7 @@ export default function DataScopePreview({
       setLoading(true);
       let q = supabase
         .from("claims")
-        .select("id, patient_name, tpa_name, insurance_company_name, claim_status, claim_amount, hospital_branch_id", { count: "exact" })
+        .select("id, patient_name, tpa_name, insurance_company_name, claim_status, claimed_amount, hospital_branch_id", { count: "exact" })
         .order("created_at", { ascending: false })
         .limit(8);
       if (mode === "restricted") {
@@ -205,7 +205,7 @@ export default function DataScopePreview({
                       <td className="p-2">{branchName(r.hospital_branch_id)}</td>
                       <td className="p-2">{r.claim_status}</td>
                       <td className="p-2 text-right tabular-nums">
-                        {r.claim_amount != null ? `₹${Number(r.claim_amount).toLocaleString("en-IN")}` : "—"}
+                        {r.claimed_amount != null ? `₹${Number(r.claimed_amount).toLocaleString("en-IN")}` : "—"}
                       </td>
                     </tr>
                   ))}
