@@ -65,6 +65,9 @@ import TeamDigestsPage from "./pages/settings/TeamDigestsPage";
 import WhatsAppTemplatesPage from "./pages/settings/WhatsAppTemplatesPage";
 import DataManagementPage from "./pages/settings/DataManagementPage";
 import AdminConsolePage from "./pages/settings/AdminConsolePage";
+import AccessGuidePage from "./pages/settings/AccessGuidePage";
+import OnboardingWizardPage from "./pages/settings/OnboardingWizardPage";
+import AccessAuditLogPage from "./pages/settings/AccessAuditLogPage";
 // AI Center
 import AiCenterPage from "./pages/AiCenterPage";
 import AiCreationPage from "./pages/ai/AiCreationPage";
@@ -218,6 +221,9 @@ const ROUTES: Record<string, RouteEntry> = {
   "/settings": AdminConsolePage,
   "/settings/users": UsersPage,
   "/settings/permissions": PermissionsPage,
+  "/settings/access-guide": AccessGuidePage,
+  "/settings/onboarding": OnboardingWizardPage,
+  "/settings/access-audit": AccessAuditLogPage,
   "/settings/effective-permissions": EffectivePermissionsPage,
   "/settings/integrations": IntegrationsPage,
   "/settings/notifications": NotificationsPage,
