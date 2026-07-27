@@ -204,7 +204,7 @@ export default function MyEmailPage() {
                   <Label>Password / App password</Label>
                   <Input
                     type="password"
-                    placeholder="••••••••"
+                    placeholder={me.smtp_password ? "•••••••• (saved — leave blank to keep)" : "App password"}
                     value={draft.smtp_password ?? ""}
                     onChange={(e) => setDraft({ ...draft, smtp_password: e.target.value })}
                   />
