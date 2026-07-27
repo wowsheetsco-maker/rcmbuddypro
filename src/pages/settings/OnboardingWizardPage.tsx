@@ -135,6 +135,21 @@ export default function OnboardingWizardPage() {
 
   const saveScope = async () => {
     if (!selectedUser) return;
+    // organization_members keys on the auth user id, not app_users.id.
+    const { data: link } = await supabase
+      .from("app_users")
+      .select("auth_user_id")
+      .eq("id", selectedUser.id)
+      .maybeSingle();
+    const authUserId = link?.auth_user_id;
+    if (!authUserId) {
+      toast({
+        title: "Scope not saved",
+        description: `${selectedUser.name} hasn't accepted their invite yet — set scope once they sign in.`,
+        variant: "destructive",
+      });
+      return;
+    }
     const { error } = await supabase
       .from("organization_members")
       .update({
