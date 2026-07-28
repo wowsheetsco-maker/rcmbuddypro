@@ -3,7 +3,8 @@ import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import {
   LayoutDashboard, Search, ListChecks, Home,
   ShieldAlert, Calendar as CalendarIcon, Bot,
-  Users, Landmark, ChevronDown,
+ Users, ChevronDown,
+11: Flame, LifeBuoy, LogOut, Shield,
   UserCog, Wallet, Briefcase, ShieldCheck,
   PanelLeftClose, PanelLeftOpen, Crown, AlertTriangle,
   Sparkles, Building2, TrendingUp, IndianRupee,
