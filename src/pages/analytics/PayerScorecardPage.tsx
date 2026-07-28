@@ -12,6 +12,7 @@ import {
   ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, Camera, GitCompare, Loader2, Search, X,
 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import ScorecardsSwitcher from "@/components/analytics/ScorecardsSwitcher";
 import { formatInrShort } from "@/data/mockClaims";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { buildPayerStats, GRADE_TONE, type PayerStats } from "@/lib/payerScorecard";
