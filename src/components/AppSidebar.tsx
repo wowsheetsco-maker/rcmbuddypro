@@ -3,12 +3,12 @@ import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import {
   LayoutDashboard, Search, ListChecks, Home,
   ShieldAlert, Calendar as CalendarIcon, Bot,
-  Users, Landmark, ChevronDown,
+  Users, ChevronDown,
   UserCog, Wallet, Briefcase, ShieldCheck,
   PanelLeftClose, PanelLeftOpen, Crown, AlertTriangle,
   Sparkles, Building2, TrendingUp, IndianRupee,
   Swords, BarChart3, MessageSquare, Network, Settings,
-  Flame, LifeBuoy, LogOut, Shield, Stethoscope,
+  Flame, LifeBuoy, LogOut, Shield,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -106,8 +106,6 @@ const NAV_GROUPS: NavGroup[] = [
   { label: "Recovery",   icon: Flame,           path: "/claims/outstanding" },
   { label: "Recon",      icon: Network,         path: "/claims/discrepancy" },
   { label: "Follow-Ups", icon: CalendarIcon,    path: "/communications/calendar", roles: ["billing", "ops", "admin"] },
-  { label: "Gov Schemes", icon: Landmark,       path: "/gov-schemes" },
-  { label: "OPD & Wellness", icon: Stethoscope, path: "/opd" },
   { label: "Analytics",  icon: BarChart3,       path: "/analytics/payer-scorecard", orgRoles: ["owner", "admin"] },
   { label: "Admin Console", icon: Settings, path: "/settings", roles: ["admin", "ops", "billing"], orgRoles: ["owner", "admin"] },
 ];
