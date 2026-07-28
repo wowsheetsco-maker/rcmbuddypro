@@ -100,7 +100,7 @@ const SAMPLE_PATHS = [
   "/analytics",
   "/settings",
   "/providers",
-  "/opd",
+  
   "/admin/roles-matrix",
 ];
 
