@@ -8,6 +8,7 @@ import {
   ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis,
 } from "recharts";
 import AppLayout from "@/components/AppLayout";
+import ScorecardsSwitcher from "@/components/analytics/ScorecardsSwitcher";
 import { Card } from "@/components/ui/card";
 import { KpiCard as SharedKpiCard } from "@/components/ui/kpi-card";
 import { Wallet, CheckCircle2, AlertCircle, Percent, ShieldAlert } from "lucide-react";
@@ -169,6 +170,7 @@ export default function CorporatePerformancePage() {
     <AppLayout>
       <TooltipProvider delayDuration={150}>
         <div className="space-y-5">
+          <ScorecardsSwitcher />
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>

@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback } from "react";
 import AppLayout from "@/components/AppLayout";
+import ScorecardsSwitcher from "@/components/analytics/ScorecardsSwitcher";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { KpiCard as SharedKpiCard } from "@/components/ui/kpi-card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -626,6 +627,7 @@ export default function StaffScorecardPage() {
   return (
     <AppLayout>
     <div className="space-y-6 p-4 md:p-6">
+      <ScorecardsSwitcher />
       {/* Page header — title + primary actions */}
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1.5">

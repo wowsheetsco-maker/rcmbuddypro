@@ -43,23 +43,53 @@ const SUBMISSION_TABS: HubTab[] = [
   { label: "Query",              path: "/claims/query" },
 ];
 
-const RECOVERY_TABS: HubTab[] = [
-  { label: "Outstanding",     path: "/claims/outstanding", badge: "outstanding" },
-  { label: "Follow-Up",       path: "/claims/follow-up", badge: "overdue" },
-  { label: "Priority",        path: "/claims/priority" },
-  { label: "AR Management",   path: "/claims/ar" },
-  { label: "Denials",         path: "/claims/denials" },
-  { label: "Denial Workflow", path: "/claims/denials-workflow" },
-  { label: "Appeals Tracker", path: "/claims/appeals" },
+// Recovery hub grouped: Worklist / Denials / Follow-Up
+const RECOVERY_GROUPS: HubGroup[] = [
+  {
+    label: "Worklist",
+    tabs: [
+      { label: "Priority",      path: "/claims/priority" },
+      { label: "Outstanding",   path: "/claims/outstanding", badge: "outstanding" },
+      { label: "AR Management", path: "/claims/ar" },
+    ],
+  },
+  {
+    label: "Denials",
+    tabs: [
+      { label: "Overview",  path: "/claims/denials" },
+      { label: "Workflow",  path: "/claims/denials-workflow" },
+      { label: "Appeals",   path: "/claims/appeals" },
+    ],
+  },
+  {
+    label: "Follow-Up",
+    tabs: [
+      { label: "Calendar",  path: "/communications/calendar", badge: "overdue" },
+      { label: "AI Reply",  path: "/communications/ai-reply" },
+    ],
+  },
 ];
 
-const RECON_TABS: HubTab[] = [
-  { label: "Discrepancy",     path: "/claims/discrepancy" },
-  { label: "Bank Reconciliation", path: "/claims/reconciliation" },
-  { label: "Payment Advice",  path: "/claims/payment-advice" },
-  { label: "Recon Alerts",    path: "/claims/recon-alerts" },
-  { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
+// Recon hub grouped: Payments / Reconciliation
+const RECON_GROUPS: HubGroup[] = [
+  {
+    label: "Payments",
+    tabs: [
+      { label: "Payment Advice", path: "/claims/payment-advice" },
+      { label: "TDS Report",     path: "/claims/tds" },
+    ],
+  },
+  {
+    label: "Reconciliation",
+    tabs: [
+      { label: "Bank Recon",      path: "/claims/reconciliation" },
+      { label: "Discrepancy",     path: "/claims/discrepancy" },
+      { label: "Recon Alerts",    path: "/claims/recon-alerts" },
+      { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
+    ],
+  },
 ];
+
 
 const HUBS: Hub[] = [
   {
@@ -72,13 +102,15 @@ const HUBS: Hub[] = [
     key: "claims-recovery",
     label: "Recovery",
     icon: Search,
-    tabs: RECOVERY_TABS,
+    tabs: RECOVERY_GROUPS.flatMap((g) => g.tabs),
+    groups: RECOVERY_GROUPS,
   },
   {
     key: "claims-recon",
     label: "Recon",
     icon: Search,
-    tabs: RECON_TABS,
+    tabs: RECON_GROUPS.flatMap((g) => g.tabs),
+    groups: RECON_GROUPS,
   },
   {
     key: "followups",
@@ -94,16 +126,15 @@ const HUBS: Hub[] = [
     label: "Analytics",
     icon: BarChart3,
     tabs: [
-      { label: "Leakage",             path: "/analytics/leakage" },
-      { label: "Exceptions",          path: "/analytics/exceptions" },
-      { label: "Payer Scorecard",     path: "/analytics/payer-scorecard" },
-      { label: "Benchmarks",          path: "/analytics/benchmarks" },
-      { label: "Corporate Scorecard", path: "/analytics/corporate" },
-      { label: "Staff Scorecard",     path: "/analytics/staff-scorecard" },
-      { label: "Cashflow Trend",      path: "/analytics/cash-flow" },
-      { label: "Submission TAT",      path: "/analytics/submission-tat" },
+      { label: "Leakage",         path: "/analytics/leakage" },
+      { label: "Exceptions",      path: "/analytics/exceptions" },
+      { label: "Scorecards",      path: "/analytics/scorecards" },
+      { label: "Benchmarks",      path: "/analytics/benchmarks" },
+      { label: "Cashflow Trend",  path: "/analytics/cash-flow" },
+      { label: "Submission TAT",  path: "/analytics/submission-tat" },
     ],
   },
+
   {
     key: "admin",
     label: "Admin Console",
@@ -136,9 +167,21 @@ function formatCompact(n: number): string {
   return String(n);
 }
 
+// Legacy/consolidated paths that should still highlight a hub tab even
+// though the tab points to a unified destination.
+const PATH_ALIASES: Record<string, string> = {
+  "/analytics/payer-scorecard": "/analytics/scorecards",
+  "/analytics/corporate": "/analytics/scorecards",
+  "/analytics/staff-scorecard": "/analytics/scorecards",
+  "/analytics/tpa-report": "/analytics/benchmarks",
+  "/claims/follow-up": "/communications/calendar",
+};
+
 export function getHubForPath(pathname: string): Hub | undefined {
-  return HUBS.find((h) => h.tabs.some((t) => t.path === pathname));
+  const resolved = PATH_ALIASES[pathname] ?? pathname;
+  return HUBS.find((h) => h.tabs.some((t) => t.path === resolved || t.path === pathname));
 }
+
 
 export default function HubTabBar() {
   const { pathname } = useLocation();

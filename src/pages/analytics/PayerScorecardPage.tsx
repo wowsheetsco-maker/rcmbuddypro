@@ -12,6 +12,7 @@ import {
   ArrowDown, ArrowDownRight, ArrowUp, ArrowUpRight, Camera, GitCompare, Loader2, Search, X,
 } from "lucide-react";
 import AppLayout from "@/components/AppLayout";
+import ScorecardsSwitcher from "@/components/analytics/ScorecardsSwitcher";
 import { formatInrShort } from "@/data/mockClaims";
 import { useLiveClaims } from "@/hooks/useLiveClaims";
 import { buildPayerStats, GRADE_TONE, type PayerStats } from "@/lib/payerScorecard";
@@ -123,6 +124,7 @@ export default function PayerScorecardPage() {
     <AppLayout>
       <TooltipProvider delayDuration={150}>
         <div className="space-y-5">
+          <ScorecardsSwitcher />
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
