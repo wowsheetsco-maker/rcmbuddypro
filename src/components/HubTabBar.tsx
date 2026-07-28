@@ -167,9 +167,21 @@ function formatCompact(n: number): string {
   return String(n);
 }
 
+// Legacy/consolidated paths that should still highlight a hub tab even
+// though the tab points to a unified destination.
+const PATH_ALIASES: Record<string, string> = {
+  "/analytics/payer-scorecard": "/analytics/scorecards",
+  "/analytics/corporate": "/analytics/scorecards",
+  "/analytics/staff-scorecard": "/analytics/scorecards",
+  "/analytics/tpa-report": "/analytics/benchmarks",
+  "/claims/follow-up": "/communications/calendar",
+};
+
 export function getHubForPath(pathname: string): Hub | undefined {
-  return HUBS.find((h) => h.tabs.some((t) => t.path === pathname));
+  const resolved = PATH_ALIASES[pathname] ?? pathname;
+  return HUBS.find((h) => h.tabs.some((t) => t.path === resolved || t.path === pathname));
 }
+
 
 export default function HubTabBar() {
   const { pathname } = useLocation();
