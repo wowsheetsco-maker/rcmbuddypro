@@ -123,6 +123,7 @@ export default function PayerScorecardPage() {
     <AppLayout>
       <TooltipProvider delayDuration={150}>
         <div className="space-y-5">
+          <ScorecardsSwitcher />
           {/* Header */}
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
