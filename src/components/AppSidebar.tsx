@@ -3,13 +3,12 @@ import { Link, useLocation, useNavigate } from "@/lib/router-compat";
 import {
   LayoutDashboard, Search, ListChecks, Home,
   ShieldAlert, Calendar as CalendarIcon, Bot,
- Users, ChevronDown,
-11: Flame, LifeBuoy, LogOut, Shield,
+  Users, ChevronDown,
   UserCog, Wallet, Briefcase, ShieldCheck,
   PanelLeftClose, PanelLeftOpen, Crown, AlertTriangle,
   Sparkles, Building2, TrendingUp, IndianRupee,
   Swords, BarChart3, MessageSquare, Network, Settings,
-  Flame, LifeBuoy, LogOut, Shield, Stethoscope,
+  Flame, LifeBuoy, LogOut, Shield,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
