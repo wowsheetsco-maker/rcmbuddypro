@@ -26,6 +26,7 @@ import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_au
 import { Route as AuthenticatedAnalyticsExceptionsRouteImport } from './routes/_authenticated.analytics.exceptions'
 import { Route as AuthenticatedAnalyticsLeakageRouteImport } from './routes/_authenticated.analytics.leakage'
 import { Route as AuthenticatedAnalyticsPayerScorecardRouteImport } from './routes/_authenticated.analytics.payer-scorecard'
+import { Route as AuthenticatedAnalyticsScorecardsRouteImport } from './routes/_authenticated.analytics.scorecards'
 import { Route as AuthenticatedAnalyticsSubmissionTatRouteImport } from './routes/_authenticated.analytics.submission-tat'
 import { Route as AuthenticatedAnalyticsTpaReportRouteImport } from './routes/_authenticated.analytics.tpa-report'
 import { Route as AuthenticatedClaimsIndexRouteImport } from './routes/_authenticated.claims.index'
@@ -143,6 +144,12 @@ const AuthenticatedAnalyticsPayerScorecardRoute =
   AuthenticatedAnalyticsPayerScorecardRouteImport.update({
     id: '/payer-scorecard',
     path: '/payer-scorecard',
+    getParentRoute: () => AuthenticatedAnalyticsRoute,
+  } as any)
+const AuthenticatedAnalyticsScorecardsRoute =
+  AuthenticatedAnalyticsScorecardsRouteImport.update({
+    id: '/scorecards',
+    path: '/scorecards',
     getParentRoute: () => AuthenticatedAnalyticsRoute,
   } as any)
 const AuthenticatedAnalyticsSubmissionTatRoute =
@@ -335,6 +342,7 @@ export interface FileRoutesByFullPath {
   '/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
   '/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/analytics/scorecards': typeof AuthenticatedAnalyticsScorecardsRoute
   '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
@@ -379,6 +387,7 @@ export interface FileRoutesByTo {
   '/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
   '/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/analytics/scorecards': typeof AuthenticatedAnalyticsScorecardsRoute
   '/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
@@ -428,6 +437,7 @@ export interface FileRoutesById {
   '/_authenticated/analytics/exceptions': typeof AuthenticatedAnalyticsExceptionsRoute
   '/_authenticated/analytics/leakage': typeof AuthenticatedAnalyticsLeakageRoute
   '/_authenticated/analytics/payer-scorecard': typeof AuthenticatedAnalyticsPayerScorecardRoute
+  '/_authenticated/analytics/scorecards': typeof AuthenticatedAnalyticsScorecardsRoute
   '/_authenticated/analytics/submission-tat': typeof AuthenticatedAnalyticsSubmissionTatRoute
   '/_authenticated/analytics/tpa-report': typeof AuthenticatedAnalyticsTpaReportRoute
   '/_authenticated/claims/appeals': typeof AuthenticatedClaimsAppealsRoute
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/analytics/exceptions'
     | '/analytics/leakage'
     | '/analytics/payer-scorecard'
+    | '/analytics/scorecards'
     | '/analytics/submission-tat'
     | '/analytics/tpa-report'
     | '/claims/appeals'
@@ -521,6 +532,7 @@ export interface FileRouteTypes {
     | '/analytics/exceptions'
     | '/analytics/leakage'
     | '/analytics/payer-scorecard'
+    | '/analytics/scorecards'
     | '/analytics/submission-tat'
     | '/analytics/tpa-report'
     | '/claims/appeals'
@@ -569,6 +581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/analytics/exceptions'
     | '/_authenticated/analytics/leakage'
     | '/_authenticated/analytics/payer-scorecard'
+    | '/_authenticated/analytics/scorecards'
     | '/_authenticated/analytics/submission-tat'
     | '/_authenticated/analytics/tpa-report'
     | '/_authenticated/claims/appeals'
@@ -733,6 +746,13 @@ declare module '@tanstack/react-router' {
       path: '/payer-scorecard'
       fullPath: '/analytics/payer-scorecard'
       preLoaderRoute: typeof AuthenticatedAnalyticsPayerScorecardRouteImport
+      parentRoute: typeof AuthenticatedAnalyticsRoute
+    }
+    '/_authenticated/analytics/scorecards': {
+      id: '/_authenticated/analytics/scorecards'
+      path: '/scorecards'
+      fullPath: '/analytics/scorecards'
+      preLoaderRoute: typeof AuthenticatedAnalyticsScorecardsRouteImport
       parentRoute: typeof AuthenticatedAnalyticsRoute
     }
     '/_authenticated/analytics/submission-tat': {
@@ -947,6 +967,7 @@ interface AuthenticatedAnalyticsRouteChildren {
   AuthenticatedAnalyticsExceptionsRoute: typeof AuthenticatedAnalyticsExceptionsRoute
   AuthenticatedAnalyticsLeakageRoute: typeof AuthenticatedAnalyticsLeakageRoute
   AuthenticatedAnalyticsPayerScorecardRoute: typeof AuthenticatedAnalyticsPayerScorecardRoute
+  AuthenticatedAnalyticsScorecardsRoute: typeof AuthenticatedAnalyticsScorecardsRoute
   AuthenticatedAnalyticsSubmissionTatRoute: typeof AuthenticatedAnalyticsSubmissionTatRoute
   AuthenticatedAnalyticsTpaReportRoute: typeof AuthenticatedAnalyticsTpaReportRoute
 }
@@ -961,6 +982,8 @@ const AuthenticatedAnalyticsRouteChildren: AuthenticatedAnalyticsRouteChildren =
     AuthenticatedAnalyticsLeakageRoute: AuthenticatedAnalyticsLeakageRoute,
     AuthenticatedAnalyticsPayerScorecardRoute:
       AuthenticatedAnalyticsPayerScorecardRoute,
+    AuthenticatedAnalyticsScorecardsRoute:
+      AuthenticatedAnalyticsScorecardsRoute,
     AuthenticatedAnalyticsSubmissionTatRoute:
       AuthenticatedAnalyticsSubmissionTatRoute,
     AuthenticatedAnalyticsTpaReportRoute: AuthenticatedAnalyticsTpaReportRoute,

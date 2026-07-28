@@ -43,23 +43,53 @@ const SUBMISSION_TABS: HubTab[] = [
   { label: "Query",              path: "/claims/query" },
 ];
 
-const RECOVERY_TABS: HubTab[] = [
-  { label: "Outstanding",     path: "/claims/outstanding", badge: "outstanding" },
-  { label: "Follow-Up",       path: "/claims/follow-up", badge: "overdue" },
-  { label: "Priority",        path: "/claims/priority" },
-  { label: "AR Management",   path: "/claims/ar" },
-  { label: "Denials",         path: "/claims/denials" },
-  { label: "Denial Workflow", path: "/claims/denials-workflow" },
-  { label: "Appeals Tracker", path: "/claims/appeals" },
+// Recovery hub grouped: Worklist / Denials / Follow-Up
+const RECOVERY_GROUPS: HubGroup[] = [
+  {
+    label: "Worklist",
+    tabs: [
+      { label: "Priority",      path: "/claims/priority" },
+      { label: "Outstanding",   path: "/claims/outstanding", badge: "outstanding" },
+      { label: "AR Management", path: "/claims/ar" },
+    ],
+  },
+  {
+    label: "Denials",
+    tabs: [
+      { label: "Overview",  path: "/claims/denials" },
+      { label: "Workflow",  path: "/claims/denials-workflow" },
+      { label: "Appeals",   path: "/claims/appeals" },
+    ],
+  },
+  {
+    label: "Follow-Up",
+    tabs: [
+      { label: "Calendar",  path: "/communications/calendar", badge: "overdue" },
+      { label: "AI Reply",  path: "/communications/ai-reply" },
+    ],
+  },
 ];
 
-const RECON_TABS: HubTab[] = [
-  { label: "Discrepancy",     path: "/claims/discrepancy" },
-  { label: "Bank Reconciliation", path: "/claims/reconciliation" },
-  { label: "Payment Advice",  path: "/claims/payment-advice" },
-  { label: "Recon Alerts",    path: "/claims/recon-alerts" },
-  { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
+// Recon hub grouped: Payments / Reconciliation
+const RECON_GROUPS: HubGroup[] = [
+  {
+    label: "Payments",
+    tabs: [
+      { label: "Payment Advice", path: "/claims/payment-advice" },
+      { label: "TDS Report",     path: "/claims/tds" },
+    ],
+  },
+  {
+    label: "Reconciliation",
+    tabs: [
+      { label: "Bank Recon",      path: "/claims/reconciliation" },
+      { label: "Discrepancy",     path: "/claims/discrepancy" },
+      { label: "Recon Alerts",    path: "/claims/recon-alerts" },
+      { label: "Zero / Cancelled",path: "/claims/zero-cancelled" },
+    ],
+  },
 ];
+
 
 const HUBS: Hub[] = [
   {
