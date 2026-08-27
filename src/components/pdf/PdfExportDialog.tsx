@@ -7,6 +7,8 @@ import { toast } from "sonner";
 
 type Orientation = "p" | "l";
 type PaperSize = "a4" | "letter";
+/** continuous = one tall page that looks exactly like the portal (no page breaks at all). */
+type FitMode = "continuous" | "paginated";
 
 export interface PdfFilterMeta {
   dateFrom?: Date | null;
@@ -44,6 +46,18 @@ const MARGIN = 28;
 const HEADER_H = 78;
 const FOOTER_H = 32;
 
+/** Browser canvas limits — exceeding these silently produces a blank canvas,
+ *  which is the usual cause of an "empty"/failed dashboard PDF. */
+const MAX_CANVAS_SIDE = 16000;
+const MAX_CANVAS_AREA = 1.4e8;
+
+function safeScale(w: number, h: number) {
+  if (!w || !h) return 1;
+  const byArea = Math.sqrt(MAX_CANVAS_AREA / (w * h));
+  const bySide = Math.min(MAX_CANVAS_SIDE / w, MAX_CANVAS_SIDE / h);
+  return Math.max(1, Math.min(2, byArea, bySide));
+}
+
 function fmtDate(d?: Date | null | string) {
   if (!d) return "All time";
   const date = typeof d === "string" ? new Date(d) : d;
@@ -51,7 +65,7 @@ function fmtDate(d?: Date | null | string) {
   return date.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-/** Pack child-canvases into A4-sized pages without splitting a child. */
+/** Pack child-canvases into page-sized buckets without splitting a child. */
 function packIntoPages(items: PageCanvas[], pxPerPage: number, scale: number): PageCanvas[][] {
   const pages: PageCanvas[][] = [];
   let cur: PageCanvas[] = [];
@@ -90,12 +104,14 @@ function packIntoPages(items: PageCanvas[], pxPerPage: number, scale: number): P
 }
 
 export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, fileName, meta }: Props) {
-  // Two-step flow: 1) options (confirm filters + paper) 2) preview 3) saving
+  // Flow: 1) options (confirm filters + layout) 2) rendering 3) preview 4) saving
   const [phase, setPhase] = useState<"options" | "rendering" | "ready" | "saving">("options");
   const [progress, setProgress] = useState(0);
   const [pages, setPages] = useState<PageCanvas[][]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[][]>([]);
   const [paper, setPaper] = useState<PaperSize>("a4");
   const [orientation, setOrientation] = useState<Orientation>("p");
+  const [fitMode, setFitMode] = useState<FitMode>("continuous");
   const previewRef = useRef<HTMLDivElement>(null);
 
   const generatedAt = useMemo(() => new Date(), [open]);
@@ -123,6 +139,7 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
       setPhase("options");
       setProgress(0);
       setPages([]);
+      setPreviewUrls([]);
     }
   }, [open]);
 
@@ -135,29 +152,63 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
       const { default: html2canvas } = await import("html2canvas-pro");
       setProgress(15);
 
-      // Capture each direct child as its own canvas so pagination respects
-      // element boundaries (no mid-row cuts, no overlapping charts).
-      const children = Array.from(node.children).filter(
-        (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
-      );
-      const sources: HTMLElement[] = children.length ? children : [node];
-      const captured: PageCanvas[] = [];
-      const scale = 2;
-      for (let i = 0; i < sources.length; i++) {
-        const c = await html2canvas(sources[i], {
+      const width = node.scrollWidth || node.offsetWidth;
+
+      const capture = async (el: HTMLElement) => {
+        const h = el.scrollHeight || el.offsetHeight;
+        const scale = safeScale(width, h);
+        return {
+          canvas: await html2canvas(el, {
+            scale,
+            backgroundColor: "#ffffff",
+            useCORS: true,
+            logging: false,
+            width,
+            windowWidth: width,
+            height: h,
+            scrollX: 0,
+            scrollY: 0,
+          }),
           scale,
-          backgroundColor: "#ffffff",
-          useCORS: true,
-          windowWidth: node.scrollWidth,
-        });
-        captured.push({ canvas: c });
-        setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
+        };
+      };
+
+      let packed: PageCanvas[][];
+
+      if (fitMode === "continuous") {
+        // One single capture of the whole dashboard → one tall PDF page.
+        // Identical to the portal, zero page breaks.
+        const { canvas } = await capture(node);
+        if (!canvas.width || !canvas.height) throw new Error("Dashboard is too large to capture");
+        setProgress(85);
+        packed = [[{ canvas }]];
+      } else {
+        // Capture each direct child as its own canvas so pagination respects
+        // element boundaries (no mid-row cuts, no overlapping charts).
+        const children = Array.from(node.children).filter(
+          (el): el is HTMLElement => el instanceof HTMLElement && el.offsetHeight > 0,
+        );
+        const sources: HTMLElement[] = children.length ? children : [node];
+        const captured: PageCanvas[] = [];
+        let scaleUsed = 2;
+        for (let i = 0; i < sources.length; i++) {
+          try {
+            const { canvas, scale } = await capture(sources[i]);
+            scaleUsed = scale;
+            if (canvas.width && canvas.height) captured.push({ canvas });
+          } catch (e) {
+            console.warn("Skipped a section that could not be captured", e);
+          }
+          setProgress(15 + Math.round(((i + 1) / sources.length) * 65));
+        }
+        if (!captured.length) throw new Error("No dashboard sections could be captured");
+        const refW = captured[0].canvas.width;
+        const pxPerPage = (usableH * refW) / (usableW * scaleUsed);
+        packed = packIntoPages(captured, pxPerPage, scaleUsed);
       }
 
-      const refW = captured[0]?.canvas.width ?? usableW * scale;
-      const pxPerPage = (usableH * refW) / (usableW * scale);
-      const packed = packIntoPages(captured, pxPerPage, scale);
       setPages(packed);
+      setPreviewUrls(packed.map((pg) => pg.map((it) => it.canvas.toDataURL("image/jpeg", 0.82))));
       setProgress(100);
       setPhase("ready");
     } catch (err) {
@@ -174,17 +225,31 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     const tId = toast.loading("Saving PDF…");
     try {
       const { default: jsPDF } = await import("jspdf");
-      const pdf = new jsPDF({ orientation, unit: "pt", format: paper });
-      const totalPages = pages.length;
       const generatedStr = generatedAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
       const snapStr = `${fmtDate(meta.snapshotFrom)} → ${fmtDate(meta.snapshotTo)}`;
       const userStr = [meta.userName, meta.role].filter(Boolean).join(" · ") || "—";
 
+      const continuous = fitMode === "continuous";
+      let docW = pageW;
+      let docH = pageH;
+      if (continuous) {
+        const c = pages[0][0].canvas;
+        const contentH = (c.height * usableW) / c.width;
+        docH = Math.ceil(HEADER_H + contentH + FOOTER_H + MARGIN);
+      }
+
+      const pdf = new jsPDF({
+        orientation: continuous ? "p" : orientation,
+        unit: "pt",
+        format: continuous ? [docW, docH] : paper,
+      });
+
+      const totalPages = pages.length;
       for (let p = 0; p < totalPages; p++) {
         if (p > 0) pdf.addPage();
-        // Header
+        // Header band
         pdf.setFillColor(15, 23, 42);
-        pdf.rect(0, 0, pageW, HEADER_H - 18, "F");
+        pdf.rect(0, 0, docW, HEADER_H - 18, "F");
         pdf.setTextColor(255, 255, 255);
         pdf.setFont("helvetica", "bold");
         pdf.setFontSize(13);
@@ -199,26 +264,25 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
         pdf.setTextColor(15, 23, 42);
 
         // Body
-        const pageItems = pages[p];
         let y = HEADER_H;
-        for (const it of pageItems) {
+        for (const it of pages[p]) {
           const w = usableW;
           const h = (it.canvas.height * w) / it.canvas.width;
-          pdf.addImage(it.canvas.toDataURL("image/png"), "PNG", MARGIN, y, w, h, undefined, "FAST");
+          pdf.addImage(it.canvas.toDataURL("image/jpeg", 0.92), "JPEG", MARGIN, y, w, h, undefined, "FAST");
           y += h;
         }
 
         // Footer
-        const footerY = pageH - FOOTER_H + 8;
+        const footerY = docH - FOOTER_H + 8;
         pdf.setDrawColor(220);
-        pdf.line(MARGIN, footerY - 6, pageW - MARGIN, footerY - 6);
+        pdf.line(MARGIN, footerY - 6, docW - MARGIN, footerY - 6);
         pdf.setFontSize(7.5);
         pdf.setTextColor(90);
         pdf.text(`Snapshot: ${snapStr}`, MARGIN, footerY);
         pdf.text(`Prepared for: ${userStr}`, MARGIN, footerY + 10);
-        pdf.text(`Generated ${generatedStr}`, pageW / 2, footerY, { align: "center" });
-        pdf.text(`Page ${p + 1} of ${totalPages}`, pageW - MARGIN, footerY, { align: "right" });
-        pdf.text("Confidential — RCMBuddy", pageW - MARGIN, footerY + 10, { align: "right" });
+        pdf.text(`Generated ${generatedStr}`, docW / 2, footerY, { align: "center" });
+        pdf.text(continuous ? "Single continuous page" : `Page ${p + 1} of ${totalPages}`, docW - MARGIN, footerY, { align: "right" });
+        pdf.text("Confidential — RCMBuddy", docW - MARGIN, footerY + 10, { align: "right" });
       }
 
       pdf.save(fileName);
@@ -226,16 +290,17 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
       onOpenChange(false);
     } catch (err) {
       console.error("PDF save failed", err);
-      toast.error("Could not save PDF", { id: tId });
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      toast.error(`Could not save PDF: ${msg}`, { id: tId });
       setPhase("ready");
     }
   }
-
 
   const isOptions = phase === "options";
   const isRendering = phase === "rendering";
   const isReady = phase === "ready";
   const isSaving = phase === "saving";
+  const continuous = fitMode === "continuous";
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (isSaving) return; onOpenChange(o); }}>
@@ -278,41 +343,63 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
                 </ul>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Paper size</div>
-                  <div className="inline-flex rounded-md border overflow-hidden">
-                    {(["a4", "letter"] as PaperSize[]).map((p) => (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => setPaper(p)}
-                        className={`px-3 py-1.5 text-[12px] ${paper === p ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                      >
-                        {p.toUpperCase()}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Orientation</div>
-                  <div className="inline-flex rounded-md border overflow-hidden">
-                    {([["p", "Portrait"], ["l", "Landscape"]] as [Orientation, string][]).map(([v, l]) => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setOrientation(v)}
-                        className={`px-3 py-1.5 text-[12px] ${orientation === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                      >
-                        {l}
-                      </button>
-                    ))}
-                  </div>
+              <div>
+                <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Layout</div>
+                <div className="grid sm:grid-cols-2 gap-2">
+                  {([
+                    ["continuous", "Exactly like the portal", "One tall page — no page breaks anywhere"],
+                    ["paginated", "Paginated (A4 / Letter)", "Breaks only between cards & sections"],
+                  ] as [FitMode, string, string][]).map(([v, l, d]) => (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => setFitMode(v)}
+                      className={`text-left rounded-md border px-3 py-2 transition-colors ${fitMode === v ? "border-primary bg-primary/5" : "hover:bg-muted"}`}
+                    >
+                      <div className="text-[12px] font-semibold">{l}</div>
+                      <div className="text-[10.5px] text-muted-foreground leading-snug">{d}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
 
+              {!continuous && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Paper size</div>
+                    <div className="inline-flex rounded-md border overflow-hidden">
+                      {(["a4", "letter"] as PaperSize[]).map((p) => (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => setPaper(p)}
+                          className={`px-3 py-1.5 text-[12px] ${paper === p ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                        >
+                          {p.toUpperCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-1.5">Orientation</div>
+                    <div className="inline-flex rounded-md border overflow-hidden">
+                      {([["p", "Portrait"], ["l", "Landscape"]] as [Orientation, string][]).map(([v, l]) => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setOrientation(v)}
+                          className={`px-3 py-1.5 text-[12px] ${orientation === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                        >
+                          {l}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <p className="text-[10.5px] text-muted-foreground border-t pt-3">
-                Click <strong>Generate preview</strong> to render the dashboard. Pagination respects card/section boundaries to avoid cutting rows or charts.
+                Click <strong>Generate preview</strong> to render the dashboard exactly as filtered on screen.
               </p>
             </div>
           )}
@@ -328,30 +415,37 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
 
           {(isReady || isSaving) && (
             <div ref={previewRef} className="space-y-4">
-              {pages.map((pageItems, idx) => (
+              {previewUrls.map((urls, idx) => (
                 <div
                   key={idx}
                   className="mx-auto bg-white shadow-md ring-1 ring-border overflow-hidden"
-                  style={{ width: Math.min(720, pageW * 1.15), aspectRatio: `${pageW} / ${pageH}` }}
+                  style={
+                    continuous
+                      ? { width: Math.min(720, pageW * 1.15) }
+                      : { width: Math.min(720, pageW * 1.15), aspectRatio: `${pageW} / ${pageH}` }
+                  }
                 >
                   <div className="bg-slate-900 text-white px-4 py-2">
                     <div className="text-[11px] font-semibold">RCMBuddy — {title}</div>
                     <div className="text-[8.5px] opacity-80 leading-snug">{filterChips.join("  •  ")}</div>
                   </div>
-                  <div className="p-3 flex flex-col gap-2" style={{ height: `calc(100% - 70px)` }}>
-                    {pageItems.map((it, i) => (
+                  <div
+                    className="p-3 flex flex-col gap-2"
+                    style={continuous ? undefined : { height: "calc(100% - 70px)" }}
+                  >
+                    {urls.map((u, i) => (
                       <img
                         key={i}
-                        src={it.canvas.toDataURL("image/png")}
+                        src={u}
                         alt=""
                         className="w-full object-contain"
-                        style={{ maxHeight: "100%" }}
+                        style={continuous ? undefined : { maxHeight: "100%" }}
                       />
                     ))}
                   </div>
                   <div className="border-t px-3 py-1.5 flex justify-between text-[8px] text-muted-foreground">
                     <span>Snapshot: {fmtDate(meta.snapshotFrom)} → {fmtDate(meta.snapshotTo)}</span>
-                    <span>Page {idx + 1} of {pages.length}</span>
+                    <span>{continuous ? "Single continuous page" : `Page ${idx + 1} of ${previewUrls.length}`}</span>
                   </div>
                 </div>
               ))}
@@ -363,12 +457,12 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
           <div className="text-[11px] text-muted-foreground">
             {isOptions && "Step 1 of 2 · Confirm filters & layout"}
             {isRendering && `Rendering… ${progress}%`}
-            {isReady && `Step 2 of 2 · ${pages.length} page${pages.length === 1 ? "" : "s"} ready`}
+            {isReady && (continuous ? "Step 2 of 2 · Continuous page ready" : `Step 2 of 2 · ${pages.length} page${pages.length === 1 ? "" : "s"} ready`)}
             {isSaving && "Saving PDF…"}
           </div>
           <div className="flex items-center gap-2">
             {isReady && (
-              <Button variant="outline" size="sm" onClick={() => { setPhase("options"); setPages([]); }}>
+              <Button variant="outline" size="sm" onClick={() => { setPhase("options"); setPages([]); setPreviewUrls([]); }}>
                 <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Back to options
               </Button>
             )}
@@ -395,4 +489,3 @@ export default function PdfExportDialog({ open, onOpenChange, sourceRef, title, 
     </Dialog>
   );
 }
-
