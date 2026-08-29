@@ -56,24 +56,26 @@ async function resolveMembership(userId: string): Promise<{
     };
   }
 
-  // No explicit membership — platform admins (super admins) should still
-  // get an active org so the rest of the app works. The
-  // "Platform admins can view all orgs" RLS policy lets them read any org;
-  // pick the oldest one as a sensible default. For non-admins this returns
-  // nothing and orgId stays null.
-  const { data: fallback } = await supabase
-    .from("organizations")
-    .select("id")
-    .order("created_at", { ascending: true })
-    .limit(1)
-    .maybeSingle();
-
-  if (fallback?.id) {
-    return { orgId: fallback.id, role: "admin" };
+  // No explicit membership. ONLY platform (super) admins may fall back to an
+  // arbitrary organization — for every other user, having no membership means
+  // having no tenant, and therefore no data. Never guess a tenant here: doing
+  // so used to hand brand-new accounts another hospital's workspace.
+  const { data: isPlatformAdmin } = await supabase.rpc("is_platform_admin");
+  if (isPlatformAdmin === true) {
+    const { data: fallback } = await supabase
+      .from("organizations")
+      .select("id")
+      .order("created_at", { ascending: true })
+      .limit(1)
+      .maybeSingle();
+    if (fallback?.id) {
+      return { orgId: fallback.id, role: "admin" };
+    }
   }
 
   return { orgId: null, role: null };
 }
+
 
 export function AuthContextProvider({ children }: AuthContextProviderProps) {
   const [userId, setUserId] = useState<string | null>(null);
