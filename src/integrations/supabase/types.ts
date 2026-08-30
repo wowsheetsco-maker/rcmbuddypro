@@ -62,6 +62,62 @@ export type Database = {
         }
         Relationships: []
       }
+      access_requests: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string | null
+          name: string | null
+          org_id: string | null
+          requested_org_name: string | null
+          requester_user_id: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message?: string | null
+          name?: string | null
+          org_id?: string | null
+          requested_org_name?: string | null
+          requester_user_id: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string | null
+          name?: string | null
+          org_id?: string | null
+          requested_org_name?: string | null
+          requester_user_id?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "access_requests_org_id_fkey"
+            columns: ["org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admin_role_assignments: {
         Row: {
           granted_at: string
@@ -4973,6 +5029,14 @@ export type Database = {
       }
     }
     Functions: {
+      approve_access_request: {
+        Args: {
+          _app_role?: Database["public"]["Enums"]["app_role"]
+          _org_role?: Database["public"]["Enums"]["org_role"]
+          _request_id: string
+        }
+        Returns: Json
+      }
       auto_create_submission_tasks: { Args: never; Returns: number }
       can_access_branch: {
         Args: { _branch_id: string; _org_id: string }
@@ -5025,6 +5089,13 @@ export type Database = {
       }
       is_org_member: { Args: { _org_id: string }; Returns: boolean }
       is_platform_admin: { Args: never; Returns: boolean }
+      list_joinable_organizations: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       my_app_roles: {
         Args: { _org_id: string }
         Returns: Database["public"]["Enums"]["app_role"][]
@@ -5047,6 +5118,10 @@ export type Database = {
         Returns: Json
       }
       refresh_hospital_kpis: { Args: never; Returns: number }
+      reject_access_request: {
+        Args: { _note?: string; _request_id: string }
+        Returns: Json
+      }
       required_role_rank: { Args: { _required: string }; Returns: number }
       seed_launch_checklist: { Args: { _org_id: string }; Returns: undefined }
       seed_submission_checklist: {
