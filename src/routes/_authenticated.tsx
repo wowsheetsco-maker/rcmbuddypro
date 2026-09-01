@@ -115,9 +115,11 @@ function AuthenticatedLayout() {
         <Sonner />
         <MobileRedirect />
         {mounted ? (
-          <AdminSubroleGate>
-            <Outlet />
-          </AdminSubroleGate>
+          <WorkspaceGate>
+            <AdminSubroleGate>
+              <Outlet />
+            </AdminSubroleGate>
+          </WorkspaceGate>
         ) : null}
       </TooltipProvider>
     </ProtectedRoute>
