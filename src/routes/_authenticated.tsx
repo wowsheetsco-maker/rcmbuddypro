@@ -8,6 +8,30 @@ import { allowedRolesForPath } from "@/lib/routeAccess";
 import { useAdminSubroles, requiredSubrolesForPath } from "@/hooks/useAdminSubroles";
 import { useViewMode } from "@/hooks/useViewMode";
 import { useNavigate } from "@/lib/router-compat";
+import { useAuth } from "@/contexts/AuthContext";
+import { useIsPlatformAdmin } from "@/hooks/useIsPlatformAdmin";
+
+/**
+ * Users who belong to no hospital have no data and no safe default tenant.
+ * Send them to the "request access" screen instead of an empty app shell.
+ */
+function WorkspaceGate({ children }: { children: React.ReactNode }) {
+  const { userId, orgId, isLoading } = useAuth();
+  const { isAdmin, loading: adminLoading } = useIsPlatformAdmin();
+  const location = useLocation();
+  const tNavigate = useTanstackNavigate();
+  const onRequestScreen = location.pathname === "/request-access";
+  const needsWorkspace = !!userId && !isLoading && !orgId && !adminLoading && !isAdmin;
+
+  useEffect(() => {
+    if (needsWorkspace && !onRequestScreen) {
+      tNavigate({ to: "/request-access", replace: true });
+    }
+  }, [needsWorkspace, onRequestScreen, tNavigate]);
+
+  if (needsWorkspace && !onRequestScreen) return null;
+  return <>{children}</>;
+}
 
 const REDIRECT_GATE = "rcm-mobile-redirected";
 const DESKTOP_HOME_ROUTES = new Set<string>(["/", "/dashboard/executive"]);
@@ -91,9 +115,11 @@ function AuthenticatedLayout() {
         <Sonner />
         <MobileRedirect />
         {mounted ? (
-          <AdminSubroleGate>
-            <Outlet />
-          </AdminSubroleGate>
+          <WorkspaceGate>
+            <AdminSubroleGate>
+              <Outlet />
+            </AdminSubroleGate>
+          </WorkspaceGate>
         ) : null}
       </TooltipProvider>
     </ProtectedRoute>

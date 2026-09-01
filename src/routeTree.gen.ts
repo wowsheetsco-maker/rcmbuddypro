@@ -19,9 +19,11 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated.claims'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedMyTasksRouteImport } from './routes/_authenticated.my-tasks'
+import { Route as AuthenticatedRequestAccessRouteImport } from './routes/_authenticated.request-access'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
 import { Route as AuthenticatedAdminAccessCheckerRouteImport } from './routes/_authenticated.admin.access-checker'
+import { Route as AuthenticatedAdminAccessRequestsRouteImport } from './routes/_authenticated.admin.access-requests'
 import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as AuthenticatedAnalyticsCorporateRouteImport } from './routes/_authenticated.analytics.corporate'
@@ -111,6 +113,12 @@ const AuthenticatedMyTasksRoute = AuthenticatedMyTasksRouteImport.update({
   path: '/my-tasks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRequestAccessRoute =
+  AuthenticatedRequestAccessRouteImport.update({
+    id: '/request-access',
+    path: '/request-access',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -125,6 +133,12 @@ const AuthenticatedAdminAccessCheckerRoute =
   AuthenticatedAdminAccessCheckerRouteImport.update({
     id: '/admin/access-checker',
     path: '/admin/access-checker',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminAccessRequestsRoute =
+  AuthenticatedAdminAccessRequestsRouteImport.update({
+    id: '/admin/access-requests',
+    path: '/admin/access-requests',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAnalyticsBenchmarksRoute =
@@ -370,9 +384,11 @@ export interface FileRoutesByFullPath {
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/request-access': typeof AuthenticatedRequestAccessRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -421,8 +437,10 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/request-access': typeof AuthenticatedRequestAccessRoute
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -475,9 +493,11 @@ export interface FileRoutesById {
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/_authenticated/request-access': typeof AuthenticatedRequestAccessRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/_authenticated/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/_authenticated/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/_authenticated/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -530,9 +550,11 @@ export interface FileRouteTypes {
     | '/claims'
     | '/dashboard'
     | '/my-tasks'
+    | '/request-access'
     | '/settings'
     | '/today'
     | '/admin/access-checker'
+    | '/admin/access-requests'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/corporate'
@@ -581,8 +603,10 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytics'
     | '/my-tasks'
+    | '/request-access'
     | '/today'
     | '/admin/access-checker'
+    | '/admin/access-requests'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/corporate'
@@ -634,9 +658,11 @@ export interface FileRouteTypes {
     | '/_authenticated/claims'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-tasks'
+    | '/_authenticated/request-access'
     | '/_authenticated/settings'
     | '/_authenticated/today'
     | '/_authenticated/admin/access-checker'
+    | '/_authenticated/admin/access-requests'
     | '/_authenticated/analytics/benchmarks'
     | '/_authenticated/analytics/cash-flow'
     | '/_authenticated/analytics/corporate'
@@ -764,6 +790,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMyTasksRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/request-access': {
+      id: '/_authenticated/request-access'
+      path: '/request-access'
+      fullPath: '/request-access'
+      preLoaderRoute: typeof AuthenticatedRequestAccessRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -783,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/access-checker'
       fullPath: '/admin/access-checker'
       preLoaderRoute: typeof AuthenticatedAdminAccessCheckerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/access-requests': {
+      id: '/_authenticated/admin/access-requests'
+      path: '/admin/access-requests'
+      fullPath: '/admin/access-requests'
+      preLoaderRoute: typeof AuthenticatedAdminAccessRequestsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/analytics/benchmarks': {
@@ -1185,9 +1225,11 @@ interface AuthenticatedRouteChildren {
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
   AuthenticatedMyTasksRoute: typeof AuthenticatedMyTasksRoute
+  AuthenticatedRequestAccessRoute: typeof AuthenticatedRequestAccessRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedAdminAccessCheckerRoute: typeof AuthenticatedAdminAccessCheckerRoute
+  AuthenticatedAdminAccessRequestsRoute: typeof AuthenticatedAdminAccessRequestsRoute
   AuthenticatedProvidersContactsRoute: typeof AuthenticatedProvidersContactsRoute
 }
 
@@ -1196,9 +1238,11 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
   AuthenticatedMyTasksRoute: AuthenticatedMyTasksRoute,
+  AuthenticatedRequestAccessRoute: AuthenticatedRequestAccessRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedAdminAccessCheckerRoute: AuthenticatedAdminAccessCheckerRoute,
+  AuthenticatedAdminAccessRequestsRoute: AuthenticatedAdminAccessRequestsRoute,
   AuthenticatedProvidersContactsRoute: AuthenticatedProvidersContactsRoute,
 }
 
