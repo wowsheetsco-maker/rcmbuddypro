@@ -19,6 +19,7 @@ import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authentica
 import { Route as AuthenticatedClaimsRouteImport } from './routes/_authenticated.claims'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated.dashboard'
 import { Route as AuthenticatedMyTasksRouteImport } from './routes/_authenticated.my-tasks'
+import { Route as AuthenticatedRequestAccessRouteImport } from './routes/_authenticated.request-access'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
 import { Route as AuthenticatedAdminAccessCheckerRouteImport } from './routes/_authenticated.admin.access-checker'
@@ -111,6 +112,12 @@ const AuthenticatedMyTasksRoute = AuthenticatedMyTasksRouteImport.update({
   path: '/my-tasks',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedRequestAccessRoute =
+  AuthenticatedRequestAccessRouteImport.update({
+    id: '/request-access',
+    path: '/request-access',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/request-access': typeof AuthenticatedRequestAccessRoute
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
@@ -421,6 +429,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/analytics': typeof AuthenticatedAnalyticsRouteWithChildren
   '/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/request-access': typeof AuthenticatedRequestAccessRoute
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
@@ -475,6 +484,7 @@ export interface FileRoutesById {
   '/_authenticated/claims': typeof AuthenticatedClaimsRouteWithChildren
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRouteWithChildren
   '/_authenticated/my-tasks': typeof AuthenticatedMyTasksRoute
+  '/_authenticated/request-access': typeof AuthenticatedRequestAccessRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
@@ -530,6 +540,7 @@ export interface FileRouteTypes {
     | '/claims'
     | '/dashboard'
     | '/my-tasks'
+    | '/request-access'
     | '/settings'
     | '/today'
     | '/admin/access-checker'
@@ -581,6 +592,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/analytics'
     | '/my-tasks'
+    | '/request-access'
     | '/today'
     | '/admin/access-checker'
     | '/analytics/benchmarks'
@@ -634,6 +646,7 @@ export interface FileRouteTypes {
     | '/_authenticated/claims'
     | '/_authenticated/dashboard'
     | '/_authenticated/my-tasks'
+    | '/_authenticated/request-access'
     | '/_authenticated/settings'
     | '/_authenticated/today'
     | '/_authenticated/admin/access-checker'
@@ -762,6 +775,13 @@ declare module '@tanstack/react-router' {
       path: '/my-tasks'
       fullPath: '/my-tasks'
       preLoaderRoute: typeof AuthenticatedMyTasksRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/request-access': {
+      id: '/_authenticated/request-access'
+      path: '/request-access'
+      fullPath: '/request-access'
+      preLoaderRoute: typeof AuthenticatedRequestAccessRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings': {
@@ -1185,6 +1205,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedClaimsRoute: typeof AuthenticatedClaimsRouteWithChildren
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRouteWithChildren
   AuthenticatedMyTasksRoute: typeof AuthenticatedMyTasksRoute
+  AuthenticatedRequestAccessRoute: typeof AuthenticatedRequestAccessRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedAdminAccessCheckerRoute: typeof AuthenticatedAdminAccessCheckerRoute
@@ -1196,6 +1217,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedClaimsRoute: AuthenticatedClaimsRouteWithChildren,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRouteWithChildren,
   AuthenticatedMyTasksRoute: AuthenticatedMyTasksRoute,
+  AuthenticatedRequestAccessRoute: AuthenticatedRequestAccessRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedAdminAccessCheckerRoute: AuthenticatedAdminAccessCheckerRoute,
