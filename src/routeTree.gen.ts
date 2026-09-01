@@ -23,6 +23,7 @@ import { Route as AuthenticatedRequestAccessRouteImport } from './routes/_authen
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated.settings'
 import { Route as AuthenticatedTodayRouteImport } from './routes/_authenticated.today'
 import { Route as AuthenticatedAdminAccessCheckerRouteImport } from './routes/_authenticated.admin.access-checker'
+import { Route as AuthenticatedAdminAccessRequestsRouteImport } from './routes/_authenticated.admin.access-requests'
 import { Route as AuthenticatedAnalyticsBenchmarksRouteImport } from './routes/_authenticated.analytics.benchmarks'
 import { Route as AuthenticatedAnalyticsCashFlowRouteImport } from './routes/_authenticated.analytics.cash-flow'
 import { Route as AuthenticatedAnalyticsCorporateRouteImport } from './routes/_authenticated.analytics.corporate'
@@ -132,6 +133,12 @@ const AuthenticatedAdminAccessCheckerRoute =
   AuthenticatedAdminAccessCheckerRouteImport.update({
     id: '/admin/access-checker',
     path: '/admin/access-checker',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedAdminAccessRequestsRoute =
+  AuthenticatedAdminAccessRequestsRouteImport.update({
+    id: '/admin/access-requests',
+    path: '/admin/access-requests',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedAnalyticsBenchmarksRoute =
@@ -381,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -432,6 +440,7 @@ export interface FileRoutesByTo {
   '/request-access': typeof AuthenticatedRequestAccessRoute
   '/today': typeof AuthenticatedTodayRoute
   '/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -488,6 +497,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRouteWithChildren
   '/_authenticated/today': typeof AuthenticatedTodayRoute
   '/_authenticated/admin/access-checker': typeof AuthenticatedAdminAccessCheckerRoute
+  '/_authenticated/admin/access-requests': typeof AuthenticatedAdminAccessRequestsRoute
   '/_authenticated/analytics/benchmarks': typeof AuthenticatedAnalyticsBenchmarksRoute
   '/_authenticated/analytics/cash-flow': typeof AuthenticatedAnalyticsCashFlowRoute
   '/_authenticated/analytics/corporate': typeof AuthenticatedAnalyticsCorporateRoute
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/today'
     | '/admin/access-checker'
+    | '/admin/access-requests'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/corporate'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/request-access'
     | '/today'
     | '/admin/access-checker'
+    | '/admin/access-requests'
     | '/analytics/benchmarks'
     | '/analytics/cash-flow'
     | '/analytics/corporate'
@@ -650,6 +662,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/today'
     | '/_authenticated/admin/access-checker'
+    | '/_authenticated/admin/access-requests'
     | '/_authenticated/analytics/benchmarks'
     | '/_authenticated/analytics/cash-flow'
     | '/_authenticated/analytics/corporate'
@@ -803,6 +816,13 @@ declare module '@tanstack/react-router' {
       path: '/admin/access-checker'
       fullPath: '/admin/access-checker'
       preLoaderRoute: typeof AuthenticatedAdminAccessCheckerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/admin/access-requests': {
+      id: '/_authenticated/admin/access-requests'
+      path: '/admin/access-requests'
+      fullPath: '/admin/access-requests'
+      preLoaderRoute: typeof AuthenticatedAdminAccessRequestsRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/analytics/benchmarks': {
@@ -1209,6 +1229,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRouteWithChildren
   AuthenticatedTodayRoute: typeof AuthenticatedTodayRoute
   AuthenticatedAdminAccessCheckerRoute: typeof AuthenticatedAdminAccessCheckerRoute
+  AuthenticatedAdminAccessRequestsRoute: typeof AuthenticatedAdminAccessRequestsRoute
   AuthenticatedProvidersContactsRoute: typeof AuthenticatedProvidersContactsRoute
 }
 
@@ -1221,6 +1242,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsRoute: AuthenticatedSettingsRouteWithChildren,
   AuthenticatedTodayRoute: AuthenticatedTodayRoute,
   AuthenticatedAdminAccessCheckerRoute: AuthenticatedAdminAccessCheckerRoute,
+  AuthenticatedAdminAccessRequestsRoute: AuthenticatedAdminAccessRequestsRoute,
   AuthenticatedProvidersContactsRoute: AuthenticatedProvidersContactsRoute,
 }
 
