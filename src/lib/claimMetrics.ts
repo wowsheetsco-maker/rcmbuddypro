@@ -33,6 +33,7 @@ export function isZeroApprovedDenial(c: Claim): boolean {
   if (approved > 0) return false;
   const status = (c.claim_status || "").trim();
   if (!status) return false;
+  if (SETTLED_STATUSES.has(status.toLowerCase())) return false;
   return !IN_PROGRESS_RE.test(status);
 }
 

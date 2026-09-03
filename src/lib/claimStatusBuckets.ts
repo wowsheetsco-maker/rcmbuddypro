@@ -58,6 +58,7 @@ export const isDenied = (c: StatusedClaim) => {
   // Approved Amount = 0 on a decided claim → denial, never outstanding.
   const approved = Number(c.approved_amount || 0);
   const status = (c.claim_status || "").trim();
+  if (SETTLED_STATUSES.has(norm(status))) return false;
   return approved <= 0 && !!status && !IN_PROGRESS_RE.test(status);
 };
 export const isSubmitted = (c: StatusedClaim) => SUBMITTED_STATUSES.has(norm(c.claim_status));
