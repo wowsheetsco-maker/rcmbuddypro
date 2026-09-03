@@ -291,7 +291,24 @@ export default function ImportClaimsPage() {
       const { getCurrentOrgId } = await import("@/lib/currentOrg");
       const _orgId = getCurrentOrgId();
 
+      // Fresh-sheet mode: remove the previous claim list entirely so output, QC,
+      // outstanding and denial calculations use only this sheet.
+      let purged = 0;
+      if (replaceAll) {
+        const { count: prevCount } = await supabase
+          .from("claims")
+          .select("claim_number", { count: "exact", head: true })
+          .eq("org_id", _orgId);
+        const { error: delErr } = await supabase
+          .from("claims")
+          .delete()
+          .eq("org_id", _orgId);
+        if (delErr) throw delErr;
+        purged = prevCount ?? 0;
+      }
+
       const branchSummary = await enrichRowsWithBranchIds(workingRows);
+
 
       const allClaimNumbers = workingRows.map((r) => r.claim_number).filter(Boolean);
       const existingByClaim = new Map<string, Record<string, unknown>>();
