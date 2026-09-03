@@ -835,7 +835,7 @@ export const ISSUE_CODE_LABELS: Record<string, string> = {
   L3_APPROVED_GT_CLAIMED: "Approved > Claimed",
   L3_SETTLED_GT_APPROVED: "Settled > Approved",
   L3_DATE_DIS_BEFORE_ADM: "Discharge before admission",
-  L3_DATE_CLAIM_BEFORE_DIS: "Claim date before discharge",
+  L3_DATE_CLAIM_BEFORE_ADM: "Claim/pre-auth date before admission",
   L3_DATE_PAY_BEFORE_CLAIM: "Payment before claim date",
   L3_TAT_SUBMISSION: "Submission delay",
   L3_TAT_APPROVAL: "Approval delay",

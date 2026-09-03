@@ -48,8 +48,18 @@ export const DOCS_TO_SUBMIT_STATUSES = new Set<string>([
   "pre auth approved", "pre-auth approved",
 ]);
 
+/** Statuses still awaiting an approval decision — zero approved is not a denial. */
+const IN_PROGRESS_RE =
+  /initiated|submitted|query|processing|in progress|pending|reminder|reconsideration/i;
+
 export const isSettled = (c: StatusedClaim) => SETTLED_STATUSES.has(norm(c.claim_status));
-export const isDenied = (c: StatusedClaim) => DENIED_STATUSES.has(norm(c.claim_status));
+export const isDenied = (c: StatusedClaim) => {
+  if (DENIED_STATUSES.has(norm(c.claim_status))) return true;
+  // Approved Amount = 0 on a decided claim → denial, never outstanding.
+  const approved = Number(c.approved_amount || 0);
+  const status = (c.claim_status || "").trim();
+  return approved <= 0 && !!status && !IN_PROGRESS_RE.test(status);
+};
 export const isSubmitted = (c: StatusedClaim) => SUBMITTED_STATUSES.has(norm(c.claim_status));
 export const isDocsToSubmit = (c: StatusedClaim) =>
   !!c.date_of_discharge && DOCS_TO_SUBMIT_STATUSES.has(norm(c.claim_status));
