@@ -466,13 +466,17 @@ export default function ImportClaimsPage() {
           ? ` · ${branchSummary.groupsCreated} new group${branchSummary.groupsCreated === 1 ? "" : "s"}, ${branchSummary.branchesCreated} new branch${branchSummary.branchesCreated === 1 ? "" : "es"}`
           : "";
 
+      const purgeNote = purged > 0
+        ? ` · cleared ${purged} old claim${purged === 1 ? "" : "s"}`
+        : "";
+
       if (failed === 0) {
         toast.success(
-          `Imported ${success} claims (${inserted} new, ${updated} updated)${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
+          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
         );
       } else {
         toast.error(
-          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${dedupNote}${protectNote}${qcNote}${branchNote}`,
+          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
         );
       }
 
