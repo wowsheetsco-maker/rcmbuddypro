@@ -687,6 +687,24 @@ export default function ImportClaimsPage() {
               )}
 
               {/* 🩺 RCM Quality Control */}
+              {/* 🔄 Fresh sheet mode */}
+              <div className="rounded-md border bg-card p-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Replace existing data</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {replaceAll
+                      ? "The current claim list will be cleared and only this sheet will be processed — QC, outstanding and denial numbers come from this upload alone."
+                      : "This sheet will be merged into the existing claim list (old claims stay in all calculations)."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch id="replace-all" checked={replaceAll} onCheckedChange={setReplaceAll} />
+                  <Label htmlFor="replace-all" className="text-xs cursor-pointer">
+                    Fresh upload
+                  </Label>
+                </div>
+              </div>
+
               {qc && (
                 <div className="rounded-md border bg-card p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
