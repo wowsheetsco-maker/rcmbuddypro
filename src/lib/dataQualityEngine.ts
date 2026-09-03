@@ -334,9 +334,12 @@ function layer3(c: DqClaim, bucket: StatusBucket, rules: DqRules, issues: DqIssu
   if (admToDis !== null && admToDis < 0) {
     issues.push({ layer: 3, severity: "critical", code: "L3_DATE_DIS_BEFORE_ADM", message: "Discharge before admission" });
   }
-  const disToClaim = dayDiff(c.date_of_discharge, c.claim_creation_date);
-  if (disToClaim !== null && disToClaim < 0) {
-    issues.push({ layer: 3, severity: "critical", code: "L3_DATE_CLAIM_BEFORE_DIS", message: "Claim date before discharge" });
+  // NOTE: `claim_creation_date` is often the pre-authorization date, which is
+  // legitimately BEFORE discharge (and even before admission is impossible).
+  // So we only flag a genuine impossibility: claim/pre-auth date before admission.
+  const admToClaim = dayDiff(c.date_of_admission, c.claim_creation_date);
+  if (admToClaim !== null && admToClaim < 0) {
+    issues.push({ layer: 3, severity: "critical", code: "L3_DATE_CLAIM_BEFORE_ADM", message: "Claim/pre-auth date before admission" });
   }
   const claimToPay = dayDiff(c.claim_creation_date, c.payment_update_date);
   if (claimToPay !== null && claimToPay < 0) {
@@ -832,7 +835,7 @@ export const ISSUE_CODE_LABELS: Record<string, string> = {
   L3_APPROVED_GT_CLAIMED: "Approved > Claimed",
   L3_SETTLED_GT_APPROVED: "Settled > Approved",
   L3_DATE_DIS_BEFORE_ADM: "Discharge before admission",
-  L3_DATE_CLAIM_BEFORE_DIS: "Claim date before discharge",
+  L3_DATE_CLAIM_BEFORE_ADM: "Claim/pre-auth date before admission",
   L3_DATE_PAY_BEFORE_CLAIM: "Payment before claim date",
   L3_TAT_SUBMISSION: "Submission delay",
   L3_TAT_APPROVAL: "Approval delay",

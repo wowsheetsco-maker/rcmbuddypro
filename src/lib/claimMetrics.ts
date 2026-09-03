@@ -18,12 +18,27 @@ export const SETTLED_STATUSES = new Set([
 export const DENIED_RE = /denied|rejected|repudiat/i;
 export const PREAUTH_RE = /pre[\s-]?auth/i;
 
+/** Statuses still awaiting an approval decision — a zero approved amount here
+ *  is simply "not decided yet", not a denial. */
+export const IN_PROGRESS_RE =
+  /initiated|submitted|query|processing|in progress|pending|reminder|reconsideration/i;
+
 export function isOpen(c: Claim): boolean {
   return !SETTLED_STATUSES.has((c.claim_status || "").toLowerCase().trim());
 }
 
+/** Approved amount = 0 on a decided claim → treated as a denial. */
+export function isZeroApprovedDenial(c: Claim): boolean {
+  const approved = Number((c as any).approved_amount) || 0;
+  if (approved > 0) return false;
+  const status = (c.claim_status || "").trim();
+  if (!status) return false;
+  if (SETTLED_STATUSES.has(status.toLowerCase())) return false;
+  return !IN_PROGRESS_RE.test(status);
+}
+
 export function isDenied(c: Claim): boolean {
-  return DENIED_RE.test(c.claim_status || "");
+  return DENIED_RE.test(c.claim_status || "") || isZeroApprovedDenial(c);
 }
 
 /** True if the claim's status refers to the pre-authorization stage. */
@@ -38,11 +53,12 @@ export function isPreauthDenied(c: Claim): boolean {
 
 /**
  * Any denied/rejected/repudiated claim (including Enhancement Denied,
- * Claim Denied, Pre-Auth Denied) — must NEVER appear under outstanding,
- * recovery, or the priority worklist. They live only on the Denials page.
+ * Claim Denied, Pre-Auth Denied) or any claim with Approved Amount = 0 —
+ * must NEVER appear under outstanding, recovery, or the priority worklist.
+ * They live only on the Denials page.
  */
 export function isExcludedFromOutstanding(c: Claim): boolean {
-  return isDenied(c);
+  return isDenied(c) || (Number((c as any).approved_amount) || 0) <= 0;
 }
 
 /**

@@ -80,6 +80,9 @@ export default function ImportClaimsPage() {
   } | null>(null);
   const [qc, setQc] = useState<QualityClassification | null>(null);
   const [skipQc, setSkipQc] = useState(false);
+  // Fresh sheet = fresh dataset: wipe the previous claim list so QC, outstanding
+  // and denial numbers are computed from this sheet only.
+  const [replaceAll, setReplaceAll] = useState(true);
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [overrideMap, setOverrideMap] = useState<Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null>(() => {
     if (typeof window === "undefined") return null;
@@ -288,7 +291,24 @@ export default function ImportClaimsPage() {
       const { getCurrentOrgId } = await import("@/lib/currentOrg");
       const _orgId = getCurrentOrgId();
 
+      // Fresh-sheet mode: remove the previous claim list entirely so output, QC,
+      // outstanding and denial calculations use only this sheet.
+      let purged = 0;
+      if (replaceAll) {
+        const { count: prevCount } = await supabase
+          .from("claims")
+          .select("claim_number", { count: "exact", head: true })
+          .eq("org_id", _orgId);
+        const { error: delErr } = await supabase
+          .from("claims")
+          .delete()
+          .eq("org_id", _orgId);
+        if (delErr) throw delErr;
+        purged = prevCount ?? 0;
+      }
+
       const branchSummary = await enrichRowsWithBranchIds(workingRows);
+
 
       const allClaimNumbers = workingRows.map((r) => r.claim_number).filter(Boolean);
       const existingByClaim = new Map<string, Record<string, unknown>>();
@@ -446,13 +466,17 @@ export default function ImportClaimsPage() {
           ? ` · ${branchSummary.groupsCreated} new group${branchSummary.groupsCreated === 1 ? "" : "s"}, ${branchSummary.branchesCreated} new branch${branchSummary.branchesCreated === 1 ? "" : "es"}`
           : "";
 
+      const purgeNote = purged > 0
+        ? ` · cleared ${purged} old claim${purged === 1 ? "" : "s"}`
+        : "";
+
       if (failed === 0) {
         toast.success(
-          `Imported ${success} claims (${inserted} new, ${updated} updated)${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
+          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
         );
       } else {
         toast.error(
-          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${dedupNote}${protectNote}${qcNote}${branchNote}`,
+          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
         );
       }
 
@@ -663,6 +687,24 @@ export default function ImportClaimsPage() {
               )}
 
               {/* 🩺 RCM Quality Control */}
+              {/* 🔄 Fresh sheet mode */}
+              <div className="rounded-md border bg-card p-4 flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-semibold">Replace existing data</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {replaceAll
+                      ? "The current claim list will be cleared and only this sheet will be processed — QC, outstanding and denial numbers come from this upload alone."
+                      : "This sheet will be merged into the existing claim list (old claims stay in all calculations)."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Switch id="replace-all" checked={replaceAll} onCheckedChange={setReplaceAll} />
+                  <Label htmlFor="replace-all" className="text-xs cursor-pointer">
+                    Fresh upload
+                  </Label>
+                </div>
+              </div>
+
               {qc && (
                 <div className="rounded-md border bg-card p-4 space-y-3">
                   <div className="flex items-start justify-between gap-3">
