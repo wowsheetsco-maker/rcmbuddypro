@@ -80,6 +80,9 @@ export default function ImportClaimsPage() {
   } | null>(null);
   const [qc, setQc] = useState<QualityClassification | null>(null);
   const [skipQc, setSkipQc] = useState(false);
+  // Fresh sheet = fresh dataset: wipe the previous claim list so QC, outstanding
+  // and denial numbers are computed from this sheet only.
+  const [replaceAll, setReplaceAll] = useState(true);
   const [lastFile, setLastFile] = useState<File | null>(null);
   const [overrideMap, setOverrideMap] = useState<Record<string, keyof import("@/lib/claimsImport").ClaimUpsertRow> | null>(() => {
     if (typeof window === "undefined") return null;
