@@ -74,9 +74,14 @@ function rowToClaim(r: Record<string, unknown>): Claim {
   };
 }
 
-/** Same regex as denialAnalytics.isDeniedStatus — denied/query/rejected. */
+/** Denied/query/rejected statuses PLUS decided claims with Approved Amount = 0
+ *  (zero approved is a denial, never outstanding). In-progress statuses that
+ *  simply have no approval yet are excluded. */
 const DENIAL_FILTER =
-  "claim_status.ilike.%deni%,claim_status.ilike.%query%,claim_status.ilike.%reject%";
+  "claim_status.ilike.%deni%,claim_status.ilike.%query%,claim_status.ilike.%reject%," +
+  "and(approved_amount.lte.0,claim_status.not.ilike.%initiated%,claim_status.not.ilike.%submitted%," +
+  "claim_status.not.ilike.%progress%,claim_status.not.ilike.%processing%," +
+  "claim_status.not.ilike.%pending%,claim_status.not.ilike.%reminder%)";
 
 export interface DenialPageRow {
   claim: Claim;
