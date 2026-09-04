@@ -74,14 +74,21 @@ function rowToClaim(r: Record<string, unknown>): Claim {
   };
 }
 
-/** Denied/query/rejected statuses PLUS decided claims with Approved Amount = 0
- *  (zero approved is a denial, never outstanding). In-progress statuses that
- *  simply have no approval yet are excluded. */
-const DENIAL_FILTER =
-  "claim_status.ilike.%deni%,claim_status.ilike.%query%,claim_status.ilike.%reject%," +
-  "and(approved_amount.lte.0,claim_status.not.ilike.%initiated%,claim_status.not.ilike.%submitted%," +
-  "claim_status.not.ilike.%progress%,claim_status.not.ilike.%processing%," +
-  "claim_status.not.ilike.%pending%,claim_status.not.ilike.%reminder%)";
+/** Denied/query/rejected statuses PLUS claims with Approved Amount = 0 that are
+ *  either decided or older than 10 days (zero approved is a denial, never
+ *  outstanding). Only fresh in-progress zero-approval claims are excluded. */
+function denialFilter(): string {
+  const cutoff = new Date(Date.now() - 10 * 86_400_000).toISOString().slice(0, 10);
+  return (
+    "claim_status.ilike.%deni%,claim_status.ilike.%query%,claim_status.ilike.%reject%," +
+    "and(approved_amount.lte.0,claim_status.not.ilike.%initiated%,claim_status.not.ilike.%submitted%," +
+    "claim_status.not.ilike.%progress%,claim_status.not.ilike.%processing%," +
+    "claim_status.not.ilike.%pending%,claim_status.not.ilike.%reminder%)," +
+    `and(approved_amount.lte.0,claim_creation_date.lt.${cutoff},` +
+    "claim_status.not.ilike.%settled%,claim_status.not.ilike.%paid%,claim_status.not.ilike.%closed%)"
+  );
+}
+
 
 export interface DenialPageRow {
   claim: Claim;
