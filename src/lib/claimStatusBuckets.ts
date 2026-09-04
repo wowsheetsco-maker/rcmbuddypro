@@ -9,12 +9,27 @@
 export interface StatusedClaim {
   claim_status?: string | null;
   date_of_discharge?: string | null;
+  date_of_admission?: string | null;
+  claim_creation_date?: string | null;
   approved_amount?: number | null;
   claimed_amount?: number | null;
   settled_amount?: number | null;
 }
 
 const norm = (s?: string | null) => (s || "").toLowerCase().trim();
+
+/** Age of a claim in days, using creation date then discharge then admission. */
+export function claimAgeDays(c: StatusedClaim): number | null {
+  const src = c.claim_creation_date || c.date_of_discharge || c.date_of_admission;
+  if (!src) return null;
+  const t = new Date(src).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86_400_000);
+}
+
+/** Business rule: zero approval that has aged past this many days = denial. */
+export const ZERO_APPROVAL_DENIAL_AGE_DAYS = 10;
+
 
 export const SETTLED_STATUSES = new Set<string>([
   "settled", "paid", "closed",
