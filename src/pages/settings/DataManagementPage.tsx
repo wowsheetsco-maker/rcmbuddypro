@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { AlertTriangle, Trash2, Loader2 } from "lucide-react";
+import { AlertTriangle, Trash2, Loader2, ArrowLeft, Home } from "lucide-react";
+import { Link, useRouter } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { bumpClaimsVersion } from "@/hooks/useLiveClaims";
 const ALLOWED_ROLES = new Set(["Super Admin", "Hospital Admin", "CFO View"]);
 
 export default function DataManagementPage() {
+  const router = useRouter();
   const role = getActingRole();
   const allowed = ALLOWED_ROLES.has(role);
 
@@ -39,6 +41,25 @@ export default function DataManagementPage() {
     setBusy(true);
     try {
       const orgId = getCurrentOrgId();
+
+      // Preserve team-entered notes (SPOCs, remarks, action plans, last
+      // communication) so they re-attach when a new sheet is uploaded.
+      const { saveNotesVault } = await import("@/lib/claimNotesVault");
+      {
+        let from = 0;
+        const PAGE = 1000;
+        for (;;) {
+          const { data } = await supabase
+            .from("claims")
+            .select("claim_number,tpa_spoc,hospital_spoc,last_communication_at,last_communication_note,remarks,action_plan")
+            .eq("org_id", orgId)
+            .range(from, from + PAGE - 1);
+          saveNotesVault((data ?? []) as Record<string, unknown>[]);
+          if (!data || data.length < PAGE) break;
+          from += PAGE;
+        }
+      }
+
       const tables: string[] = [];
       if (includeFollowUps) tables.push("follow_ups");
       if (includeDiscrepancies) {
@@ -63,7 +84,7 @@ export default function DataManagementPage() {
 
       toast({
         title: "Claims data cleared",
-        description: `${count ?? 0} claims removed. You can now re-upload the correct data.`,
+        description: `${count ?? 0} claims removed. Team notes are saved and will re-attach on your next upload.`,
       });
       setConfirmText("");
       setOpen(false);
@@ -77,6 +98,19 @@ export default function DataManagementPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
+      <div className="flex items-center gap-2">
+        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.history.back()}>
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <Button variant="ghost" size="sm" className="gap-1.5" asChild>
+          <Link to="/today">
+            <Home className="h-4 w-4" />
+            Home
+          </Link>
+        </Button>
+      </div>
+
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Data Management</h1>
         <p className="text-sm text-muted-foreground">

@@ -291,6 +291,41 @@ export default function ImportClaimsPage() {
       const { getCurrentOrgId } = await import("@/lib/currentOrg");
       const _orgId = getCurrentOrgId();
 
+      // Team-entered workflow notes must survive any re-upload. Snapshot them
+      // (keyed by claim number) BEFORE anything is deleted or upserted, seeded
+      // from the local vault so notes survive even a full data wipe.
+      const { CLAIM_NOTE_FIELDS, readNotesVault, saveNotesVault } = await import("@/lib/claimNotesVault");
+      const NOTE_FIELDS = CLAIM_NOTE_FIELDS;
+      const retainedNotes = new Map<string, Record<string, unknown>>();
+      for (const [cn, rec] of Object.entries(readNotesVault())) {
+        retainedNotes.set(cn, rec);
+      }
+      {
+        let from = 0;
+        const PAGE = 1000;
+        for (;;) {
+          const { data, error } = await supabase
+            .from("claims")
+            .select("claim_number,tpa_spoc,hospital_spoc,last_communication_at,last_communication_note,remarks,action_plan")
+            .eq("org_id", _orgId)
+            .range(from, from + PAGE - 1);
+          if (error) throw error;
+          (data ?? []).forEach((r) => {
+            if (!r.claim_number) return;
+            retainedNotes.set(r.claim_number, {
+              ...(retainedNotes.get(r.claim_number) ?? {}),
+              ...Object.fromEntries(
+                Object.entries(r as Record<string, unknown>).filter(([, v]) => v !== null && v !== ""),
+              ),
+            });
+          });
+          if (!data || data.length < PAGE) break;
+          from += PAGE;
+        }
+        saveNotesVault(Array.from(retainedNotes.entries()).map(([cn, rec]) => ({ ...rec, claim_number: cn })));
+      }
+
+
       // Fresh-sheet mode: remove the previous claim list entirely so output, QC,
       // outstanding and denial calculations use only this sheet.
       let purged = 0;
@@ -306,6 +341,7 @@ export default function ImportClaimsPage() {
         if (delErr) throw delErr;
         purged = prevCount ?? 0;
       }
+
 
       const branchSummary = await enrichRowsWithBranchIds(workingRows);
 
@@ -351,18 +387,35 @@ export default function ImportClaimsPage() {
         v === null || v === undefined || (typeof v === "string" && v.trim() === "");
 
       let blanksProtected = 0;
+      let notesRetained = 0;
       const mergeWithExisting = <T extends Record<string, unknown>>(incoming: T): T => {
         const prev = existingByClaim.get(incoming.claim_number as string);
-        if (!prev) return incoming;
+        const notes = retainedNotes.get(incoming.claim_number as string);
+        if (!prev && !notes) return incoming;
         const merged: Record<string, unknown> = { ...incoming };
-        for (const f of PROTECTED_FIELDS) {
-          if (isBlank(merged[f]) && !isBlank(prev[f])) {
-            merged[f] = prev[f];
-            blanksProtected += 1;
+        if (prev) {
+          for (const f of PROTECTED_FIELDS) {
+            if (isBlank(merged[f]) && !isBlank(prev[f])) {
+              merged[f] = prev[f];
+              blanksProtected += 1;
+            }
           }
+        }
+        // Team comments / SPOC / action plans are never wiped by a re-upload —
+        // the sheet only overrides them when it actually carries a new value.
+        if (notes) {
+          let kept = false;
+          for (const f of NOTE_FIELDS) {
+            if (isBlank(merged[f]) && !isBlank(notes[f])) {
+              merged[f] = notes[f];
+              kept = true;
+            }
+          }
+          if (kept) notesRetained += 1;
         }
         return merged as T;
       };
+
 
       let success = 0;
       let failed = 0;
@@ -469,14 +522,18 @@ export default function ImportClaimsPage() {
       const purgeNote = purged > 0
         ? ` · cleared ${purged} old claim${purged === 1 ? "" : "s"}`
         : "";
+      const notesNote = notesRetained > 0
+        ? ` · kept team notes on ${notesRetained} claim${notesRetained === 1 ? "" : "s"}`
+        : "";
+
 
       if (failed === 0) {
         toast.success(
-          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
+          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${notesNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
         );
       } else {
         toast.error(
-          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
+          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${notesNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
         );
       }
 
