@@ -291,6 +291,35 @@ export default function ImportClaimsPage() {
       const { getCurrentOrgId } = await import("@/lib/currentOrg");
       const _orgId = getCurrentOrgId();
 
+      // Team-entered workflow notes must survive any re-upload. Snapshot them
+      // (keyed by claim number) BEFORE anything is deleted or upserted.
+      const NOTE_FIELDS = [
+        "tpa_spoc",
+        "hospital_spoc",
+        "last_communication_at",
+        "last_communication_note",
+        "remarks",
+        "action_plan",
+      ] as const;
+      const retainedNotes = new Map<string, Record<string, unknown>>();
+      {
+        let from = 0;
+        const PAGE = 1000;
+        for (;;) {
+          const { data, error } = await supabase
+            .from("claims")
+            .select("claim_number,tpa_spoc,hospital_spoc,last_communication_at,last_communication_note,remarks,action_plan")
+            .eq("org_id", _orgId)
+            .range(from, from + PAGE - 1);
+          if (error) throw error;
+          (data ?? []).forEach((r) => {
+            if (r.claim_number) retainedNotes.set(r.claim_number, r as Record<string, unknown>);
+          });
+          if (!data || data.length < PAGE) break;
+          from += PAGE;
+        }
+      }
+
       // Fresh-sheet mode: remove the previous claim list entirely so output, QC,
       // outstanding and denial calculations use only this sheet.
       let purged = 0;
@@ -306,6 +335,7 @@ export default function ImportClaimsPage() {
         if (delErr) throw delErr;
         purged = prevCount ?? 0;
       }
+
 
       const branchSummary = await enrichRowsWithBranchIds(workingRows);
 
