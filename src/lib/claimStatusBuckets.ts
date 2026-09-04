@@ -74,8 +74,13 @@ export const isDenied = (c: StatusedClaim) => {
   const approved = Number(c.approved_amount || 0);
   const status = (c.claim_status || "").trim();
   if (SETTLED_STATUSES.has(norm(status))) return false;
-  return approved <= 0 && !!status && !IN_PROGRESS_RE.test(status);
+  if (approved > 0) return false;
+  // Zero approval older than 10 days is a denial even if still "in progress".
+  const age = claimAgeDays(c);
+  if (age !== null && age > ZERO_APPROVAL_DENIAL_AGE_DAYS) return true;
+  return !!status && !IN_PROGRESS_RE.test(status);
 };
+
 export const isSubmitted = (c: StatusedClaim) => SUBMITTED_STATUSES.has(norm(c.claim_status));
 export const isDocsToSubmit = (c: StatusedClaim) =>
   !!c.date_of_discharge && DOCS_TO_SUBMIT_STATUSES.has(norm(c.claim_status));
