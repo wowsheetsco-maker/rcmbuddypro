@@ -119,7 +119,7 @@ export function useDenialsPage(params: DenialsQueryParams): UseDenialsPageResult
       let q = supabase
         .from("claims")
         .select("*", { count: "exact" })
-        .or(DENIAL_FILTER);
+        .or(denialFilter());
       const term = search.trim();
       if (term) {
         const safe = escapeLike(term);
