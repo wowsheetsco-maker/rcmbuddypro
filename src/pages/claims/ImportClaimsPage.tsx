@@ -516,6 +516,10 @@ export default function ImportClaimsPage() {
       const purgeNote = purged > 0
         ? ` · cleared ${purged} old claim${purged === 1 ? "" : "s"}`
         : "";
+      const notesNote = notesRetained > 0
+        ? ` · kept team notes on ${notesRetained} claim${notesRetained === 1 ? "" : "s"}`
+        : "";
+
 
       if (failed === 0) {
         toast.success(
