@@ -27,15 +27,32 @@ export function isOpen(c: Claim): boolean {
   return !SETTLED_STATUSES.has((c.claim_status || "").toLowerCase().trim());
 }
 
-/** Approved amount = 0 on a decided claim → treated as a denial. */
+/** Zero approval that has aged past this many days counts as a denial. */
+export const ZERO_APPROVAL_DENIAL_AGE_DAYS = 10;
+
+/** Age of the claim in days — creation date, else discharge, else admission. */
+export function claimAgeDays(c: Claim): number | null {
+  const src =
+    c.claim_creation_date || c.date_of_discharge || (c as any).date_of_admission;
+  if (!src) return null;
+  const t = new Date(src).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86_400_000);
+}
+
+/** Approved amount = 0 on a decided claim, or on any claim older than 10 days
+ *  → treated as a denial (never outstanding). */
 export function isZeroApprovedDenial(c: Claim): boolean {
   const approved = Number((c as any).approved_amount) || 0;
   if (approved > 0) return false;
   const status = (c.claim_status || "").trim();
-  if (!status) return false;
   if (SETTLED_STATUSES.has(status.toLowerCase())) return false;
+  const age = claimAgeDays(c);
+  if (age !== null && age > ZERO_APPROVAL_DENIAL_AGE_DAYS) return true;
+  if (!status) return false;
   return !IN_PROGRESS_RE.test(status);
 }
+
 
 export function isDenied(c: Claim): boolean {
   return DENIED_RE.test(c.claim_status || "") || isZeroApprovedDenial(c);

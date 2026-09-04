@@ -9,12 +9,27 @@
 export interface StatusedClaim {
   claim_status?: string | null;
   date_of_discharge?: string | null;
+  date_of_admission?: string | null;
+  claim_creation_date?: string | null;
   approved_amount?: number | null;
   claimed_amount?: number | null;
   settled_amount?: number | null;
 }
 
 const norm = (s?: string | null) => (s || "").toLowerCase().trim();
+
+/** Age of a claim in days, using creation date then discharge then admission. */
+export function claimAgeDays(c: StatusedClaim): number | null {
+  const src = c.claim_creation_date || c.date_of_discharge || c.date_of_admission;
+  if (!src) return null;
+  const t = new Date(src).getTime();
+  if (Number.isNaN(t)) return null;
+  return Math.floor((Date.now() - t) / 86_400_000);
+}
+
+/** Business rule: zero approval that has aged past this many days = denial. */
+export const ZERO_APPROVAL_DENIAL_AGE_DAYS = 10;
+
 
 export const SETTLED_STATUSES = new Set<string>([
   "settled", "paid", "closed",
@@ -59,8 +74,13 @@ export const isDenied = (c: StatusedClaim) => {
   const approved = Number(c.approved_amount || 0);
   const status = (c.claim_status || "").trim();
   if (SETTLED_STATUSES.has(norm(status))) return false;
-  return approved <= 0 && !!status && !IN_PROGRESS_RE.test(status);
+  if (approved > 0) return false;
+  // Zero approval older than 10 days is a denial even if still "in progress".
+  const age = claimAgeDays(c);
+  if (age !== null && age > ZERO_APPROVAL_DENIAL_AGE_DAYS) return true;
+  return !!status && !IN_PROGRESS_RE.test(status);
 };
+
 export const isSubmitted = (c: StatusedClaim) => SUBMITTED_STATUSES.has(norm(c.claim_status));
 export const isDocsToSubmit = (c: StatusedClaim) =>
   !!c.date_of_discharge && DOCS_TO_SUBMIT_STATUSES.has(norm(c.claim_status));
