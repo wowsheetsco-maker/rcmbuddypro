@@ -381,18 +381,35 @@ export default function ImportClaimsPage() {
         v === null || v === undefined || (typeof v === "string" && v.trim() === "");
 
       let blanksProtected = 0;
+      let notesRetained = 0;
       const mergeWithExisting = <T extends Record<string, unknown>>(incoming: T): T => {
         const prev = existingByClaim.get(incoming.claim_number as string);
-        if (!prev) return incoming;
+        const notes = retainedNotes.get(incoming.claim_number as string);
+        if (!prev && !notes) return incoming;
         const merged: Record<string, unknown> = { ...incoming };
-        for (const f of PROTECTED_FIELDS) {
-          if (isBlank(merged[f]) && !isBlank(prev[f])) {
-            merged[f] = prev[f];
-            blanksProtected += 1;
+        if (prev) {
+          for (const f of PROTECTED_FIELDS) {
+            if (isBlank(merged[f]) && !isBlank(prev[f])) {
+              merged[f] = prev[f];
+              blanksProtected += 1;
+            }
           }
+        }
+        // Team comments / SPOC / action plans are never wiped by a re-upload —
+        // the sheet only overrides them when it actually carries a new value.
+        if (notes) {
+          let kept = false;
+          for (const f of NOTE_FIELDS) {
+            if (isBlank(merged[f]) && !isBlank(notes[f])) {
+              merged[f] = notes[f];
+              kept = true;
+            }
+          }
+          if (kept) notesRetained += 1;
         }
         return merged as T;
       };
+
 
       let success = 0;
       let failed = 0;
