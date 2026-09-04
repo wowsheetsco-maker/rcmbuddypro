@@ -523,11 +523,11 @@ export default function ImportClaimsPage() {
 
       if (failed === 0) {
         toast.success(
-          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
+          `Imported ${success} claims (${inserted} new, ${updated} updated)${purgeNote}${notesNote}${dedupNote}${protectNote}${qcNote}${branchNote} — dashboards refreshing`,
         );
       } else {
         toast.error(
-          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
+          `Imported ${success} of ${rowsWithDq.length} (${failed} failed)${purgeNote}${notesNote}${dedupNote}${protectNote}${qcNote}${branchNote}`,
         );
       }
 
