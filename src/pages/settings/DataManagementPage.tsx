@@ -64,49 +64,24 @@ export default function DataManagementPage() {
         }
       }
 
-      const tables: string[] = [];
-      if (includeFollowUps) tables.push("follow_ups");
-      if (includeDiscrepancies) {
-        tables.push("discrepancy_action_log");
-        tables.push("discrepancy_actions");
-      }
-      // Delete dependents first. A failure here (missing permission on a
-      // side table) must NOT stop the claims wipe — collect and report later.
-      const warnings: string[] = [];
-      for (const t of tables) {
-        const q = supabase.from(t as never).delete();
-        const { error } = orgId ? await q.eq("org_id", orgId) : await q.not("id", "is", null);
-        if (error) warnings.push(`${t}: ${error.message}`);
+      if (!orgId) {
+        throw new Error("No active hospital was found. Refresh the page and try again.");
       }
 
-      let count = 0;
-      if (orgId) {
-        const { error: claimsErr, count: c } = await supabase
-          .from("claims")
-          .delete({ count: "exact" })
-          .eq("org_id", orgId);
-        if (claimsErr) warnings.push(`claims: ${claimsErr.message}`);
-        count = c ?? 0;
-      }
+      // Clear in one authorized database transaction. A browser-side delete
+      // is branch-scoped by RLS, so it can leave claims from other branches
+      // behind even for a hospital administrator.
+      const { data: result, error: clearError } = await supabase.rpc(
+        "clear_organization_claims",
+        { _org_id: orgId }
+      );
+      if (clearError) throw clearError;
 
-      // Fallback / verification sweep: anything still visible to this user
-      // (wrong or missing org context, rows saved under another workspace)
-      // gets removed by id so the screens really do come back empty.
-      for (let pass = 0; pass < 10; pass++) {
-        const { data: left } = await supabase.from("claims").select("id").limit(1000);
-        if (!left || left.length === 0) break;
-        const ids = left.map((r) => r.id as string);
-        const { error: delErr } = await supabase.from("claims").delete().in("id", ids);
-        if (delErr) {
-          warnings.push(`claims: ${delErr.message}`);
-          break;
-        }
-        count += ids.length;
-      }
-
-      const { count: remaining } = await supabase
-        .from("claims")
-        .select("id", { count: "exact", head: true });
+      const summary = result && typeof result === "object" && !Array.isArray(result)
+        ? result as Record<string, unknown>
+        : {};
+      const count = typeof summary.deleted_count === "number" ? summary.deleted_count : 0;
+      const remaining = typeof summary.remaining_count === "number" ? summary.remaining_count : 0;
 
       // Mark that the user has explicitly cleared their data so the
       // mock/demo claims do NOT come back to haunt them on next load.
@@ -116,13 +91,13 @@ export default function DataManagementPage() {
       if (remaining && remaining > 0) {
         toast({
           title: "Some claims could not be removed",
-          description: `${count} removed, ${remaining} still remaining. ${warnings.join(" | ")}`,
+          description: `${count} removed, ${remaining} still remaining. Please try again or contact support.`,
           variant: "destructive",
         });
       } else {
         toast({
           title: "Claims data cleared",
-          description: `${count} claims removed. Team notes are saved and will re-attach on your next upload.${warnings.length ? ` Note: ${warnings.join(" | ")}` : ""}`,
+          description: `${count} claims removed. Team notes are saved and will re-attach on your next upload.`,
         });
       }
       setConfirmText("");
