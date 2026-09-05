@@ -5050,6 +5050,7 @@ export type Database = {
         Args: { _code: Database["public"]["Enums"]["claim_status_code"] }
         Returns: Database["public"]["Enums"]["claim_status_bucket"]
       }
+      clear_organization_claims: { Args: { _org_id: string }; Returns: Json }
       get_own_smtp_settings: {
         Args: never
         Returns: {
