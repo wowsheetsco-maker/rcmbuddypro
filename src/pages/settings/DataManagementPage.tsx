@@ -40,7 +40,12 @@ export default function DataManagementPage() {
   async function handleClearAll() {
     setBusy(true);
     try {
-      const orgId = getCurrentOrgId();
+      let orgId: string | null = null;
+      try {
+        orgId = getCurrentOrgId();
+      } catch {
+        orgId = null;
+      }
 
       // Preserve team-entered notes (SPOCs, remarks, action plans, last
       // communication) so they re-attach when a new sheet is uploaded.
@@ -52,7 +57,6 @@ export default function DataManagementPage() {
           const { data } = await supabase
             .from("claims")
             .select("claim_number,tpa_spoc,hospital_spoc,last_communication_at,last_communication_note,remarks,action_plan")
-            .eq("org_id", orgId)
             .range(from, from + PAGE - 1);
           saveNotesVault((data ?? []) as Record<string, unknown>[]);
           if (!data || data.length < PAGE) break;
@@ -66,26 +70,61 @@ export default function DataManagementPage() {
         tables.push("discrepancy_action_log");
         tables.push("discrepancy_actions");
       }
-      // Delete dependents first
+      // Delete dependents first. A failure here (missing permission on a
+      // side table) must NOT stop the claims wipe — collect and report later.
+      const warnings: string[] = [];
       for (const t of tables) {
-        const { error } = await supabase.from(t as never).delete().eq("org_id", orgId);
-        if (error) throw new Error(`${t}: ${error.message}`);
+        const q = supabase.from(t as never).delete();
+        const { error } = orgId ? await q.eq("org_id", orgId) : await q.not("id", "is", null);
+        if (error) warnings.push(`${t}: ${error.message}`);
       }
-      const { error: claimsErr, count } = await supabase
+
+      let count = 0;
+      if (orgId) {
+        const { error: claimsErr, count: c } = await supabase
+          .from("claims")
+          .delete({ count: "exact" })
+          .eq("org_id", orgId);
+        if (claimsErr) warnings.push(`claims: ${claimsErr.message}`);
+        count = c ?? 0;
+      }
+
+      // Fallback / verification sweep: anything still visible to this user
+      // (wrong or missing org context, rows saved under another workspace)
+      // gets removed by id so the screens really do come back empty.
+      for (let pass = 0; pass < 10; pass++) {
+        const { data: left } = await supabase.from("claims").select("id").limit(1000);
+        if (!left || left.length === 0) break;
+        const ids = left.map((r) => r.id as string);
+        const { error: delErr } = await supabase.from("claims").delete().in("id", ids);
+        if (delErr) {
+          warnings.push(`claims: ${delErr.message}`);
+          break;
+        }
+        count += ids.length;
+      }
+
+      const { count: remaining } = await supabase
         .from("claims")
-        .delete({ count: "exact" })
-        .eq("org_id", orgId);
-      if (claimsErr) throw new Error(claimsErr.message);
+        .select("id", { count: "exact", head: true });
 
       // Mark that the user has explicitly cleared their data so the
       // mock/demo claims do NOT come back to haunt them on next load.
       try { localStorage.setItem("rcm-buddy-claims-cleared", "1"); } catch { /* ignore */ }
       bumpClaimsVersion();
 
-      toast({
-        title: "Claims data cleared",
-        description: `${count ?? 0} claims removed. Team notes are saved and will re-attach on your next upload.`,
-      });
+      if (remaining && remaining > 0) {
+        toast({
+          title: "Some claims could not be removed",
+          description: `${count} removed, ${remaining} still remaining. ${warnings.join(" | ")}`,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Claims data cleared",
+          description: `${count} claims removed. Team notes are saved and will re-attach on your next upload.${warnings.length ? ` Note: ${warnings.join(" | ")}` : ""}`,
+        });
+      }
       setConfirmText("");
       setOpen(false);
     } catch (e) {
@@ -95,6 +134,7 @@ export default function DataManagementPage() {
       setBusy(false);
     }
   }
+
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
