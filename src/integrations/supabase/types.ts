@@ -5109,6 +5109,8 @@ export type Database = {
         Args: { _role: Database["public"]["Enums"]["org_role"] }
         Returns: number
       }
+      platform_access_overview: { Args: never; Returns: Json }
+      platform_isolation_report: { Args: never; Returns: Json }
       private_cron_get: { Args: { _key: string }; Returns: string }
       private_cron_set: {
         Args: { _key: string; _value: string }
